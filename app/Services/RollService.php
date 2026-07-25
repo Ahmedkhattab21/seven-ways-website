@@ -50,7 +50,14 @@ class RollService
                 'created_by' => $this->tenant->user()->id,
             ])->save();
             $this->recordMovement($roll, 'receipt', '0', $length, '0', $area, $reference);
-            $this->inventory->receive($warehouse, $product, '1', $total, 'roll_receipt', ['type' => 'roll', 'id' => $roll->id]);
+            $this->inventory->receive(
+                $warehouse,
+                $product,
+                '1',
+                $total,
+                $reference['movement_type'] ?? 'roll_receipt',
+                ['type' => $reference['type'] ?? 'roll', 'id' => $reference['id'] ?? $roll->id]
+            );
             $this->audit->record('roll.received', $roll, ['area' => $area]);
 
             return $roll;

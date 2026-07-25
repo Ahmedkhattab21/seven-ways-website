@@ -1,0 +1,1 @@
+@include('purchasing.index',['title'=>'مرتجعات المشتريات','createRoute'=>'purchase-returns.create','showRoute'=>'purchase-returns.show','numberField'=>'purchase_return_number','dateField'=>'return_date'])

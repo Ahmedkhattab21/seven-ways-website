@@ -16,6 +16,7 @@ use App\Models\CustomerRefund;
 use App\Models\DocumentSequence;
 use App\Models\EmployeeServiceSkill;
 use App\Models\FiscalYear;
+use App\Models\GoodsReceipt;
 use App\Models\InventoryCount;
 use App\Models\InventoryReservation;
 use App\Models\InventoryRoll;
@@ -26,6 +27,9 @@ use App\Models\Product;
 use App\Models\ProductBrand;
 use App\Models\ProductCategory;
 use App\Models\Promotion;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseRequisition;
+use App\Models\PurchaseReturn;
 use App\Models\QualityCheck;
 use App\Models\QualityChecklistTemplate;
 use App\Models\Quotation;
@@ -45,6 +49,10 @@ use App\Models\StockAdjustment;
 use App\Models\StockMovement;
 use App\Models\StockTransfer;
 use App\Models\StockTransferDiscrepancy;
+use App\Models\Supplier;
+use App\Models\SupplierCreditNote;
+use App\Models\SupplierInvoice;
+use App\Models\SupplierPayment;
 use App\Models\Tax;
 use App\Models\Unit;
 use App\Models\User;
@@ -72,6 +80,7 @@ use App\Policies\CustomerPaymentPolicy;
 use App\Policies\CustomerPolicy;
 use App\Policies\CustomerRefundPolicy;
 use App\Policies\EmployeeServiceSkillPolicy;
+use App\Policies\GoodsReceiptPolicy;
 use App\Policies\InventoryCountPolicy;
 use App\Policies\InventoryReservationPolicy;
 use App\Policies\InventoryRollPolicy;
@@ -81,6 +90,9 @@ use App\Policies\ProductBrandPolicy;
 use App\Policies\ProductCategoryPolicy;
 use App\Policies\ProductPolicy;
 use App\Policies\PromotionPolicy;
+use App\Policies\PurchaseOrderPolicy;
+use App\Policies\PurchaseRequisitionPolicy;
+use App\Policies\PurchaseReturnPolicy;
 use App\Policies\QualityChecklistTemplatePolicy;
 use App\Policies\QualityCheckPolicy;
 use App\Policies\QuotationItemPolicy;
@@ -101,6 +113,10 @@ use App\Policies\StockAdjustmentPolicy;
 use App\Policies\StockMovementPolicy;
 use App\Policies\StockTransferDiscrepancyPolicy;
 use App\Policies\StockTransferPolicy;
+use App\Policies\SupplierCreditNotePolicy;
+use App\Policies\SupplierInvoicePolicy;
+use App\Policies\SupplierPaymentPolicy;
+use App\Policies\SupplierPolicy;
 use App\Policies\UserPolicy;
 use App\Policies\VehicleInspectionPolicy;
 use App\Policies\VehiclePolicy;
@@ -181,6 +197,14 @@ class AuthServiceProvider extends ServiceProvider
         PaymentAllocation::class => PaymentAllocationPolicy::class,
         SalesCreditNote::class => SalesCreditNotePolicy::class,
         CustomerRefund::class => CustomerRefundPolicy::class,
+        Supplier::class => SupplierPolicy::class,
+        PurchaseRequisition::class => PurchaseRequisitionPolicy::class,
+        PurchaseOrder::class => PurchaseOrderPolicy::class,
+        GoodsReceipt::class => GoodsReceiptPolicy::class,
+        PurchaseReturn::class => PurchaseReturnPolicy::class,
+        SupplierInvoice::class => SupplierInvoicePolicy::class,
+        SupplierPayment::class => SupplierPaymentPolicy::class,
+        SupplierCreditNote::class => SupplierCreditNotePolicy::class,
     ];
 
     /**

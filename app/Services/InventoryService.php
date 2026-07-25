@@ -29,6 +29,11 @@ class InventoryService
         return $this->change($warehouse, $product, $quantity, null, $type, 'out', $reference);
     }
 
+    public function issueAtCost(Warehouse $warehouse, Product $product, string $quantity, string $unitCost, string $type, array $reference = []): StockMovement
+    {
+        return $this->change($warehouse, $product, $quantity, $unitCost, $type, 'out', $reference, false, true);
+    }
+
     public function reserve(Warehouse $warehouse, Product $product, string $quantity, bool $release = false, array $reference = [], ?string $movementType = null): StockMovement
     {
         return DB::transaction(function () use ($warehouse, $product, $quantity, $release, $reference, $movementType) {
@@ -81,13 +86,22 @@ class InventoryService
         return $reversal;
     }
 
-    private function change(Warehouse $warehouse, Product $product, string $quantity, ?string $unitCost, string $type, string $direction, array $reference, bool $allowSystemTransit = false): StockMovement
-    {
+    private function change(
+        Warehouse $warehouse,
+        Product $product,
+        string $quantity,
+        ?string $unitCost,
+        string $type,
+        string $direction,
+        array $reference,
+        bool $allowSystemTransit = false,
+        bool $preserveProvidedCost = false
+    ): StockMovement {
         if (bccomp($quantity, '0', 6) <= 0) {
             throw new BusinessRuleException('Stock quantity must be positive.');
         }
 
-        return DB::transaction(function () use ($warehouse, $product, $quantity, $unitCost, $type, $direction, $reference, $allowSystemTransit) {
+        return DB::transaction(function () use ($warehouse, $product, $quantity, $unitCost, $type, $direction, $reference, $allowSystemTransit, $preserveProvidedCost) {
             $this->assertScope($warehouse, $product, $allowSystemTransit);
             $balance = $this->lockedBalance($warehouse, $product);
             $before = $balance->quantity;
@@ -96,7 +110,7 @@ class InventoryService
                     throw new BusinessRuleException('Issue exceeds available stock.');
                 }
                 $after = bcsub($before, $quantity, 6);
-                $unitCost = $balance->average_cost;
+                $unitCost = $preserveProvidedCost ? $unitCost : $balance->average_cost;
             } else {
                 $after = bcadd($before, $quantity, 6);
                 if ($product->costing_method === 'weighted_average') {

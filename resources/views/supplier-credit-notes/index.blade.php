@@ -1,0 +1,1 @@
+@include('purchasing.index',['title'=>'إشعارات دائنة للمورد','createRoute'=>'supplier-credit-notes.create','showRoute'=>'supplier-credit-notes.show','numberField'=>'credit_note_number','dateField'=>'credit_date'])

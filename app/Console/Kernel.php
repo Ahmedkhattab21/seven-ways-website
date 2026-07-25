@@ -16,6 +16,7 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('quotations:expire')->dailyAt('00:10')->withoutOverlapping();
         $schedule->command('invoices:mark-overdue')->dailyAt('00:20')->withoutOverlapping();
+        $schedule->command('supplier-invoices:mark-overdue')->dailyAt('00:30')->withoutOverlapping();
     }
 
     /**

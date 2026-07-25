@@ -54,8 +54,7 @@ class AuthenticationUiTest extends TestCase
             ->assertSee('مستخدم Seven Ways')
             ->assertDontSee('فواتير المبيعات')
             ->assertDontSee('href="'.route('sales-invoices.index').'"', false)
-            ->assertSee('المشتريات')
-            ->assertSee('قريبًا')
+            ->assertDontSee('المشتريات')
             ->assertDontSee('href="'.url('/purchases').'"', false);
     }
 

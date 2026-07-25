@@ -1,0 +1,1 @@
+@include('purchasing.show',['title'=>'مرتجع مشتريات','numberField'=>'purchase_return_number','actionRoute'=>'purchase-returns.action','actions'=>['submit'=>'إرسال للاعتماد','approve'=>'اعتماد','post'=>'ترحيل']])

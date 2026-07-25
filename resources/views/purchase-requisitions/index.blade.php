@@ -1,0 +1,1 @@
+@include('purchasing.index',['title'=>'طلبات الشراء','createRoute'=>'purchase-requisitions.create','showRoute'=>'purchase-requisitions.show','numberField'=>'requisition_number','dateField'=>'request_date'])

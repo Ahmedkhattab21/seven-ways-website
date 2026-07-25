@@ -1,0 +1,1 @@
+@include('purchasing.show',['title'=>'فاتورة مورد','numberField'=>'internal_invoice_number','actionRoute'=>'supplier-invoices.action','actions'=>['submit'=>'إرسال للاعتماد','approve'=>'اعتماد','post'=>'ترحيل']])

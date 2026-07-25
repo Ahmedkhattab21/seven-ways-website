@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AttachmentRequest;
+use App\Http\Requests\GoodsReceiptAttachmentRequest;
 use App\Models\Attachment;
 use App\Models\Customer;
+use App\Models\GoodsReceipt;
 use App\Models\Vehicle;
 use App\Services\AttachmentService;
 use Illuminate\Http\RedirectResponse;
@@ -32,6 +34,16 @@ class AttachmentController extends Controller
         $this->authorize('view', $attachment);
 
         return Storage::disk($attachment->disk)->download($attachment->path, $attachment->original_name);
+    }
+
+    public function storeForGoodsReceipt(
+        GoodsReceiptAttachmentRequest $request,
+        GoodsReceipt $goodsReceipt,
+        AttachmentService $service
+    ): RedirectResponse {
+        $service->store($goodsReceipt, $request->file('file'), $request->string('category')->toString());
+
+        return back()->with('status', 'Goods receipt attachment uploaded.');
     }
 
     public function destroy(Attachment $attachment, AttachmentService $service): RedirectResponse

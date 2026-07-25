@@ -1,0 +1,1 @@
+@include('purchasing.index',['title'=>'استلامات المشتريات','createRoute'=>'goods-receipts.create','showRoute'=>'goods-receipts.show','numberField'=>'goods_receipt_number','dateField'=>'receipt_date'])

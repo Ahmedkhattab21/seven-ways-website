@@ -1,0 +1,1 @@
+@include('purchasing.index',['title'=>'فواتير الموردين','createRoute'=>'supplier-invoices.create','showRoute'=>'supplier-invoices.show','numberField'=>'internal_invoice_number','dateField'=>'invoice_date'])

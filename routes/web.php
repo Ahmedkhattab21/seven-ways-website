@@ -13,6 +13,7 @@ use App\Http\Controllers\CustomerPaymentController;
 use App\Http\Controllers\CustomerRefundController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryController;
+use App\Http\Controllers\GoodsReceiptController;
 use App\Http\Controllers\InventoryActionController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InventoryDocumentController;
@@ -20,6 +21,10 @@ use App\Http\Controllers\LeadController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductReferenceController;
 use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\PurchaseRequisitionController;
+use App\Http\Controllers\PurchaseReturnController;
+use App\Http\Controllers\PurchasingReportController;
 use App\Http\Controllers\QualityCheckController;
 use App\Http\Controllers\QualityChecklistController;
 use App\Http\Controllers\QuotationActionController;
@@ -34,6 +39,10 @@ use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServicePackageController;
 use App\Http\Controllers\StockTransferController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\SupplierCreditNoteController;
+use App\Http\Controllers\SupplierInvoiceController;
+use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\VehicleInspectionController;
@@ -378,4 +387,67 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
 
     Route::get('customers/{customer}/statement', [SalesReportController::class, 'statement'])->middleware('permission:customer_statements.view')->name('customer-statements.show');
     Route::get('reports/accounts-receivable-aging', [SalesReportController::class, 'aging'])->middleware('permission:accounts_receivable.aging')->name('sales-reports.aging');
+
+    Route::get('suppliers', [SupplierController::class, 'index'])->middleware('permission:suppliers.view')->name('suppliers.index');
+    Route::get('suppliers/create', [SupplierController::class, 'create'])->middleware('permission:suppliers.create')->name('suppliers.create');
+    Route::post('suppliers', [SupplierController::class, 'store'])->middleware('permission:suppliers.create')->name('suppliers.store');
+    Route::get('suppliers/{supplier}', [SupplierController::class, 'show'])->middleware('permission:suppliers.view')->name('suppliers.show');
+    Route::get('suppliers/{supplier}/edit', [SupplierController::class, 'edit'])->middleware('permission:suppliers.update')->name('suppliers.edit');
+    Route::put('suppliers/{supplier}', [SupplierController::class, 'update'])->middleware('permission:suppliers.update')->name('suppliers.update');
+    Route::patch('suppliers/{supplier}/status/{status}', [SupplierController::class, 'status'])->middleware('permission:suppliers.disable')->whereIn('status', ['active', 'inactive', 'suspended', 'blocked'])->name('suppliers.status');
+    Route::post('suppliers/{supplier}/contacts', [SupplierController::class, 'contact'])->middleware('permission:suppliers.update')->name('suppliers.contacts.store');
+    Route::post('suppliers/{supplier}/addresses', [SupplierController::class, 'address'])->middleware('permission:suppliers.update')->name('suppliers.addresses.store');
+    Route::post('suppliers/{supplier}/products', [SupplierController::class, 'product'])->middleware('permission:suppliers.update')->name('suppliers.products.store');
+
+    Route::get('purchase-requisitions', [PurchaseRequisitionController::class, 'index'])->middleware('permission:purchase_requisitions.view')->name('purchase-requisitions.index');
+    Route::get('purchase-requisitions/create', [PurchaseRequisitionController::class, 'create'])->middleware('permission:purchase_requisitions.create')->name('purchase-requisitions.create');
+    Route::post('purchase-requisitions', [PurchaseRequisitionController::class, 'store'])->middleware('permission:purchase_requisitions.create')->name('purchase-requisitions.store');
+    Route::get('purchase-requisitions/{purchaseRequisition}', [PurchaseRequisitionController::class, 'show'])->middleware('permission:purchase_requisitions.view')->name('purchase-requisitions.show');
+    Route::post('purchase-requisitions/{purchaseRequisition}/{action}', [PurchaseRequisitionController::class, 'action'])->whereIn('action', ['submit', 'approve', 'reject', 'cancel'])->name('purchase-requisitions.action');
+
+    Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->middleware('permission:purchase_orders.view')->name('purchase-orders.index');
+    Route::get('purchase-orders/create', [PurchaseOrderController::class, 'create'])->middleware('permission:purchase_orders.create')->name('purchase-orders.create');
+    Route::post('purchase-orders', [PurchaseOrderController::class, 'store'])->middleware('permission:purchase_orders.create')->name('purchase-orders.store');
+    Route::get('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->middleware('permission:purchase_orders.view')->name('purchase-orders.show');
+    Route::post('purchase-orders/{purchaseOrder}/{action}', [PurchaseOrderController::class, 'action'])->whereIn('action', ['submit', 'approve', 'send', 'cancel'])->name('purchase-orders.action');
+
+    Route::get('goods-receipts', [GoodsReceiptController::class, 'index'])->middleware('permission:goods_receipts.view')->name('goods-receipts.index');
+    Route::get('goods-receipts/create', [GoodsReceiptController::class, 'create'])->middleware('permission:goods_receipts.create')->name('goods-receipts.create');
+    Route::post('goods-receipts', [GoodsReceiptController::class, 'store'])->middleware('permission:goods_receipts.create')->name('goods-receipts.store');
+    Route::get('goods-receipts/{goodsReceipt}', [GoodsReceiptController::class, 'show'])->middleware('permission:goods_receipts.view')->name('goods-receipts.show');
+    Route::post('goods-receipts/{goodsReceipt}/receive', [GoodsReceiptController::class, 'receive'])->middleware('permission:goods_receipts.update')->name('goods-receipts.receive');
+    Route::post('goods-receipts/{goodsReceipt}/inspect', [GoodsReceiptController::class, 'inspect'])->middleware('permission:goods_receipts.inspect')->name('goods-receipts.inspect');
+    Route::post('goods-receipts/{goodsReceipt}/attachments', [AttachmentController::class, 'storeForGoodsReceipt'])->middleware('permission:goods_receipts.inspect')->name('goods-receipts.attachments.store');
+    Route::post('goods-receipts/{goodsReceipt}/post', [GoodsReceiptController::class, 'post'])->middleware('permission:goods_receipts.post')->name('goods-receipts.post');
+
+    Route::get('purchase-returns', [PurchaseReturnController::class, 'index'])->middleware('permission:purchase_returns.view')->name('purchase-returns.index');
+    Route::get('purchase-returns/create', [PurchaseReturnController::class, 'create'])->middleware('permission:purchase_returns.create')->name('purchase-returns.create');
+    Route::post('purchase-returns', [PurchaseReturnController::class, 'store'])->middleware('permission:purchase_returns.create')->name('purchase-returns.store');
+    Route::get('purchase-returns/{purchaseReturn}', [PurchaseReturnController::class, 'show'])->middleware('permission:purchase_returns.view')->name('purchase-returns.show');
+    Route::post('purchase-returns/{purchaseReturn}/{action}', [PurchaseReturnController::class, 'action'])->whereIn('action', ['submit', 'approve', 'post'])->name('purchase-returns.action');
+
+    Route::get('supplier-invoices', [SupplierInvoiceController::class, 'index'])->middleware('permission:supplier_invoices.view')->name('supplier-invoices.index');
+    Route::get('supplier-invoices/create', [SupplierInvoiceController::class, 'create'])->middleware('permission:supplier_invoices.create')->name('supplier-invoices.create');
+    Route::post('supplier-invoices', [SupplierInvoiceController::class, 'store'])->middleware('permission:supplier_invoices.create')->name('supplier-invoices.store');
+    Route::get('supplier-invoices/{supplierInvoice}', [SupplierInvoiceController::class, 'show'])->middleware('permission:supplier_invoices.view')->name('supplier-invoices.show');
+    Route::post('supplier-invoices/{supplierInvoice}/variances', [SupplierInvoiceController::class, 'approveVariance'])->middleware('permission:supplier_invoices.override_variance')->name('supplier-invoices.variances.approve');
+    Route::post('supplier-invoices/{supplierInvoice}/{action}', [SupplierInvoiceController::class, 'action'])->whereIn('action', ['submit', 'approve', 'post'])->name('supplier-invoices.action');
+
+    Route::get('supplier-payments', [SupplierPaymentController::class, 'index'])->middleware('permission:supplier_payments.view')->name('supplier-payments.index');
+    Route::get('supplier-payments/create', [SupplierPaymentController::class, 'create'])->middleware('permission:supplier_payments.create')->name('supplier-payments.create');
+    Route::post('supplier-payments', [SupplierPaymentController::class, 'store'])->middleware('permission:supplier_payments.create')->name('supplier-payments.store');
+    Route::get('supplier-payments/{supplierPayment}', [SupplierPaymentController::class, 'show'])->middleware('permission:supplier_payments.view')->name('supplier-payments.show');
+    Route::post('supplier-payments/{supplierPayment}/allocations', [SupplierPaymentController::class, 'allocate'])->middleware('permission:supplier_payments.allocate')->name('supplier-payments.allocate');
+    Route::post('supplier-payments/{supplierPayment}/{action}', [SupplierPaymentController::class, 'action'])->whereIn('action', ['approve', 'process'])->name('supplier-payments.action');
+    Route::post('supplier-payment-allocations/{supplierPaymentAllocation}/reverse', [SupplierPaymentController::class, 'reverse'])->middleware('permission:supplier_payments.reverse_allocation')->name('supplier-payment-allocations.reverse');
+
+    Route::get('supplier-credit-notes', [SupplierCreditNoteController::class, 'index'])->middleware('permission:supplier_credit_notes.view')->name('supplier-credit-notes.index');
+    Route::get('supplier-credit-notes/create', [SupplierCreditNoteController::class, 'create'])->middleware('permission:supplier_credit_notes.create')->name('supplier-credit-notes.create');
+    Route::post('supplier-credit-notes', [SupplierCreditNoteController::class, 'store'])->middleware('permission:supplier_credit_notes.create')->name('supplier-credit-notes.store');
+    Route::get('supplier-credit-notes/{supplierCreditNote}', [SupplierCreditNoteController::class, 'show'])->middleware('permission:supplier_credit_notes.view')->name('supplier-credit-notes.show');
+    Route::post('supplier-credit-notes/{supplierCreditNote}/{action}', [SupplierCreditNoteController::class, 'action'])->whereIn('action', ['approve', 'post'])->name('supplier-credit-notes.action');
+
+    Route::get('suppliers/{supplier}/statement', [PurchasingReportController::class, 'statement'])->middleware('permission:supplier_statements.view')->name('supplier-statements.show');
+    Route::get('reports/accounts-payable-aging', [PurchasingReportController::class, 'aging'])->middleware('permission:accounts_payable.aging')->name('purchasing-reports.aging');
+    Route::get('reports/purchasing/{report}', [PurchasingReportController::class, 'operational'])->whereIn('report', ['open-orders', 'pending-receipts', 'unmatched-invoices', 'purchase-returns'])->name('purchasing-reports.operational');
 });

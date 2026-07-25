@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             WorkOrderSeeder::class,
             QualityWarrantySeeder::class,
             SalesReceivablesSeeder::class,
+            PurchasingSeeder::class,
         ]);
     }
 }

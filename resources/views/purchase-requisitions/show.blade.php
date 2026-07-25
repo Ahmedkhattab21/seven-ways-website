@@ -1,0 +1,1 @@
+@include('purchasing.show',['title'=>'طلب شراء','numberField'=>'requisition_number','actionRoute'=>'purchase-requisitions.action','actions'=>['submit'=>'إرسال للاعتماد','approve'=>'اعتماد','reject'=>'رفض','cancel'=>'إلغاء']])

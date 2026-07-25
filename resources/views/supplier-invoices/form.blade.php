@@ -1,0 +1,8 @@
+@extends('layouts.app')
+@section('title','فاتورة مورد جديدة') @section('page-title','فاتورة مورد جديدة')
+@section('content')
+<form class="sw-card sw-form" method="POST" action="{{ route('supplier-invoices.store') }}">@csrf
+<div class="sw-form-grid"><label>المورد<select name="supplier_id">@foreach($suppliers as $supplier)<option value="{{ $supplier->id }}">{{ $supplier->name }}</option>@endforeach</select></label><label>أمر الشراء<select name="purchase_order_id"><option value="">—</option>@foreach($orders as $order)<option value="{{ $order->id }}">{{ $order->purchase_order_number }}</option>@endforeach</select></label><label>الاستلام<select name="goods_receipt_id"><option value="">—</option>@foreach($receipts as $receipt)<option value="{{ $receipt->id }}">{{ $receipt->goods_receipt_number }}</option>@endforeach</select></label><label>رقم فاتورة المورد<input name="supplier_invoice_number" required></label><label>تاريخ الفاتورة<input type="date" name="invoice_date" value="{{ today()->toDateString() }}" required></label><label>الاستحقاق<input type="date" name="due_date"></label></div>
+<h2>السطر</h2><div class="sw-form-grid"><label>الوصف<input name="items[0][description]" required></label><label>رقم سطر أمر الشراء<input type="number" name="items[0][purchase_order_item_id]"></label><label>رقم سطر الاستلام<input type="number" name="items[0][goods_receipt_item_id]"></label><label>الكمية<input type="number" step=".000001" name="items[0][quantity]" required></label><label>السعر<input type="number" step=".0001" name="items[0][unit_price]" required></label><label>الضريبة %<input type="number" step=".0001" name="items[0][tax_rate]" value="15"></label></div>
+<button class="sw-btn">حفظ المسودة</button></form>
+@endsection

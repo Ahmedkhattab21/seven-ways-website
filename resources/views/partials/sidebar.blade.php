@@ -6,6 +6,7 @@
         ['label' => 'الموظفون', 'icon' => 'users'],
         ['label' => 'التقارير', 'icon' => 'chart'],
     ];
+    $futureNavigation = array_values(array_filter($futureNavigation, fn ($item) => $item['icon'] !== 'cart'));
 @endphp
 <aside class="sw-sidebar" id="app-sidebar" data-sidebar aria-label="التنقل الرئيسي">
     <div class="sw-sidebar__header"><x-brand /><button class="sw-icon-button sw-sidebar__close" type="button" data-sidebar-close aria-label="إغلاق القائمة"><x-icon name="close" /></button></div>
@@ -38,6 +39,15 @@
         @if(auth()->user()->hasPermission('sales_credit_notes.view'))<a class="sw-nav-item @if(request()->routeIs('sales-credit-notes.*')) sw-nav-item--active @endif" href="{{ route('sales-credit-notes.index') }}"><x-icon name="clipboard" /><span>الإشعارات الدائنة</span></a>@endif
         @if(auth()->user()->hasPermission('customer_refunds.view'))<a class="sw-nav-item @if(request()->routeIs('customer-refunds.*')) sw-nav-item--active @endif" href="{{ route('customer-refunds.index') }}"><x-icon name="wallet" /><span>المبالغ المستردة</span></a>@endif
         @if(auth()->user()->hasPermission('accounts_receivable.aging'))<a class="sw-nav-item @if(request()->routeIs('sales-reports.*')) sw-nav-item--active @endif" href="{{ route('sales-reports.aging') }}"><x-icon name="chart" /><span>أعمار الديون</span></a>@endif
+        @if(auth()->user()->hasPermission('suppliers.view'))<a class="sw-nav-item @if(request()->routeIs('suppliers.*')) sw-nav-item--active @endif" href="{{ route('suppliers.index') }}"><x-icon name="users" /><span>الموردون</span></a>@endif
+        @if(auth()->user()->hasPermission('purchase_requisitions.view'))<a class="sw-nav-item @if(request()->routeIs('purchase-requisitions.*')) sw-nav-item--active @endif" href="{{ route('purchase-requisitions.index') }}"><x-icon name="clipboard" /><span>طلبات الشراء</span></a>@endif
+        @if(auth()->user()->hasPermission('purchase_orders.view'))<a class="sw-nav-item @if(request()->routeIs('purchase-orders.*')) sw-nav-item--active @endif" href="{{ route('purchase-orders.index') }}"><x-icon name="cart" /><span>أوامر الشراء</span></a>@endif
+        @if(auth()->user()->hasPermission('goods_receipts.view'))<a class="sw-nav-item @if(request()->routeIs('goods-receipts.*')) sw-nav-item--active @endif" href="{{ route('goods-receipts.index') }}"><x-icon name="box" /><span>استلام المشتريات</span></a>@endif
+        @if(auth()->user()->hasPermission('purchase_returns.view'))<a class="sw-nav-item @if(request()->routeIs('purchase-returns.*')) sw-nav-item--active @endif" href="{{ route('purchase-returns.index') }}"><x-icon name="box" /><span>مرتجعات المشتريات</span></a>@endif
+        @if(auth()->user()->hasPermission('supplier_invoices.view'))<a class="sw-nav-item @if(request()->routeIs('supplier-invoices.*')) sw-nav-item--active @endif" href="{{ route('supplier-invoices.index') }}"><x-icon name="clipboard" /><span>فواتير الموردين</span></a>@endif
+        @if(auth()->user()->hasPermission('supplier_payments.view'))<a class="sw-nav-item @if(request()->routeIs('supplier-payments.*')) sw-nav-item--active @endif" href="{{ route('supplier-payments.index') }}"><x-icon name="wallet" /><span>دفعات الموردين</span></a>@endif
+        @if(auth()->user()->hasPermission('supplier_credit_notes.view'))<a class="sw-nav-item @if(request()->routeIs('supplier-credit-notes.*')) sw-nav-item--active @endif" href="{{ route('supplier-credit-notes.index') }}"><x-icon name="clipboard" /><span>إشعارات الموردين الدائنة</span></a>@endif
+        @if(auth()->user()->hasPermission('accounts_payable.aging'))<a class="sw-nav-item @if(request()->routeIs('purchasing-reports.*')) sw-nav-item--active @endif" href="{{ route('purchasing-reports.aging') }}"><x-icon name="chart" /><span>أعمار الديون الدائنة</span></a>@endif
         @if(auth()->user()->hasPermission('inventory.view'))
             @foreach(['balances'=>'الأرصدة','movements'=>'حركات المخزون','rolls'=>'الرولات','scraps'=>'القصاصات','openings'=>'الرصيد الافتتاحي','adjustments'=>'التسويات','counts'=>'الجرد','alerts'=>'التنبيهات'] as $section=>$label)
                 <a class="sw-nav-item @if(request()->routeIs('inventory.*') && request()->route('section') === $section) sw-nav-item--active @endif" href="{{ route('inventory.index', $section) }}"><x-icon name="box" /><span>{{ $label }}</span></a>
