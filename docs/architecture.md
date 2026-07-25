@@ -6,8 +6,9 @@ The project is a Laravel 9 modular monolith. Laravel routes and controllers rema
 HTTP delivery layer. Shared, reusable rules live under `App\Core`; future business
 capabilities live under `App\Modules`.
 
-The existing `/`, `/api/welcome`, and `/api/user` behavior is retained during phase 01.
-New API endpoints use the standard envelope through `App\Core\Http\ApiResponse`.
+The existing `/` and `/api/welcome` behavior is retained during phase 01. `/api/user`
+returns the authenticated user and is protected by `auth:sanctum`. New API endpoints use
+the standard envelope through `App\Core\Http\ApiResponse`.
 
 ## Module boundaries
 

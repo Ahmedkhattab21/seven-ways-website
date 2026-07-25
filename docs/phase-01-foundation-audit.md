@@ -17,8 +17,9 @@ The repository is a near-stock Laravel application. It has web/API routes, two s
 controllers, the default `User` model, Blade welcome page, and no service, repository,
 policy, role, company, or branch implementation.
 
-Existing application endpoints are `/`, `/api/welcome`, and `/api/user`. The last returns
-three hard-coded demo users. Successful payloads were not changed in phase 01.
+Existing application endpoints are `/`, `/api/welcome`, and `/api/user`. Before the
+limited pre-UI patch, the last route was duplicated and its effective public definition
+returned three hard-coded demo users. It now returns only the authenticated user.
 
 ## Existing tables and relationships
 
@@ -34,9 +35,7 @@ No business-domain relationships or tenant columns exist.
 
 ### High
 
-1. `/api/user` is declared twice. The later public route replaces the intended
-   `auth:sanctum` route and exposes hard-coded names without authentication.
-2. `phpunit.xml` inherits the normal MySQL connection. Future database-resetting tests
+1. `phpunit.xml` inherits the normal MySQL connection. Future database-resetting tests
    could modify a developer or shared database unless a dedicated test DB is configured.
 
 ### Medium
@@ -84,6 +83,11 @@ central API error mappings, health endpoint, modular-boundary documentation, env
 configuration for timezone/CORS/token expiry, and focused tests. No migration or business
 module was created.
 
+A limited pre-UI patch removed the duplicate public `/api/user` route. The endpoint now
+exists once behind `auth:sanctum`, returns only the authenticated model's visible fields,
+and has unauthenticated/authenticated feature coverage. The public health endpoint also
+has failure-path coverage proving that internal exception details are not returned.
+
 ## Commands
 
 ```bash
@@ -100,16 +104,18 @@ npm run build
 
 - `composer validate --no-interaction`: valid.
 - `php artisan migrate --force`: database reachable; nothing pending.
-- `php artisan test`: 7 tests passed in 13.06 seconds.
-- Targeted `vendor/bin/pint --test`: 13 files passed.
+- `php artisan test`: 10 tests passed in 0.63 seconds.
+- `php artisan route:list`: 8 routes; `/api/user` appeared once.
+- Targeted `vendor/bin/pint --test`: the two patch PHP files passed.
+- Full `vendor/bin/pint --test`: found four pre-existing style failures in
+  `app/Console/Kernel.php`, `UserController.php`, `WelcomeController.php`, and
+  `RedirectIfAuthenticated.php`; they were left untouched to keep this patch limited.
 - `npm run build`: 58 modules transformed; production build succeeded.
 - Laravel commands and Pint emitted PHP 8.4 deprecation notices from locked third-party
   dependencies; these did not fail the checks.
 
 ## Deferred work and risks
 
-- Resolve the duplicate `/api/user` route after confirming consumers; protect real user
-  data with Sanctum and authorization.
 - Select and configure a dedicated testing database before persistence tests.
 - Implement companies, branches, memberships, and explicit authorization before any
   tenant-owned module.

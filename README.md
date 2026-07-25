@@ -5,7 +5,7 @@ Phase 01 contains shared architecture only; business modules are intentionally d
 
 ## Requirements
 
-- PHP 8.0.2–8.3 recommended for the current Laravel 9 dependency set
+- PHP 8.2 recommended for the current Laravel 9 dependency set
 - Composer 2
 - MySQL 5.7+ or MariaDB 10.3+
 - Node.js 16+ and npm
@@ -49,3 +49,10 @@ details. See `docs/development-setup.md` for environment and test-database guida
 - `docs`: architecture, database conventions, setup, and phase audit.
 
 Read `docs/architecture.md` before adding a module.
+
+## Runtime compatibility
+
+The project currently uses Laravel `9.52.21`. The inspected CLI runtime is PHP `8.4.21`,
+which still emits third-party deprecation warnings with the locked dependencies. PHP 8.2
+is recommended for this phase. Upgrading Laravel or major dependencies is intentionally
+outside this patch.

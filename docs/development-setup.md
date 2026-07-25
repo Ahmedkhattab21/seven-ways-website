@@ -43,8 +43,10 @@ vendor/bin/pint --test
 npm run build
 ```
 
-Use a PHP version supported by both `composer.json` and locked dependencies. PHP 8.4
-currently emits dependency deprecation notices with this Laravel 9 lockfile.
+The application currently uses Laravel `9.52.21`. The inspected CLI runtime is PHP
+`8.4.21`, which currently emits deprecation notices from locked Symfony, Termwind, and
+related development dependencies. Use PHP 8.2 for the current phase. A Laravel or major
+dependency upgrade is outside this patch.
 
 ## Adding a module
 

@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Core\Exceptions\BusinessRuleException;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Sanctum;
+use RuntimeException;
 use Tests\TestCase;
 
 class FoundationTest extends TestCase
@@ -22,6 +25,60 @@ class FoundationTest extends TestCase
                 'errors' => null,
                 'meta' => [],
             ]);
+    }
+
+    public function test_health_endpoint_failure_does_not_expose_internal_details(): void
+    {
+        \Illuminate\Support\Facades\DB::shouldReceive('select')
+            ->once()
+            ->andThrow(new RuntimeException('internal database failure detail'));
+
+        $response = $this->getJson('/api/health')
+            ->assertStatus(503)
+            ->assertExactJson([
+                'success' => false,
+                'message' => 'Application health check failed',
+                'data' => null,
+                'errors' => ['database' => ['unavailable']],
+                'meta' => [
+                    'application' => 'ok',
+                    'database' => 'unavailable',
+                ],
+            ]);
+
+        $this->assertStringNotContainsString(
+            'internal database failure detail',
+            $response->getContent()
+        );
+    }
+
+    public function test_user_endpoint_rejects_unauthenticated_requests(): void
+    {
+        $this->getJson('/api/user')
+            ->assertUnauthorized()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Unauthenticated');
+    }
+
+    public function test_authenticated_user_can_access_only_their_profile(): void
+    {
+        $user = User::factory()->make([
+            'id' => 123,
+            'name' => 'Authenticated User',
+            'email' => 'authenticated@example.com',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/user')
+            ->assertOk()
+            ->assertJson([
+                'id' => 123,
+                'name' => 'Authenticated User',
+                'email' => 'authenticated@example.com',
+            ])
+            ->assertJsonMissingPath('password')
+            ->assertJsonMissingPath('remember_token');
     }
 
     public function test_api_validation_errors_use_the_standard_envelope(): void

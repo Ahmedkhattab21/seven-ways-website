@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Api\HealthController;
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\WelcomeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -23,4 +22,3 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::get('health', HealthController::class)->name('api.health');
 Route::get('welcome', [WelcomeController::class, 'welcome']);
-Route::get('user', [UserController::class, 'index']);
