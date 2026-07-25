@@ -12,10 +12,12 @@ class ExampleTest extends TestCase
      *
      * @return void
      */
-    public function test_the_application_redirects_guests_to_login()
+    public function test_the_public_home_page_is_available_to_guests()
     {
         $response = $this->get('/');
 
-        $response->assertRedirect(route('login'));
+        $response
+            ->assertOk()
+            ->assertSee('Seven Ways');
     }
 }

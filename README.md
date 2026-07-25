@@ -53,6 +53,48 @@ Registration and password reset are intentionally not part of the current phase.
 
 Read `docs/architecture.md` before adding a module.
 
+## Public website
+
+The Seven Ways public website is served from `/`, with public pages for About,
+Services, and Contact. It uses a standalone Blade layout and separate Vite entries,
+so its CSS and JavaScript are not loaded by the ERP.
+
+```bash
+npm install
+npm run dev
+php artisan serve
+```
+
+Use `npm run build` for production assets. Website source files live in:
+
+- `resources/views/website`
+- `resources/css/website`
+- `resources/js/website`
+- `lang/ar/website.php` and `lang/en/website.php`
+- `config/website.php`
+- `public/assets/website`
+
+Edit translated copy in the language files. Edit branch addresses, phone numbers,
+map embeds, social links, and asset mappings in `config/website.php`. Add images,
+fonts, and videos beneath `public/assets/website` and reference them from that config.
+
+Set `WEBSITE_CONTACT_EMAIL` in `.env` to the inbox that should receive contact-form
+messages. If it is empty, the configured `MAIL_FROM_ADDRESS` is used. Laravel's normal
+`MAIL_*` settings control delivery.
+
+Run the public-site tests and production build with:
+
+```bash
+php artisan test --filter=PublicWebsiteTest
+php artisan test
+npm run build
+php artisan route:list
+```
+
+Reference-browser screenshots and the visual audit live in `docs/website`. Regenerate
+them with Playwright/Chromium at the viewport sizes listed in
+`docs/website/visual-comparison.md`.
+
 ## Runtime compatibility
 
 The project currently uses Laravel `9.52.21`. The inspected CLI runtime is PHP `8.4.21`,

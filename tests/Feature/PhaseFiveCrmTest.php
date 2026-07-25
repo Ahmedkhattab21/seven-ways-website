@@ -277,7 +277,7 @@ class PhaseFiveCrmTest extends TestCase
         ]);
         $customer = $this->rawCustomer($company, $branch, 'CUS-FILE');
         $this->actingAs($user)->post(route('customers.attachments.store', $customer), [
-            'file' => UploadedFile::fake()->image('car.jpg'),
+            'file' => $this->fakeImage('car.jpg'),
             'category' => 'customer_document',
         ])->assertRedirect();
         $attachment = $customer->attachments()->firstOrFail();

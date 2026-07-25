@@ -7,6 +7,7 @@
 @can('disable', $customer)@if($customer->status === 'active')<form method="POST" action="{{ route('customers.disable', $customer) }}">@csrf @method('PATCH')<x-button type="submit" variant="outline">تعطيل</x-button></form>@endif @endcan
 @endsection
 @section('content')
+@if(auth()->user()->hasPermission('customer_statements.view'))<x-card title="المبيعات التشغيلية"><a class="sw-button sw-button--primary" href="{{ route('customer-statements.show',['customer'=>$customer,'currency_id'=>auth()->user()->company->currency_id]) }}">كشف الحساب والرصيد</a></x-card>@endif
 <x-card title="بيانات العميل"><dl class="sw-details-grid">
     <div><dt>الكود</dt><dd>{{ $customer->customer_code }}</dd></div><div><dt>النوع</dt><dd>{{ $customer->customer_type }}</dd></div>
     <div><dt>الهاتف</dt><dd>{{ $customer->phone ?? '—' }}</dd></div><div><dt>البريد</dt><dd>{{ $customer->email ?? '—' }}</dd></div>

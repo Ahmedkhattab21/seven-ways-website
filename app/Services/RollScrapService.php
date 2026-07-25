@@ -61,20 +61,20 @@ class RollScrapService
         });
     }
 
-    public function consume(RollScrap $scrap): void
+    public function consume(RollScrap $scrap, array $context = []): void
     {
-        DB::transaction(function () use ($scrap) {
+        DB::transaction(function () use ($scrap, $context) {
             $scrap = RollScrap::query()->whereKey($scrap->id)->lockForUpdate()->firstOrFail();
             if ($scrap->status !== 'available') {
                 throw new BusinessRuleException('Scrap is not available.');
             }
             $scrap->forceFill(['status' => 'consumed', 'consumed_at' => now()])->save();
-            $this->recordStockMovement($scrap, 'roll_scrap_consumed');
+            $this->recordStockMovement($scrap, 'roll_scrap_consumed', $context);
             $this->audit->record('roll_scrap.consumed', $scrap);
         });
     }
 
-    private function recordStockMovement(RollScrap $scrap, string $type): void
+    private function recordStockMovement(RollScrap $scrap, string $type, array $context = []): void
     {
         $roll = InventoryRoll::findOrFail($scrap->source_roll_id);
         $product = Product::findOrFail($roll->product_id);
@@ -83,8 +83,10 @@ class RollScrapService
         $this->stockMovements->record([
             'company_id' => $scrap->company_id, 'branch_id' => $scrap->branch_id,
             'warehouse_id' => $scrap->warehouse_id, 'product_id' => $product->id,
-            'movement_type' => $type, 'direction' => 'none', 'reference_type' => 'roll_scrap',
-            'reference_id' => $scrap->id, 'quantity' => $scrap->area, 'unit_id' => $product->stock_unit_id,
+            'movement_type' => $type, 'direction' => 'none',
+            'reference_type' => $context['type'] ?? 'roll_scrap',
+            'reference_id' => $context['id'] ?? $scrap->id,
+            'quantity' => $scrap->area, 'unit_id' => $product->stock_unit_id,
             'stock_quantity' => '0', 'unit_cost' => $scrap->unit_cost_per_area, 'total_cost' => $scrap->total_cost,
             'balance_before' => $balance->quantity, 'balance_after' => $balance->quantity,
         ]);

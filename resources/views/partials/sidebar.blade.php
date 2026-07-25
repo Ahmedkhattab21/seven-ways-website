@@ -1,6 +1,5 @@
 @php
     $futureNavigation = [
-        ['label' => 'المبيعات', 'icon' => 'sales'],
         ['label' => 'الحجوزات وأوامر العمل', 'icon' => 'clipboard'],
         ['label' => 'المشتريات', 'icon' => 'cart'],
         ['label' => 'الحسابات', 'icon' => 'wallet'],
@@ -28,6 +27,17 @@
         @if(auth()->user()->hasPermission('quotations.view'))<a class="sw-nav-item @if(request()->routeIs('quotations.*')) sw-nav-item--active @endif" href="{{ route('quotations.index') }}"><x-icon name="sales" /><span>عروض الأسعار</span></a>@endif
         @if(auth()->user()->hasPermission('appointments.view'))<a class="sw-nav-item @if(request()->routeIs('appointments.index','appointments.show','appointments.create','appointments.edit')) sw-nav-item--active @endif" href="{{ route('appointments.index') }}"><x-icon name="clipboard" /><span>الحجوزات</span></a>@endif
         @if(auth()->user()->hasPermission('appointments.calendar'))<a class="sw-nav-item @if(request()->routeIs('appointments.calendar')) sw-nav-item--active @endif" href="{{ route('appointments.calendar') }}"><x-icon name="chart" /><span>تقويم الحجوزات</span></a>@endif
+        @if(auth()->user()->hasPermission('work_orders.view'))<a class="sw-nav-item @if(request()->routeIs('work-orders.*','work-order-services.*','vehicle-inspections.*')) sw-nav-item--active @endif" href="{{ route('work-orders.index') }}"><x-icon name="clipboard" /><span>أوامر العمل</span></a>@endif
+        @if(auth()->user()->hasPermission('quality_checks.view'))<a class="sw-nav-item @if(request()->routeIs('quality-checks.*','quality-templates.*')) sw-nav-item--active @endif" href="{{ route('quality-checks.index') }}"><x-icon name="clipboard" /><span>فحص الجودة</span></a>@endif
+        @if(auth()->user()->hasPermission('rework_orders.view'))<a class="sw-nav-item @if(request()->routeIs('rework-orders.*')) sw-nav-item--active @endif" href="{{ route('rework-orders.index') }}"><x-icon name="wrench" /><span>إعادة العمل</span></a>@endif
+        @if(auth()->user()->hasPermission('work_orders.deliver'))<a class="sw-nav-item @if(request()->routeIs('deliveries.*')) sw-nav-item--active @endif" href="{{ route('deliveries.index') }}"><x-icon name="clipboard" /><span>تسليم السيارات</span></a>@endif
+        @if(auth()->user()->hasPermission('warranties.view'))<a class="sw-nav-item @if(request()->routeIs('warranties.*')) sw-nav-item--active @endif" href="{{ route('warranties.index') }}"><x-icon name="clipboard" /><span>الضمانات</span></a>@endif
+        @if(auth()->user()->hasPermission('warranty_claims.view'))<a class="sw-nav-item @if(request()->routeIs('warranty-claims.*')) sw-nav-item--active @endif" href="{{ route('warranty-claims.index') }}"><x-icon name="clipboard" /><span>مطالبات الضمان</span></a>@endif
+        @if(auth()->user()->hasPermission('sales_invoices.view'))<a class="sw-nav-item @if(request()->routeIs('sales-invoices.*')) sw-nav-item--active @endif" href="{{ route('sales-invoices.index') }}"><x-icon name="sales" /><span>فواتير المبيعات</span></a>@endif
+        @if(auth()->user()->hasPermission('customer_payments.view'))<a class="sw-nav-item @if(request()->routeIs('customer-payments.*')) sw-nav-item--active @endif" href="{{ route('customer-payments.index') }}"><x-icon name="wallet" /><span>المدفوعات</span></a>@endif
+        @if(auth()->user()->hasPermission('sales_credit_notes.view'))<a class="sw-nav-item @if(request()->routeIs('sales-credit-notes.*')) sw-nav-item--active @endif" href="{{ route('sales-credit-notes.index') }}"><x-icon name="clipboard" /><span>الإشعارات الدائنة</span></a>@endif
+        @if(auth()->user()->hasPermission('customer_refunds.view'))<a class="sw-nav-item @if(request()->routeIs('customer-refunds.*')) sw-nav-item--active @endif" href="{{ route('customer-refunds.index') }}"><x-icon name="wallet" /><span>المبالغ المستردة</span></a>@endif
+        @if(auth()->user()->hasPermission('accounts_receivable.aging'))<a class="sw-nav-item @if(request()->routeIs('sales-reports.*')) sw-nav-item--active @endif" href="{{ route('sales-reports.aging') }}"><x-icon name="chart" /><span>أعمار الديون</span></a>@endif
         @if(auth()->user()->hasPermission('inventory.view'))
             @foreach(['balances'=>'الأرصدة','movements'=>'حركات المخزون','rolls'=>'الرولات','scraps'=>'القصاصات','openings'=>'الرصيد الافتتاحي','adjustments'=>'التسويات','counts'=>'الجرد','alerts'=>'التنبيهات'] as $section=>$label)
                 <a class="sw-nav-item @if(request()->routeIs('inventory.*') && request()->route('section') === $section) sw-nav-item--active @endif" href="{{ route('inventory.index', $section) }}"><x-icon name="box" /><span>{{ $label }}</span></a>

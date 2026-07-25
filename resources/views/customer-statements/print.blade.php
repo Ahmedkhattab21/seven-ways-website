@@ -1,0 +1,1 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>كشف {{ $customer->name }}</title></head><body><h1>SEVEN WAYS — كشف تشغيلي</h1><h2>{{ $customer->name }}</h2>@foreach($statement['entries'] as $row)<p>{{ $row['date'] }} — {{ $row['reference'] }} — {{ $row['debit'] }} / {{ $row['credit'] }} — {{ $row['running_balance'] }}</p>@endforeach</body></html>

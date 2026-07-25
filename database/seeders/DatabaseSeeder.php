@@ -23,6 +23,9 @@ class DatabaseSeeder extends Seeder
             StockTransferSeeder::class,
             ServiceCatalogSeeder::class,
             QuotationAppointmentSeeder::class,
+            WorkOrderSeeder::class,
+            QualityWarrantySeeder::class,
+            SalesReceivablesSeeder::class,
         ]);
     }
 }

@@ -57,8 +57,8 @@ class PhaseNineQuotationAppointmentTest extends TestCase
 
         ServicePrice::query()->where('service_id', $context['service']->id)->update(['price' => 250]);
         $this->assertSame('100.0000', $quotation->fresh()->items()->first()->unit_price);
-        $this->assertFalse(\Schema::hasTable('work_orders'));
-        $this->assertFalse(\Schema::hasTable('sales_invoices'));
+        $this->assertSame(0, \App\Models\WorkOrder::query()->count());
+        $this->assertSame(0, \App\Models\SalesInvoice::query()->count());
     }
 
     public function test_non_draft_quotation_creates_version_and_preserves_family_number(): void
@@ -117,7 +117,7 @@ class PhaseNineQuotationAppointmentTest extends TestCase
         $this->assertSame('converted', $quotation->fresh()->status);
         $this->assertSame(1, $appointment->services()->count());
         $this->assertSame($beforeStock, \App\Models\StockMovement::query()->count());
-        $this->assertFalse(\Schema::hasTable('work_orders'));
+        $this->assertSame(0, \App\Models\WorkOrder::query()->count());
 
         $this->expectException(BusinessRuleException::class);
         app(QuotationToAppointmentService::class)->convert($quotation->fresh(), [
@@ -159,7 +159,7 @@ class PhaseNineQuotationAppointmentTest extends TestCase
         $this->assertSame('recorded', $deposit->status);
         $this->assertSame('checked_in', $appointment->fresh()->status);
         $this->assertFalse(\Schema::hasTable('journal_entries'));
-        $this->assertFalse(\Schema::hasTable('work_orders'));
+        $this->assertSame(0, \App\Models\WorkOrder::query()->count());
     }
 
     public function test_expiration_command_is_idempotent_and_ignores_accepted(): void

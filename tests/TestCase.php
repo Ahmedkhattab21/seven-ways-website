@@ -3,6 +3,7 @@
 namespace Tests;
 
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Http\UploadedFile;
 use RuntimeException;
 
 abstract class TestCase extends BaseTestCase
@@ -14,6 +15,14 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
 
         $this->guardTestingDatabase();
+    }
+
+    protected function fakeImage(string $name = 'image.png'): UploadedFile
+    {
+        return UploadedFile::fake()->createWithContent(
+            $name,
+            base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZQmcAAAAASUVORK5CYII=', true)
+        );
     }
 
     private function guardTestingDatabase(): void

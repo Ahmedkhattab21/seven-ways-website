@@ -23,4 +23,9 @@ class AppointmentDeposit extends BaseModel
     {
         return $this->belongsTo(PaymentMethod::class);
     }
+
+    public function convertedPayment(): BelongsTo
+    {
+        return $this->belongsTo(CustomerPayment::class, 'converted_payment_id');
+    }
 }

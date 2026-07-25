@@ -52,9 +52,11 @@ class AuthenticationUiTest extends TestCase
             ->assertOk()
             ->assertSee('لوحة التحكم')
             ->assertSee('مستخدم Seven Ways')
-            ->assertSee('المبيعات')
+            ->assertDontSee('فواتير المبيعات')
+            ->assertDontSee('href="'.route('sales-invoices.index').'"', false)
+            ->assertSee('المشتريات')
             ->assertSee('قريبًا')
-            ->assertDontSee('href="'.url('/sales').'"', false);
+            ->assertDontSee('href="'.url('/purchases').'"', false);
     }
 
     public function test_logout_ends_the_authenticated_session(): void

@@ -9,7 +9,10 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BranchSettingsController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\CustomerPaymentController;
+use App\Http\Controllers\CustomerRefundController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\InventoryActionController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InventoryDocumentController;
@@ -17,17 +20,33 @@ use App\Http\Controllers\LeadController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductReferenceController;
 use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\QualityCheckController;
+use App\Http\Controllers\QualityChecklistController;
 use App\Http\Controllers\QuotationActionController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\ReferenceDataController;
+use App\Http\Controllers\ReworkOrderController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SalesCreditNoteController;
+use App\Http\Controllers\SalesInvoiceController;
+use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServicePackageController;
 use App\Http\Controllers\StockTransferController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\VehicleInspectionController;
 use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\WarrantyClaimController;
+use App\Http\Controllers\WarrantyController;
+use App\Http\Controllers\WarrantyVerificationController;
+use App\Http\Controllers\Website\ContactController as WebsiteContactController;
+use App\Http\Controllers\Website\WebsiteController;
+use App\Http\Controllers\WorkOrderActionController;
+use App\Http\Controllers\WorkOrderController;
+use App\Http\Controllers\WorkOrderMaterialController;
+use App\Http\Middleware\SetWebsiteLocale;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -41,7 +60,37 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'login'));
+/*
+|--------------------------------------------------------------------------
+| Public Website Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(SetWebsiteLocale::class)->name('website.')->group(function () {
+    Route::get('/', [WebsiteController::class, 'home'])->name('home');
+    Route::get('about-us', [WebsiteController::class, 'about'])->name('about');
+    Route::get('our-services', [WebsiteController::class, 'services'])->name('services');
+    Route::get('contact-us', [WebsiteController::class, 'contact'])->name('contact');
+    Route::post('contact-us', [WebsiteContactController::class, 'store'])
+        ->middleware('throttle:5,1')
+        ->name('contact.submit');
+    Route::get('sitemap.xml', [WebsiteController::class, 'sitemap'])->name('sitemap');
+});
+
+Route::post('website/language/{locale}', [WebsiteController::class, 'language'])
+    ->whereIn('locale', ['ar', 'en'])
+    ->name('website.language');
+
+/*
+|--------------------------------------------------------------------------
+| Authentication and Accounting System Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::get('warranty/verify/{token}', WarrantyVerificationController::class)
+    ->middleware('throttle:30,1')
+    ->where('token', '[A-Za-z0-9]{40,96}')
+    ->name('warranties.verify');
 
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -234,4 +283,99 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
     Route::post('appointments/{appointment}/no-show', [AppointmentActionController::class, 'noShow'])->middleware('permission:appointments.mark_no_show')->name('appointments.no-show');
     Route::post('appointments/{appointment}/deposits', [AppointmentActionController::class, 'deposit'])->middleware('permission:appointment_deposits.record')->name('appointments.deposits.store');
     Route::post('appointment-deposits/{appointmentDeposit}/cancel', [AppointmentActionController::class, 'cancelDeposit'])->middleware('permission:appointment_deposits.cancel')->name('appointment-deposits.cancel');
+
+    Route::get('work-orders', [WorkOrderController::class, 'index'])->middleware('permission:work_orders.view')->name('work-orders.index');
+    Route::get('work-orders/create', [WorkOrderController::class, 'create'])->middleware('permission:work_orders.create')->name('work-orders.create');
+    Route::post('work-orders', [WorkOrderController::class, 'store'])->middleware('permission:work_orders.create')->name('work-orders.store');
+    Route::get('work-orders/{workOrder}', [WorkOrderController::class, 'show'])->middleware('permission:work_orders.view')->name('work-orders.show');
+    Route::post('work-orders/{workOrder}/cancel', [WorkOrderActionController::class, 'cancel'])->middleware('permission:work_orders.cancel')->name('work-orders.cancel');
+    Route::post('work-orders/{workOrder}/reserve-materials', [WorkOrderMaterialController::class, 'reserve'])->middleware('permission:work_order_materials.reserve')->name('work-orders.materials.reserve');
+    Route::post('work-orders/{workOrder}/waste', [WorkOrderMaterialController::class, 'waste'])->middleware('permission:work_order_materials.record_waste')->name('work-orders.waste.store');
+    Route::post('work-order-services/{workOrderService}/technicians', [WorkOrderActionController::class, 'assign'])->middleware('permission:work_orders.assign_technicians')->name('work-order-services.technicians.store');
+    Route::post('work-order-services/{workOrderService}/{action}', [WorkOrderActionController::class, 'action'])->whereIn('action', ['start', 'pause', 'resume', 'complete', 'reopen'])->name('work-order-services.action');
+    Route::get('vehicle-inspections/{vehicleInspection}', [VehicleInspectionController::class, 'show'])->middleware('permission:vehicle_inspections.view')->name('vehicle-inspections.show');
+    Route::put('vehicle-inspections/{vehicleInspection}', [VehicleInspectionController::class, 'update'])->middleware('permission:vehicle_inspections.update')->name('vehicle-inspections.update');
+    Route::post('vehicle-inspections/{vehicleInspection}/complete', [VehicleInspectionController::class, 'complete'])->middleware('permission:vehicle_inspections.complete')->name('vehicle-inspections.complete');
+    Route::post('vehicle-inspections/{vehicleInspection}/photos', [VehicleInspectionController::class, 'photo'])->middleware('permission:vehicle_inspections.manage_photos')->name('vehicle-inspections.photos.store');
+    Route::post('work-order-materials/{workOrderMaterial}/issue', [WorkOrderMaterialController::class, 'issue'])->middleware('permission:work_order_materials.issue')->name('work-order-materials.issue');
+    Route::post('work-order-materials/{workOrderMaterial}/use', [WorkOrderMaterialController::class, 'useMaterial'])->middleware('permission:work_order_materials.issue')->name('work-order-materials.use');
+    Route::post('work-order-materials/{workOrderMaterial}/consume-roll', [WorkOrderMaterialController::class, 'consumeRoll'])->middleware('permission:work_order_materials.consume_roll')->name('work-order-materials.consume-roll');
+    Route::post('work-order-materials/{workOrderMaterial}/consume-scrap', [WorkOrderMaterialController::class, 'consumeScrap'])->middleware('permission:work_order_materials.consume_scrap')->name('work-order-materials.consume-scrap');
+    Route::post('work-order-materials/{workOrderMaterial}/return', [WorkOrderMaterialController::class, 'returnMaterial'])->middleware('permission:work_order_materials.return')->name('work-order-materials.return');
+
+    Route::get('quality/templates', [QualityChecklistController::class, 'index'])->middleware('permission:quality_checks.manage_templates')->name('quality-templates.index');
+    Route::get('quality/templates/create', [QualityChecklistController::class, 'create'])->middleware('permission:quality_checks.manage_templates')->name('quality-templates.create');
+    Route::post('quality/templates', [QualityChecklistController::class, 'store'])->middleware('permission:quality_checks.manage_templates')->name('quality-templates.store');
+    Route::patch('quality/templates/{qualityTemplate}/toggle', [QualityChecklistController::class, 'toggle'])->middleware('permission:quality_checks.manage_templates')->name('quality-templates.toggle');
+    Route::get('quality-checks', [QualityCheckController::class, 'index'])->middleware('permission:quality_checks.view')->name('quality-checks.index');
+    Route::post('work-orders/{workOrder}/quality-checks', [QualityCheckController::class, 'start'])->middleware('permission:quality_checks.create')->name('quality-checks.start');
+    Route::get('quality-checks/{qualityCheck}', [QualityCheckController::class, 'show'])->middleware('permission:quality_checks.view')->name('quality-checks.show');
+    Route::put('quality-checks/{qualityCheck}/items', [QualityCheckController::class, 'items'])->middleware('permission:quality_checks.perform')->name('quality-checks.items');
+    Route::post('quality-checks/{qualityCheck}/{action}', [QualityCheckController::class, 'action'])->whereIn('action', ['pass', 'fail'])->name('quality-checks.action');
+    Route::post('quality-checks/{qualityCheck}/photos', [QualityCheckController::class, 'photo'])->middleware('permission:quality_checks.perform')->name('quality-checks.photos.store');
+
+    Route::get('rework-orders', [ReworkOrderController::class, 'index'])->middleware('permission:rework_orders.view')->name('rework-orders.index');
+    Route::get('rework-orders/{reworkOrder}', [ReworkOrderController::class, 'show'])->middleware('permission:rework_orders.view')->name('rework-orders.show');
+    Route::post('rework-orders/{reworkOrder}/{action}', [ReworkOrderController::class, 'action'])->whereIn('action', ['approve', 'start', 'service-complete', 'complete'])->name('rework-orders.action');
+    Route::post('rework-orders/{reworkOrder}/photos', [ReworkOrderController::class, 'photo'])->middleware('permission:rework_orders.complete')->name('rework-orders.photos.store');
+    Route::post('rework-orders/{reworkOrder}/materials', [ReworkOrderController::class, 'material'])->middleware('permission:work_order_materials.reserve')->name('rework-orders.materials.store');
+    Route::post('rework-materials/{workOrderMaterial}/reserve', [ReworkOrderController::class, 'reserveMaterial'])->middleware('permission:work_order_materials.reserve')->name('rework-orders.materials.reserve');
+
+    Route::get('deliveries', [DeliveryController::class, 'index'])->middleware('permission:work_orders.deliver')->name('deliveries.index');
+    Route::get('deliveries/{workOrder}', [DeliveryController::class, 'show'])->middleware('permission:vehicle_inspections.delivery')->name('deliveries.show');
+    Route::put('deliveries/{workOrder}/inspection', [DeliveryController::class, 'update'])->middleware('permission:vehicle_inspections.delivery')->name('deliveries.inspection.update');
+    Route::post('deliveries/{workOrder}/inspection/complete', [DeliveryController::class, 'complete'])->middleware('permission:vehicle_inspections.delivery')->name('deliveries.inspection.complete');
+    Route::post('deliveries/{workOrder}/photos', [DeliveryController::class, 'photo'])->middleware('permission:vehicle_inspections.delivery_photos')->name('deliveries.photos.store');
+    Route::post('deliveries/{workOrder}/deliver', [DeliveryController::class, 'deliver'])->middleware('permission:work_orders.deliver')->name('deliveries.deliver');
+
+    Route::get('warranties', [WarrantyController::class, 'index'])->middleware('permission:warranties.view')->name('warranties.index');
+    Route::post('warranties/issue', [WarrantyController::class, 'issue'])->middleware('permission:warranties.issue')->name('warranties.issue');
+    Route::get('warranties/{warranty}', [WarrantyController::class, 'show'])->middleware('permission:warranties.view')->name('warranties.show');
+    Route::get('warranties/{warranty}/print', [WarrantyController::class, 'print'])->middleware('permission:warranties.print')->name('warranties.print');
+    Route::post('warranties/{warranty}/void', [WarrantyController::class, 'void'])->middleware('permission:warranties.void')->name('warranties.void');
+
+    Route::get('warranty-claims', [WarrantyClaimController::class, 'index'])->middleware('permission:warranty_claims.view')->name('warranty-claims.index');
+    Route::get('warranty-claims/create', [WarrantyClaimController::class, 'create'])->middleware('permission:warranty_claims.create')->name('warranty-claims.create');
+    Route::post('warranty-claims', [WarrantyClaimController::class, 'store'])->middleware('permission:warranty_claims.create')->name('warranty-claims.store');
+    Route::get('warranty-claims/{warrantyClaim}', [WarrantyClaimController::class, 'show'])->middleware('permission:warranty_claims.view')->name('warranty-claims.show');
+    Route::post('warranty-claims/{warrantyClaim}/inspect', [WarrantyClaimController::class, 'inspect'])->middleware('permission:warranty_claims.inspect')->name('warranty-claims.inspect');
+    Route::post('warranty-claims/{warrantyClaim}/decision', [WarrantyClaimController::class, 'decide'])->middleware('permission:warranty_claims.decide')->name('warranty-claims.decide');
+    Route::post('warranty-claims/{warrantyClaim}/rework', [WarrantyClaimController::class, 'rework'])->middleware('permission:warranty_claims.approve')->name('warranty-claims.rework');
+    Route::post('warranty-claims/{warrantyClaim}/resolve', [WarrantyClaimController::class, 'resolve'])->middleware('permission:warranty_claims.resolve')->name('warranty-claims.resolve');
+    Route::post('warranty-claims/{warrantyClaim}/photos', [WarrantyClaimController::class, 'photo'])->middleware('permission:warranty_claims.inspect')->name('warranty-claims.photos.store');
+
+    Route::get('sales-invoices', [SalesInvoiceController::class, 'index'])->middleware('permission:sales_invoices.view')->name('sales-invoices.index');
+    Route::get('sales-invoices/create', [SalesInvoiceController::class, 'create'])->middleware('permission:sales_invoices.direct_sale')->name('sales-invoices.create');
+    Route::post('sales-invoices', [SalesInvoiceController::class, 'store'])->middleware('permission:sales_invoices.direct_sale')->name('sales-invoices.store');
+    Route::post('work-orders/{workOrder}/invoice', [SalesInvoiceController::class, 'fromWorkOrder'])->middleware('permission:sales_invoices.create')->name('work-orders.invoice');
+    Route::get('sales-invoices/{salesInvoice}', [SalesInvoiceController::class, 'show'])->middleware('permission:sales_invoices.view')->name('sales-invoices.show');
+    Route::get('sales-invoices/{salesInvoice}/print', [SalesInvoiceController::class, 'print'])->middleware('permission:sales_invoices.print')->name('sales-invoices.print');
+    Route::post('sales-invoices/{salesInvoice}/{action}', [SalesInvoiceController::class, 'action'])->whereIn('action', ['submit', 'approve', 'issue', 'cancel', 'void'])->name('sales-invoices.action');
+    Route::post('sales-invoice-items/{salesInvoiceItem}/return', [SalesInvoiceController::class, 'returnProduct'])->middleware('permission:sales_credit_notes.create')->name('sales-invoice-items.return');
+
+    Route::get('customer-payments', [CustomerPaymentController::class, 'index'])->middleware('permission:customer_payments.view')->name('customer-payments.index');
+    Route::get('customer-payments/create', [CustomerPaymentController::class, 'create'])->middleware('permission:customer_payments.record')->name('customer-payments.create');
+    Route::post('customer-payments', [CustomerPaymentController::class, 'store'])->middleware('permission:customer_payments.record')->name('customer-payments.store');
+    Route::get('customer-payments/{customerPayment}', [CustomerPaymentController::class, 'show'])->middleware('permission:customer_payments.view')->name('customer-payments.show');
+    Route::post('customer-payments/{customerPayment}/approve', [CustomerPaymentController::class, 'approve'])->middleware('permission:customer_payments.approve')->name('customer-payments.approve');
+    Route::post('customer-payments/{customerPayment}/allocations', [CustomerPaymentController::class, 'allocate'])->middleware('permission:customer_payments.allocate')->name('customer-payments.allocate');
+    Route::post('payment-allocations/{paymentAllocation}/reverse', [CustomerPaymentController::class, 'reverse'])->middleware('permission:customer_payments.reverse_allocation')->name('payment-allocations.reverse');
+    Route::get('customer-payments/{customerPayment}/receipt', [CustomerPaymentController::class, 'receipt'])->middleware('permission:customer_payments.print')->name('customer-payments.receipt');
+    Route::post('appointment-deposits/{appointmentDeposit}/convert', [CustomerPaymentController::class, 'convert'])->middleware('permission:customer_payments.record')->name('appointment-deposits.convert');
+
+    Route::get('sales-credit-notes', [SalesCreditNoteController::class, 'index'])->middleware('permission:sales_credit_notes.view')->name('sales-credit-notes.index');
+    Route::get('sales-invoices/{salesInvoice}/credit-note', [SalesCreditNoteController::class, 'create'])->middleware('permission:sales_credit_notes.create')->name('sales-credit-notes.create');
+    Route::post('sales-credit-notes', [SalesCreditNoteController::class, 'store'])->middleware('permission:sales_credit_notes.create')->name('sales-credit-notes.store');
+    Route::get('sales-credit-notes/{salesCreditNote}', [SalesCreditNoteController::class, 'show'])->middleware('permission:sales_credit_notes.view')->name('sales-credit-notes.show');
+    Route::get('sales-credit-notes/{salesCreditNote}/print', [SalesCreditNoteController::class, 'print'])->middleware('permission:sales_credit_notes.print')->name('sales-credit-notes.print');
+    Route::post('sales-credit-notes/{salesCreditNote}/{action}', [SalesCreditNoteController::class, 'action'])->whereIn('action', ['approve', 'issue'])->name('sales-credit-notes.action');
+
+    Route::get('customer-refunds', [CustomerRefundController::class, 'index'])->middleware('permission:customer_refunds.view')->name('customer-refunds.index');
+    Route::get('customer-refunds/create', [CustomerRefundController::class, 'create'])->middleware('permission:customer_refunds.create')->name('customer-refunds.create');
+    Route::post('customer-refunds', [CustomerRefundController::class, 'store'])->middleware('permission:customer_refunds.create')->name('customer-refunds.store');
+    Route::get('customer-refunds/{customerRefund}', [CustomerRefundController::class, 'show'])->middleware('permission:customer_refunds.view')->name('customer-refunds.show');
+    Route::post('customer-refunds/{customerRefund}/{action}', [CustomerRefundController::class, 'action'])->whereIn('action', ['approve', 'process'])->name('customer-refunds.action');
+
+    Route::get('customers/{customer}/statement', [SalesReportController::class, 'statement'])->middleware('permission:customer_statements.view')->name('customer-statements.show');
+    Route::get('reports/accounts-receivable-aging', [SalesReportController::class, 'aging'])->middleware('permission:accounts_receivable.aging')->name('sales-reports.aging');
 });
