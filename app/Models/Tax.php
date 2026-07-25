@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Core\Database\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Tax extends BaseModel
@@ -23,5 +24,10 @@ class Tax extends BaseModel
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function services(): HasMany
+    {
+        return $this->hasMany(Service::class, 'default_tax_id');
     }
 }

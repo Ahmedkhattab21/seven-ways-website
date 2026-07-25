@@ -39,7 +39,7 @@
                     @foreach($branches as $branch)<option value="{{ $branch->id }}" @selected(old('branch_id', $item->branch_id) == $branch->id)>{{ $branch->name }}</option>@endforeach
                 </x-form.select>
                 <x-form.select name="document_type" label="نوع المستند" required>
-                    @foreach(['quotation','appointment','work_order','sales_invoice','purchase_request','purchase_order','goods_receipt','purchase_invoice','stock_transfer','receipt_voucher','payment_voucher','warranty','warranty_claim','journal_entry','expense'] as $type)<option value="{{ $type }}" @selected(old('document_type', $item->document_type) === $type)>{{ $type }}</option>@endforeach
+                    @foreach(['quotation','appointment','work_order','sales_invoice','purchase_request','purchase_order','goods_receipt','purchase_invoice','stock_transfer','receipt_voucher','payment_voucher','warranty','warranty_claim','journal_entry','expense','product','stock_movement','stock_opening','stock_adjustment','inventory_count','roll','roll_scrap'] as $type)<option value="{{ $type }}" @selected(old('document_type', $item->document_type) === $type)>{{ $type }}</option>@endforeach
                 </x-form.select>
                 <x-form.input name="prefix" label="القالب" :value="$item->prefix" help="مثال: {BRANCH}-{TYPE}-{YYYY}-" required />
                 <x-form.input name="current_number" type="number" label="الرقم الحالي" :value="$item->current_number ?? 0" min="0" required />

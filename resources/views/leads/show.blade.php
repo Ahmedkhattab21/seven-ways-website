@@ -2,7 +2,7 @@
 @section('title', 'عرض العميل المحتمل')
 @section('page-title', $lead->name)
 @section('breadcrumb', 'CRM / '.$lead->lead_number)
-@section('page-actions')@can('update',$lead)<a class="sw-button sw-button--primary" href="{{ route('leads.edit',$lead) }}">تعديل</a>@endcan @endsection
+@section('page-actions')@if(auth()->user()->hasPermission('quotations.create'))<a class="sw-button" href="{{ route('quotations.create',['lead_id'=>$lead->id]) }}">إنشاء عرض سعر</a>@endif @can('update',$lead)<a class="sw-button sw-button--primary" href="{{ route('leads.edit',$lead) }}">تعديل</a>@endcan @endsection
 @section('content')
 <x-card title="البيانات"><dl class="sw-details-grid"><div><dt>الرقم</dt><dd>{{ $lead->lead_number }}</dd></div><div><dt>الهاتف</dt><dd>{{ $lead->phone }}</dd></div><div><dt>الفرع</dt><dd>{{ $lead->branch->name }}</dd></div><div><dt>المصدر</dt><dd>{{ $lead->source?->name ?? '—' }}</dd></div><div><dt>المسؤول</dt><dd>{{ $lead->assignedUser?->name ?? '—' }}</dd></div><div><dt>الحالة</dt><dd><x-status-badge :status="$lead->status" /></dd></div><div><dt>الأولوية</dt><dd>{{ $lead->priority }}</dd></div><div><dt>المتابعة القادمة</dt><dd>{{ $lead->next_follow_up_at?->format('Y-m-d H:i') ?? '—' }}</dd></div></dl></x-card>
 <x-card title="المتابعات"><x-table-shell><thead><tr><th>النوع</th><th>الموعد</th><th>النتيجة</th><th>المتابعة التالية</th></tr></thead><tbody>@forelse($lead->followUps as $followUp)<tr><td>{{ $followUp->follow_up_type }}</td><td>{{ $followUp->scheduled_at?->format('Y-m-d H:i') ?? '—' }}</td><td>{{ $followUp->outcome ?? '—' }}</td><td>{{ $followUp->next_follow_up_at?->format('Y-m-d H:i') ?? '—' }}</td></tr>@empty<tr><td colspan="4">لا توجد متابعات.</td></tr>@endforelse</tbody></x-table-shell>

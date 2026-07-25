@@ -2,8 +2,6 @@
     $futureNavigation = [
         ['label' => 'المبيعات', 'icon' => 'sales'],
         ['label' => 'الحجوزات وأوامر العمل', 'icon' => 'clipboard'],
-        ['label' => 'الخدمات', 'icon' => 'wrench'],
-        ['label' => 'المنتجات والمخزون', 'icon' => 'box'],
         ['label' => 'المشتريات', 'icon' => 'cart'],
         ['label' => 'الحسابات', 'icon' => 'wallet'],
         ['label' => 'الموظفون', 'icon' => 'users'],
@@ -18,6 +16,23 @@
         @if(auth()->user()->hasPermission('customers.view'))<a class="sw-nav-item @if(request()->routeIs('customers.*')) sw-nav-item--active @endif" href="{{ route('customers.index') }}"><x-icon name="users" /><span>العملاء</span></a>@endif
         @if(auth()->user()->hasPermission('vehicles.view'))<a class="sw-nav-item @if(request()->routeIs('vehicles.*')) sw-nav-item--active @endif" href="{{ route('vehicles.index') }}"><x-icon name="wrench" /><span>السيارات</span></a>@endif
         @if(auth()->user()->hasPermission('leads.view'))<a class="sw-nav-item @if(request()->routeIs('leads.*')) sw-nav-item--active @endif" href="{{ route('leads.index') }}"><x-icon name="sales" /><span>العملاء المحتملون</span></a>@endif
+        @if(auth()->user()->hasPermission('products.view'))<a class="sw-nav-item @if(request()->routeIs('products.*')) sw-nav-item--active @endif" href="{{ route('products.index') }}"><x-icon name="box" /><span>المنتجات</span></a>@endif
+        @if(auth()->user()->hasPermission('product_categories.manage'))<a class="sw-nav-item" href="{{ route('product-references.index', 'categories') }}"><x-icon name="box" /><span>تصنيفات المنتجات</span></a>@endif
+        @if(auth()->user()->hasPermission('product_brands.manage'))<a class="sw-nav-item" href="{{ route('product-references.index', 'brands') }}"><x-icon name="box" /><span>العلامات التجارية</span></a>@endif
+        @if(auth()->user()->hasPermission('warehouses.view'))<a class="sw-nav-item @if(request()->routeIs('warehouses.*')) sw-nav-item--active @endif" href="{{ route('warehouses.index') }}"><x-icon name="box" /><span>المخازن</span></a>@endif
+        @if(auth()->user()->hasPermission('stock_transfers.view'))<a class="sw-nav-item @if(request()->routeIs('stock-transfers.*')) sw-nav-item--active @endif" href="{{ route('stock-transfers.index') }}"><x-icon name="box" /><span>تحويلات المخزون</span></a>@endif
+        @if(auth()->user()->hasPermission('service_categories.view'))<a class="sw-nav-item @if(request()->routeIs('service-categories.*')) sw-nav-item--active @endif" href="{{ route('service-categories.index') }}"><x-icon name="wrench" /><span>تصنيفات الخدمات</span></a>@endif
+        @if(auth()->user()->hasPermission('services.view'))<a class="sw-nav-item @if(request()->routeIs('services.*')) sw-nav-item--active @endif" href="{{ route('services.index') }}"><x-icon name="wrench" /><span>الخدمات</span></a>@endif
+        @if(auth()->user()->hasPermission('service_packages.view'))<a class="sw-nav-item @if(request()->routeIs('service-packages.*')) sw-nav-item--active @endif" href="{{ route('service-packages.index') }}"><x-icon name="box" /><span>باقات الخدمات</span></a>@endif
+        @if(auth()->user()->hasPermission('promotions.view'))<a class="sw-nav-item @if(request()->routeIs('promotions.*')) sw-nav-item--active @endif" href="{{ route('promotions.index') }}"><x-icon name="sales" /><span>العروض الترويجية</span></a>@endif
+        @if(auth()->user()->hasPermission('quotations.view'))<a class="sw-nav-item @if(request()->routeIs('quotations.*')) sw-nav-item--active @endif" href="{{ route('quotations.index') }}"><x-icon name="sales" /><span>عروض الأسعار</span></a>@endif
+        @if(auth()->user()->hasPermission('appointments.view'))<a class="sw-nav-item @if(request()->routeIs('appointments.index','appointments.show','appointments.create','appointments.edit')) sw-nav-item--active @endif" href="{{ route('appointments.index') }}"><x-icon name="clipboard" /><span>الحجوزات</span></a>@endif
+        @if(auth()->user()->hasPermission('appointments.calendar'))<a class="sw-nav-item @if(request()->routeIs('appointments.calendar')) sw-nav-item--active @endif" href="{{ route('appointments.calendar') }}"><x-icon name="chart" /><span>تقويم الحجوزات</span></a>@endif
+        @if(auth()->user()->hasPermission('inventory.view'))
+            @foreach(['balances'=>'الأرصدة','movements'=>'حركات المخزون','rolls'=>'الرولات','scraps'=>'القصاصات','openings'=>'الرصيد الافتتاحي','adjustments'=>'التسويات','counts'=>'الجرد','alerts'=>'التنبيهات'] as $section=>$label)
+                <a class="sw-nav-item @if(request()->routeIs('inventory.*') && request()->route('section') === $section) sw-nav-item--active @endif" href="{{ route('inventory.index', $section) }}"><x-icon name="box" /><span>{{ $label }}</span></a>
+            @endforeach
+        @endif
         @if(auth()->user()->hasPermission('branches.view'))<a class="sw-nav-item @if(request()->routeIs('branches.*')) sw-nav-item--active @endif" href="{{ route('branches.index') }}"><x-icon name="building" /><span>الفروع</span></a>@endif
         @if(auth()->user()->hasPermission('users.view'))<a class="sw-nav-item @if(request()->routeIs('users.*')) sw-nav-item--active @endif" href="{{ route('users.index') }}"><x-icon name="users" /><span>المستخدمون</span></a>@endif
         @if(auth()->user()->hasPermission('roles.view'))<a class="sw-nav-item @if(request()->routeIs('roles.*')) sw-nav-item--active @endif" href="{{ route('roles.index') }}"><x-icon name="settings" /><span>الأدوار والصلاحيات</span></a>@endif

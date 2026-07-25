@@ -1,0 +1,15 @@
+@extends('layouts.app')
+@section('title',$quotation->quotation_number)
+@section('content')
+<div class="sw-page-header"><div><h1>{{ $quotation->quotation_number }} — V{{ $quotation->version_number }}</h1><p>{{ $quotation->customer->name }} | {{ $quotation->branch->name }} | {{ $quotation->status }}</p></div><div><a class="sw-btn" href="{{ route('quotations.print',$quotation) }}">طباعة</a>@can('update',$quotation)<a class="sw-btn" href="{{ route('quotations.edit',$quotation) }}">تعديل</a>@endcan</div></div>
+<div class="sw-card sw-table-wrap"><table class="sw-table"><thead><tr><th>الوصف</th><th>الكمية</th><th>السعر</th><th>الخصم</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>@foreach($quotation->items as $item)<tr><td>{{ $item->description }}</td><td>{{ $item->quantity }}</td><td>{{ $item->unit_price }}</td><td>{{ $item->discount_amount }}</td><td>{{ $item->tax_amount }}</td><td>{{ $item->total }}</td></tr>@endforeach</tbody></table></div>
+<div class="sw-card"><p>قبل الخصم: {{ $quotation->subtotal }}</p><p>الخصم العام: {{ $quotation->discount_amount }}</p><p>الضريبة: {{ $quotation->tax_amount }}</p><strong>الإجمالي: {{ $quotation->total }}</strong>@can('viewCost',$quotation)<hr><p>التكلفة التقديرية: {{ $quotation->estimated_total_cost??'غير متاحة' }} | الهامش: {{ $quotation->estimated_margin??'غير متاح' }}</p>@endcan</div>
+<div class="sw-card"><h2>الإجراءات</h2>
+@can('submit',$quotation)<form method="POST" action="{{ route('quotations.submit',$quotation) }}">@csrf<button class="sw-btn">إرسال للاعتماد</button></form>@endcan
+@can('approve',$quotation)<form method="POST" action="{{ route('quotations.approve',$quotation) }}">@csrf<input name="approval_notes" placeholder="ملاحظات الاعتماد"><button class="sw-btn">اعتماد</button></form>@endcan
+@can('send',$quotation)<form method="POST" action="{{ route('quotations.send',$quotation) }}">@csrf<button class="sw-btn">تسجيل الإرسال</button></form>@endcan
+@can('accept',$quotation)<form method="POST" action="{{ route('quotations.accept',$quotation) }}">@csrf<select name="acceptance_method"><option value="in_person">حضوري</option><option value="phone">هاتف</option><option value="whatsapp">واتساب</option><option value="email">بريد</option></select><input name="accepted_by_name" placeholder="اسم الموافق"><button class="sw-btn sw-btn--primary">قبول</button></form>@endcan
+@can('createVersion',$quotation)<form method="POST" action="{{ route('quotations.version',$quotation) }}">@csrf<input name="reason" required placeholder="سبب الإصدار"><button class="sw-btn">إنشاء إصدار</button></form>@endcan
+@if($quotation->status==='accepted' && $quotation->appointments->isEmpty())<form method="POST" action="{{ route('quotations.appointment',$quotation) }}">@csrf<input type="datetime-local" name="scheduled_start" required><input type="datetime-local" name="scheduled_end" required><input type="hidden" name="priority" value="normal"><button class="sw-btn sw-btn--primary">تحويل إلى حجز</button></form>@endif
+</div>
+@endsection

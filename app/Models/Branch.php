@@ -40,6 +40,16 @@ class Branch extends BaseModel
         return $this->hasMany(User::class);
     }
 
+    public function quotations(): HasMany
+    {
+        return $this->hasMany(Quotation::class);
+    }
+
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
+    }
+
     public function accessibleUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'user_branch_access')
@@ -60,5 +70,30 @@ class Branch extends BaseModel
     public function leads(): HasMany
     {
         return $this->hasMany(Lead::class);
+    }
+
+    public function outgoingStockTransfers(): HasMany
+    {
+        return $this->hasMany(StockTransfer::class, 'from_branch_id');
+    }
+
+    public function incomingStockTransfers(): HasMany
+    {
+        return $this->hasMany(StockTransfer::class, 'to_branch_id');
+    }
+
+    public function branchServices(): HasMany
+    {
+        return $this->hasMany(BranchService::class);
+    }
+
+    public function servicePrices(): HasMany
+    {
+        return $this->hasMany(ServicePrice::class);
+    }
+
+    public function employeeServiceSkills(): HasMany
+    {
+        return $this->hasMany(EmployeeServiceSkill::class);
     }
 }

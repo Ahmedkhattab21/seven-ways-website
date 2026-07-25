@@ -19,6 +19,10 @@ class DatabaseSeeder extends Seeder
             ReferenceDataSeeder::class,
             SevenWaysTenantSeeder::class,
             SevenWaysOperationalSeeder::class,
+            InventorySeeder::class,
+            StockTransferSeeder::class,
+            ServiceCatalogSeeder::class,
+            QuotationAppointmentSeeder::class,
         ]);
     }
 }

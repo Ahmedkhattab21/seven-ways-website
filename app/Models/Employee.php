@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Core\Database\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Employee extends BaseModel
@@ -30,5 +31,15 @@ class Employee extends BaseModel
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function serviceSkills(): HasMany
+    {
+        return $this->hasMany(EmployeeServiceSkill::class);
+    }
+
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class, 'assigned_employee_id');
     }
 }

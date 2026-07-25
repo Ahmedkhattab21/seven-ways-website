@@ -64,4 +64,14 @@ class Lead extends BaseModel
     {
         return $this->hasMany(LeadFollowUp::class);
     }
+
+    public function quotations(): HasMany
+    {
+        return $this->hasMany(Quotation::class);
+    }
+
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Core\Database\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PaymentMethod extends BaseModel
@@ -22,5 +23,10 @@ class PaymentMethod extends BaseModel
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function appointmentDeposits(): HasMany
+    {
+        return $this->hasMany(AppointmentDeposit::class);
     }
 }

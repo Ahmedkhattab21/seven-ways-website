@@ -120,6 +120,8 @@ class ReferenceDataRequest extends FormRequest
             'purchase_order', 'goods_receipt', 'purchase_invoice', 'stock_transfer',
             'receipt_voucher', 'payment_voucher', 'warranty', 'warranty_claim',
             'journal_entry', 'expense',
+            'product', 'stock_movement', 'stock_opening', 'stock_adjustment',
+            'inventory_count', 'roll', 'roll_scrap',
         ];
     }
 }

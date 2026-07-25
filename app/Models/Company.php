@@ -78,4 +78,24 @@ class Company extends BaseModel
     {
         return $this->hasMany(CustomerSource::class);
     }
+
+    public function serviceCategories(): HasMany
+    {
+        return $this->hasMany(ServiceCategory::class);
+    }
+
+    public function services(): HasMany
+    {
+        return $this->hasMany(Service::class);
+    }
+
+    public function servicePackages(): HasMany
+    {
+        return $this->hasMany(ServicePackage::class);
+    }
+
+    public function promotions(): HasMany
+    {
+        return $this->hasMany(Promotion::class);
+    }
 }
