@@ -6,6 +6,11 @@ The project is a Laravel 9 modular monolith. Laravel routes and controllers rema
 HTTP delivery layer. Shared, reusable rules live under `App\Core`; future business
 capabilities live under `App\Modules`.
 
+The administration frontend uses Blade, vanilla CSS, and small vanilla JavaScript
+behaviors compiled by Vite. Shared UI is organized under `resources/views/components`,
+with authenticated and guest layouts under `resources/views/layouts`. Design tokens live
+only in `resources/css/app.css`.
+
 The existing `/` and `/api/welcome` behavior is retained during phase 01. `/api/user`
 returns the authenticated user and is protected by `auth:sanctum`. New API endpoints use
 the standard envelope through `App\Core\Http\ApiResponse`.

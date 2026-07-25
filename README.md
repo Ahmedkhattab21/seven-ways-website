@@ -41,6 +41,9 @@ npm run build
 `GET /api/health` verifies the application and database without returning connection
 details. See `docs/development-setup.md` for environment and test-database guidance.
 
+Web authentication is available at `/login`; authenticated users land on `/dashboard`.
+Registration and password reset are intentionally not part of the current phase.
+
 ## Architecture
 
 - `app/Core`: shared database concerns, API response helpers, exceptions, and statuses.
