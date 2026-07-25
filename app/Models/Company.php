@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\Database\BaseModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -12,13 +13,15 @@ class Company extends BaseModel
 
     protected $fillable = [
         'name', 'legal_name', 'commercial_registration', 'tax_number', 'email',
-        'phone', 'logo_path', 'address', 'country_code', 'currency_code',
-        'timezone', 'fiscal_year_start_month', 'is_active',
+        'phone', 'logo_path', 'address', 'country_code', 'currency_code', 'currency_id',
+        'timezone', 'fiscal_year_start_month', 'date_format', 'time_format',
+        'money_decimal_places', 'default_language', 'ui_direction', 'default_tax_id', 'is_active',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'fiscal_year_start_month' => 'integer',
+        'money_decimal_places' => 'integer',
     ];
 
     public function branches(): HasMany
@@ -34,5 +37,45 @@ class Company extends BaseModel
     public function roles(): HasMany
     {
         return $this->hasMany(Role::class);
+    }
+
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class);
+    }
+
+    public function defaultTax(): BelongsTo
+    {
+        return $this->belongsTo(Tax::class, 'default_tax_id');
+    }
+
+    public function taxes(): HasMany
+    {
+        return $this->hasMany(Tax::class);
+    }
+
+    public function fiscalYears(): HasMany
+    {
+        return $this->hasMany(FiscalYear::class);
+    }
+
+    public function customers(): HasMany
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    public function vehicles(): HasMany
+    {
+        return $this->hasMany(Vehicle::class);
+    }
+
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class);
+    }
+
+    public function customerSources(): HasMany
+    {
+        return $this->hasMany(CustomerSource::class);
     }
 }

@@ -16,7 +16,9 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             FoundationPermissionSeeder::class,
+            ReferenceDataSeeder::class,
             SevenWaysTenantSeeder::class,
+            SevenWaysOperationalSeeder::class,
         ]);
     }
 }

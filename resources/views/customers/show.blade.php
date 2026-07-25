@@ -1,0 +1,31 @@
+@extends('layouts.app')
+@section('title', 'ملف العميل')
+@section('page-title', $customer->name)
+@section('breadcrumb', 'إدارة العملاء / '.$customer->customer_code)
+@section('page-actions')
+@can('update', $customer)<a class="sw-button sw-button--primary" href="{{ route('customers.edit', $customer) }}">تعديل</a>@endcan
+@can('disable', $customer)@if($customer->status === 'active')<form method="POST" action="{{ route('customers.disable', $customer) }}">@csrf @method('PATCH')<x-button type="submit" variant="outline">تعطيل</x-button></form>@endif @endcan
+@endsection
+@section('content')
+<x-card title="بيانات العميل"><dl class="sw-details-grid">
+    <div><dt>الكود</dt><dd>{{ $customer->customer_code }}</dd></div><div><dt>النوع</dt><dd>{{ $customer->customer_type }}</dd></div>
+    <div><dt>الهاتف</dt><dd>{{ $customer->phone ?? '—' }}</dd></div><div><dt>البريد</dt><dd>{{ $customer->email ?? '—' }}</dd></div>
+    <div><dt>الفرع المسؤول</dt><dd>{{ $customer->assignedBranch?->name ?? '—' }}</dd></div><div><dt>المصدر</dt><dd>{{ $customer->source?->name ?? '—' }}</dd></div>
+    <div><dt>الرقم الضريبي</dt><dd>{{ $customer->tax_number ?? '—' }}</dd></div><div><dt>الحالة</dt><dd><x-status-badge :status="$customer->status" /></dd></div>
+</dl></x-card>
+<x-card title="السيارات التابعة"><x-table-shell><thead><tr><th>اللوحة</th><th>الماركة</th><th>الموديل</th><th>السنة</th></tr></thead><tbody>@forelse($customer->vehicles as $vehicle)<tr><td><a href="{{ route('vehicles.show',$vehicle) }}">{{ $vehicle->plate_number ?? 'بدون لوحة' }}</a></td><td>{{ $vehicle->brand->name_ar }}</td><td>{{ $vehicle->model->name_ar }}</td><td>{{ $vehicle->manufacturing_year ?? '—' }}</td></tr>@empty<tr><td colspan="4">لا توجد سيارات.</td></tr>@endforelse</tbody></x-table-shell></x-card>
+<x-card title="جهات الاتصال">
+    <x-table-shell><thead><tr><th>الاسم</th><th>الوظيفة</th><th>الهاتف</th><th>رئيسية</th><th>الإجراءات</th></tr></thead><tbody>@forelse($customer->contacts as $contact)<tr><td>{{ $contact->name }}</td><td>{{ $contact->job_title ?? '—' }}</td><td>{{ $contact->phone ?? '—' }}</td><td>{{ $contact->is_primary ? 'نعم' : 'لا' }}</td><td>@if(auth()->user()->hasPermission('customers.manage_contacts'))<form method="POST" action="{{ route('customers.contacts.destroy',$contact) }}">@csrf @method('DELETE')<button type="submit">حذف</button></form>@endif</td></tr>@empty<tr><td colspan="5">لا توجد جهات اتصال.</td></tr>@endforelse</tbody></x-table-shell>
+    @if(auth()->user()->hasPermission('customers.manage_contacts'))<form method="POST" action="{{ route('customers.contacts.store',$customer) }}" class="sw-form">@csrf<div class="sw-form-grid"><x-form.input name="name" label="الاسم" required /><x-form.input name="job_title" label="الوظيفة" /><x-form.input name="phone" label="الهاتف" /><x-form.input name="email" type="email" label="البريد" /></div><label class="sw-check"><input type="checkbox" name="is_primary" value="1"> جهة رئيسية</label><x-button type="submit">إضافة جهة اتصال</x-button></form>@endif
+</x-card>
+<x-card title="العناوين">
+    <x-table-shell><thead><tr><th>التسمية</th><th>النوع</th><th>المدينة</th><th>العنوان</th><th>افتراضي</th></tr></thead><tbody>@forelse($customer->addresses as $address)<tr><td>{{ $address->label }}</td><td>{{ $address->address_type }}</td><td>{{ $address->city ?? '—' }}</td><td>{{ $address->address_line ?? '—' }}</td><td>{{ $address->is_default ? 'نعم' : 'لا' }}</td></tr>@empty<tr><td colspan="5">لا توجد عناوين.</td></tr>@endforelse</tbody></x-table-shell>
+    @if(auth()->user()->hasPermission('customers.manage_addresses'))<form method="POST" action="{{ route('customers.addresses.store',$customer) }}" class="sw-form">@csrf<div class="sw-form-grid"><x-form.input name="label" label="التسمية" required /><x-form.select name="address_type" label="النوع" required>@foreach(['billing'=>'فوترة','service'=>'خدمة','shipping'=>'شحن','other'=>'أخرى'] as $value=>$label)<option value="{{ $value }}">{{ $label }}</option>@endforeach</x-form.select><x-form.input name="country_code" label="الدولة" value="SA" required /><x-form.input name="city" label="المدينة" /><x-form.input name="district" label="الحي" /><x-form.input name="street" label="الشارع" /><x-form.textarea name="address_line" label="العنوان التفصيلي"></x-form.textarea></div><label class="sw-check"><input type="checkbox" name="is_default" value="1"> افتراضي لهذا النوع</label><x-button type="submit">إضافة عنوان</x-button></form>@endif
+</x-card>
+<x-card title="الملاحظات">@forelse($customer->notes as $note)<p><strong>{{ $note->visibility }}</strong> — {{ $note->note }}</p>@empty<p>لا توجد ملاحظات.</p>@endforelse
+    @if(auth()->user()->hasPermission('customers.manage_notes'))<form method="POST" action="{{ route('customers.notes.store',$customer) }}" class="sw-form">@csrf<x-form.textarea name="note" label="ملاحظة" required></x-form.textarea><x-form.select name="visibility" label="الظهور" required><option value="company">الشركة</option><option value="branch">الفرع</option><option value="private">خاصة</option></x-form.select><x-button type="submit">إضافة ملاحظة</x-button></form>@endif
+</x-card>
+<x-card title="المرفقات"><ul>@forelse($customer->attachments as $attachment)<li><a href="{{ route('attachments.download',$attachment) }}">{{ $attachment->original_name }}</a>@can('delete',$attachment)<form method="POST" action="{{ route('attachments.destroy',$attachment) }}">@csrf @method('DELETE')<button type="submit">حذف</button></form>@endcan</li>@empty<li>لا توجد مرفقات.</li>@endforelse</ul>
+    @if(auth()->user()->hasPermission('customers.manage_attachments'))<form method="POST" enctype="multipart/form-data" action="{{ route('customers.attachments.store',$customer) }}" class="sw-form">@csrf<x-form.input name="file" type="file" label="صورة أو PDF" required /><x-form.select name="category" label="التصنيف"><option value="customer_document">مستند عميل</option><option value="commercial_registration">سجل تجاري</option><option value="tax_certificate">شهادة ضريبية</option><option value="other">أخرى</option></x-form.select><x-button type="submit">رفع</x-button></form>@endif
+</x-card>
+@endsection

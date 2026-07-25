@@ -1,0 +1,10 @@
+@extends('layouts.app')
+@section('title', 'العملاء المحتملون')
+@section('page-title', 'إدارة العملاء المحتملين')
+@section('breadcrumb', 'CRM / القائمة')
+@section('page-actions')@if(auth()->user()->hasPermission('leads.create'))<a class="sw-button sw-button--primary" href="{{ route('leads.create') }}">إضافة عميل محتمل</a>@endif @endsection
+@section('content')
+<div class="sw-stats-grid">@foreach(['new'=>'جديدة','today'=>'متابعات اليوم','overdue'=>'متأخرة','won'=>'Won','lost'=>'Lost'] as $key=>$label)<x-stat-card :label="$label" :value="$stats[$key]" hint="حسب نطاق الفروع" icon="sales" />@endforeach</div>
+<x-card title="البحث والفلاتر"><form method="GET" class="sw-form"><div class="sw-form-grid"><x-form.input name="search" label="بحث" :value="request('search')" placeholder="الاسم أو الهاتف أو الرقم" /><x-form.select name="status" label="الحالة"><option value="">الكل</option>@foreach(['new','contacted','qualified','proposal_requested','follow_up','won','lost','cancelled'] as $status)<option value="{{ $status }}" @selected(request('status')===$status)>{{ $status }}</option>@endforeach</x-form.select></div><div class="sw-form-actions"><x-button type="submit">تطبيق</x-button><a class="sw-button sw-button--outline" href="{{ route('leads.index') }}">مسح</a></div></form></x-card>
+<x-table-shell><thead><tr><th>الرقم</th><th>الاسم</th><th>الهاتف</th><th>الفرع</th><th>المسؤول</th><th>المتابعة القادمة</th><th>الحالة</th><th>الأولوية</th></tr></thead><tbody>@forelse($leads as $lead)<tr><td><a href="{{ route('leads.show',$lead) }}">{{ $lead->lead_number }}</a></td><td>{{ $lead->name }}</td><td>{{ $lead->phone }}</td><td>{{ $lead->branch->name }}</td><td>{{ $lead->assignedUser?->name ?? '—' }}</td><td>{{ $lead->next_follow_up_at?->format('Y-m-d H:i') ?? '—' }}</td><td><x-status-badge :status="$lead->status" /></td><td>{{ $lead->priority }}</td></tr>@empty<tr><td colspan="8">لا يوجد عملاء محتملون.</td></tr>@endforelse</tbody><x-slot:footer>{{ $leads->links() }}</x-slot:footer></x-table-shell>
+@endsection

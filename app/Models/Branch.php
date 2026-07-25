@@ -46,4 +46,19 @@ class Branch extends BaseModel
             ->withPivot(['is_default', 'can_view', 'can_create', 'can_update', 'can_approve'])
             ->withTimestamps();
     }
+
+    public function createdCustomers(): HasMany
+    {
+        return $this->hasMany(Customer::class, 'created_branch_id');
+    }
+
+    public function assignedCustomers(): HasMany
+    {
+        return $this->hasMany(Customer::class, 'assigned_branch_id');
+    }
+
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class);
+    }
 }
