@@ -67,7 +67,7 @@ class SupplierInvoiceService
                 $invoiceItem = $invoice->items()->make();
                 $invoiceItem->forceFill($item + ['matched_quantity' => 0])->save();
             }
-            if ($order || $receipt) {
+            if ($order || $receipt || config('purchasing.supplier_invoice_matching_required', true)) {
                 $this->matching->match($invoice);
             }
             $this->audit->record('supplier_invoice.created', $invoice);

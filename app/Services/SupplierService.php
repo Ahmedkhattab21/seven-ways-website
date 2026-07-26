@@ -22,6 +22,7 @@ class SupplierService
     public function create(array $data): Supplier
     {
         return DB::transaction(function () use ($data) {
+            $this->assertSupplierType($data);
             $supplier = new Supplier($data);
             $supplier->forceFill([
                 'company_id' => $this->tenant->companyId(),
@@ -43,6 +44,7 @@ class SupplierService
     public function update(Supplier $supplier, array $data): Supplier
     {
         abort_unless($supplier->company_id === $this->tenant->companyId(), 403);
+        $this->assertSupplierType($data);
         $supplier->fill($data)->forceFill(['updated_by' => $this->tenant->user()->id])->save();
         $this->audit->record('supplier.updated', $supplier);
 
@@ -84,5 +86,13 @@ class SupplierService
 
             return $supplier->addresses()->create($data);
         });
+    }
+
+    private function assertSupplierType(array $data): void
+    {
+        if (isset($data['supplier_type'])
+            && ! in_array($data['supplier_type'], config('purchasing.supplier_types'), true)) {
+            throw new BusinessRuleException('Invalid supplier type.');
+        }
     }
 }

@@ -17,7 +17,8 @@ class GoodsReceiptPostingService
         private TenantContext $tenant,
         private InventoryService $inventory,
         private PurchaseRollReceivingService $rolls,
-        private AuditService $audit
+        private AuditService $audit,
+        private MoneyRoundingService $rounding
     ) {
     }
 
@@ -28,7 +29,7 @@ class GoodsReceiptPostingService
                 ->with(['items.product', 'warehouse', 'purchaseOrder'])->firstOrFail();
             abort_unless($receipt->company_id === $this->tenant->companyId()
                 && $this->tenant->user()->canAccessBranch($receipt->branch), 403);
-            if (! in_array($receipt->status, ['accepted', 'partially_rejected'], true)) {
+            if ($receipt->posted_at || ! in_array($receipt->status, ['accepted', 'partially_rejected'], true)) {
                 throw new BusinessRuleException('Only accepted receipts can be posted.');
             }
             if ($receipt->warehouse->is_system || $receipt->warehouse->warehouse_type === 'transit'
@@ -58,17 +59,18 @@ class GoodsReceiptPostingService
                     if ($item->product->tracking_type === 'roll') {
                         $this->rolls->receive($item);
                     } else {
-                        $unitCost = bcdiv($item->total_cost, $stockUnits, 4);
+                        $unitCost = $this->rounding->round(bcdiv($item->total_cost, $stockUnits, 8), 4);
                         $movement = $this->inventory->receive(
                             $receipt->warehouse,
                             $item->product,
                             $stockUnits,
                             $unitCost,
                             'purchase_receipt',
-                            ['type' => 'goods_receipt_item', 'id' => $item->id]
+                            ['type' => 'goods_receipt_item', 'id' => $item->id],
+                            $item->total_cost
                         );
                         $item->forceFill(['stock_movement_id' => $movement->id])->save();
-                        $this->batch($receipt, $item, $stockUnits, $unitCost);
+                        $this->batch($receipt, $item, $stockUnits, $unitCost, $item->total_cost);
                     }
                 }
                 if ($poItem) {
@@ -93,8 +95,13 @@ class GoodsReceiptPostingService
         });
     }
 
-    private function batch(GoodsReceipt $receipt, $item, string $quantity, string $unitCost): void
-    {
+    private function batch(
+        GoodsReceipt $receipt,
+        $item,
+        string $quantity,
+        string $unitCost,
+        string $totalCost
+    ): void {
         $poItem = $item->purchaseOrderItem;
         if (($poItem?->batch_required || $item->batch_number) && blank($item->batch_number)) {
             throw new BusinessRuleException('Batch number is required.');
@@ -122,15 +129,12 @@ class GoodsReceiptPostingService
             }
             $received = bcadd($batch->received_quantity, $quantity, 6);
             $available = bcadd($batch->available_quantity, $quantity, 6);
-            $value = bcadd(
-                bcmul($batch->received_quantity, $batch->unit_cost, 8),
-                bcmul($quantity, $unitCost, 8),
-                8
-            );
+            $value = bcadd($batch->total_cost, $totalCost, 4);
             $batch->forceFill([
                 'received_quantity' => $received,
                 'available_quantity' => $available,
-                'unit_cost' => bcdiv($value, $received, 4),
+                'total_cost' => $value,
+                'unit_cost' => $this->rounding->round(bcdiv($value, $received, 8), 4),
                 'status' => 'active',
             ])->save();
 
@@ -146,6 +150,7 @@ class GoodsReceiptPostingService
             'expiry_date' => $item->expiry_date,
             'received_quantity' => $quantity,
             'available_quantity' => $quantity,
+            'total_cost' => $totalCost,
             'unit_cost' => $unitCost,
             'supplier_id' => $receipt->supplier_id,
             'goods_receipt_item_id' => $item->id,

@@ -94,6 +94,7 @@ class SupplierPaymentAllocationService
             && $invoice->company_id === $payment->company_id
             && $invoice->supplier_id === $payment->supplier_id
             && $invoice->currency_id === $payment->currency_id
+            && $this->tenant->user()->canAccessBranch($payment->branch)
             && $this->tenant->user()->canAccessBranch($invoice->branch),
             403
         );

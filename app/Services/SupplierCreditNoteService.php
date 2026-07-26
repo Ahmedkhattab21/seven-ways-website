@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Core\Exceptions\BusinessRuleException;
 use App\Core\Tenancy\TenantContext;
 use App\Events\SupplierCreditNotePosted;
+use App\Models\PurchaseReturn;
+use App\Models\Supplier;
 use App\Models\SupplierCreditNote;
 use App\Models\SupplierInvoice;
 use Illuminate\Support\Facades\DB;
@@ -29,10 +31,25 @@ class SupplierCreditNoteService
                     ->where('branch_id', $this->tenant->branchId())
                     ->whereIn('status', ['posted', 'partially_paid', 'paid', 'overdue'])->firstOrFail();
             }
+            $supplierId = $invoice?->supplier_id ?? $data['supplier_id'];
+            $supplier = Supplier::whereKey($supplierId)
+                ->where('company_id', $this->tenant->companyId())
+                ->firstOrFail();
+            if (! empty($data['purchase_return_id'])) {
+                PurchaseReturn::whereKey($data['purchase_return_id'])
+                    ->where('company_id', $this->tenant->companyId())
+                    ->where('branch_id', $this->tenant->branchId())
+                    ->where('supplier_id', $supplierId)
+                    ->where('status', 'posted')
+                    ->firstOrFail();
+            }
             $note = new SupplierCreditNote($data);
             $note->forceFill([
                 'company_id' => $this->tenant->companyId(), 'branch_id' => $this->tenant->branchId(),
-                'supplier_id' => $invoice?->supplier_id ?? $data['supplier_id'],
+                'supplier_id' => $supplierId,
+                'currency_id' => $invoice?->currency_id
+                    ?? $supplier->currency_id
+                    ?? $this->tenant->company()->currency_id,
                 'credit_note_number' => $this->numbers->next(
                     'supplier_credit_note',
                     $this->tenant->companyId(),
@@ -78,7 +95,8 @@ class SupplierCreditNoteService
     {
         return DB::transaction(function () use ($note) {
             $note = SupplierCreditNote::whereKey($note->id)->lockForUpdate()->firstOrFail();
-            abort_unless($note->company_id === $this->tenant->companyId(), 403);
+            abort_unless($note->company_id === $this->tenant->companyId()
+                && $this->tenant->user()->canAccessBranch($note->branch), 403);
             if ($note->status !== 'approved') {
                 throw new BusinessRuleException('Only approved supplier credits can be posted.');
             }
@@ -107,7 +125,8 @@ class SupplierCreditNoteService
     {
         return DB::transaction(function () use ($note, $from, $to, $actorField) {
             $note = SupplierCreditNote::whereKey($note->id)->lockForUpdate()->firstOrFail();
-            abort_unless($note->company_id === $this->tenant->companyId(), 403);
+            abort_unless($note->company_id === $this->tenant->companyId()
+                && $this->tenant->user()->canAccessBranch($note->branch), 403);
             if ($note->status !== $from) {
                 throw new BusinessRuleException("Supplier credit must be {$from}.");
             }

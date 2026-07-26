@@ -8,8 +8,10 @@ use Illuminate\Database\Eloquent\Collection;
 
 class PurchaseRollReceivingService
 {
-    public function __construct(private RollService $rolls)
-    {
+    public function __construct(
+        private RollService $rolls,
+        private MoneyRoundingService $rounding
+    ) {
     }
 
     public function receive(GoodsReceiptItem $item): Collection
@@ -36,8 +38,11 @@ class PurchaseRollReceivingService
         foreach ($definitions as $index => $definition) {
             $cost = $index === $last
                 ? bcsub($item->total_cost, $allocated, 4)
-                : round((float) bcmul($item->total_cost, bcdiv($areas[$index], $totalArea, 8), 8), 2);
-            $cost = number_format((float) $cost, 4, '.', '');
+                : $this->rounding->round(
+                    bcmul($item->total_cost, bcdiv($areas[$index], $totalArea, 8), 8),
+                    4
+                );
+            $cost = $this->rounding->round($cost, 4);
             $allocated = bcadd($allocated, $cost, 4);
             $created->push($this->rolls->receive($item->receipt->warehouse, $item->product, [
                 'supplier_roll_number' => $definition['supplier_roll_number'] ?? null,

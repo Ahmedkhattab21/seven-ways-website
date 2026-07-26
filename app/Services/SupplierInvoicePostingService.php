@@ -25,11 +25,15 @@ class SupplierInvoicePostingService
                 ->with(['items.matches', 'items.purchaseOrderItem'])->firstOrFail();
             abort_unless($invoice->company_id === $this->tenant->companyId()
                 && $this->tenant->user()->canAccessBranch($invoice->branch), 403);
-            if ($invoice->status !== 'approved') {
+            if ($invoice->posted_at || $invoice->status !== 'approved') {
                 throw new BusinessRuleException('Only approved supplier invoices can be posted.');
             }
-            foreach ($invoice->items as $item) {
-                foreach ($item->matches as $match) {
+            foreach ($invoice->items()->lockForUpdate()->with('purchaseOrderItem')->get() as $item) {
+                $matches = $item->matches()->lockForUpdate()->get();
+                if (config('purchasing.supplier_invoice_matching_required', true) && $matches->isEmpty()) {
+                    throw new BusinessRuleException('Supplier invoice matching is required before posting.');
+                }
+                foreach ($matches as $match) {
                     if ($match->status !== 'matched' && ! $match->approved_by) {
                         throw new BusinessRuleException('Supplier invoice variances require approval before posting.');
                     }

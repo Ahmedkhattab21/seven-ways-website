@@ -32,14 +32,24 @@ class SupplierStatementService
             ->whereIn('branch_id', $branches)->whereNotIn('status', ['draft', 'pending_approval', 'approved', 'cancelled', 'void']), 'invoice_date')->get() as $invoice) {
             $entries->push(['date' => $invoice->invoice_date, 'type' => 'invoice', 'reference' => $invoice->internal_invoice_number, 'debit' => $invoice->total, 'credit' => '0.0000']);
         }
-        foreach ($range(SupplierCreditNote::where('supplier_id', $supplier->id)->whereIn('branch_id', $branches)->whereIn('status', ['posted', 'partially_applied', 'applied']), 'credit_date')->get() as $credit) {
+        foreach ($range(SupplierCreditNote::where('supplier_id', $supplier->id)
+            ->where('currency_id', $currencyId)
+            ->whereIn('branch_id', $branches)
+            ->whereIn('status', ['posted', 'partially_applied', 'applied']), 'credit_date')->get() as $credit) {
             $entries->push(['date' => $credit->credit_date, 'type' => 'credit', 'reference' => $credit->credit_note_number, 'debit' => '0.0000', 'credit' => $credit->applied_amount]);
         }
         foreach ($range(SupplierPayment::where('supplier_id', $supplier->id)->where('currency_id', $currencyId)
             ->whereIn('branch_id', $branches)->whereIn('status', ['processed', 'partially_allocated', 'allocated']), 'payment_date')->get() as $payment) {
             $entries->push(['date' => $payment->payment_date, 'type' => 'payment', 'reference' => $payment->payment_number, 'debit' => '0.0000', 'credit' => $payment->amount]);
         }
-        foreach (SupplierPaymentAllocation::whereIn('supplier_invoice_id', SupplierInvoice::where('supplier_id', $supplier->id)->select('id'))->get() as $allocation) {
+        $invoiceIds = SupplierInvoice::where('supplier_id', $supplier->id)
+            ->where('currency_id', $currencyId)
+            ->whereIn('branch_id', $branches)
+            ->select('id');
+        foreach (SupplierPaymentAllocation::whereIn('supplier_invoice_id', $invoiceIds)
+            ->when($from, fn ($query) => $query->whereDate('allocated_at', '>=', $from))
+            ->when($to, fn ($query) => $query->whereDate('allocated_at', '<=', $to))
+            ->get() as $allocation) {
             $entries->push(['date' => $allocation->reversed_at ?? $allocation->allocated_at, 'type' => $allocation->reversed_at ? 'allocation_reversal' : 'allocation', 'reference' => $allocation->uuid, 'debit' => '0.0000', 'credit' => '0.0000']);
         }
         foreach ($range(PurchaseReturn::where('supplier_id', $supplier->id)->whereIn('branch_id', $branches)->where('status', 'posted'), 'return_date')->get() as $return) {

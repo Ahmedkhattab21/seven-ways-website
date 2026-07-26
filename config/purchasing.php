@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'supplier_types' => [
+        'manufacturer',
+        'distributor',
+        'wholesaler',
+        'service_provider',
+        'other',
+    ],
     'separation_of_duties' => env('PURCHASING_SEPARATION_OF_DUTIES', true),
     'purchase_order_approval_required' => env('PURCHASE_ORDER_APPROVAL_REQUIRED', true),
     'price_variance_percentage' => env('PURCHASE_PRICE_VARIANCE_PERCENTAGE', 10),

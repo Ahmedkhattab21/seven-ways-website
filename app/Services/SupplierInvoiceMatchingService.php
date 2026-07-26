@@ -3,30 +3,35 @@
 namespace App\Services;
 
 use App\Core\Exceptions\BusinessRuleException;
+use App\Core\Tenancy\TenantContext;
 use App\Models\SupplierInvoice;
+use App\Models\SupplierInvoiceItem;
 use App\Models\SupplierInvoiceMatch;
 use Illuminate\Support\Facades\DB;
 
 class SupplierInvoiceMatchingService
 {
+    public function __construct(private TenantContext $tenant)
+    {
+    }
+
     public function match(SupplierInvoice $invoice): SupplierInvoice
     {
         return DB::transaction(function () use ($invoice) {
-            $invoice = SupplierInvoice::whereKey($invoice->id)->lockForUpdate()
-                ->with(['items.purchaseOrderItem', 'items.receiptItem'])->firstOrFail();
+            $invoice = SupplierInvoice::whereKey($invoice->id)->lockForUpdate()->firstOrFail();
+            abort_unless($invoice->company_id === $this->tenant->companyId()
+                && $this->tenant->user()->canAccessBranch($invoice->branch), 403);
             if ($invoice->status !== 'draft') {
                 throw new BusinessRuleException('Only draft supplier invoices can be matched.');
             }
-            foreach ($invoice->items as $item) {
+            foreach ($invoice->items()->lockForUpdate()->with(['purchaseOrderItem', 'receiptItem'])->get() as $item) {
                 $item->matches()->delete();
                 $poItem = $item->purchaseOrderItem;
                 $receiptItem = $item->receiptItem;
-                $matched = $receiptItem
-                    ? min((float) $item->quantity, (float) $receiptItem->accepted_quantity)
-                    : min((float) $item->quantity, (float) ($poItem?->received_quantity ?? 0));
-                $matched = number_format($matched, 6, '.', '');
-                $quantityVariance = $poItem
-                    ? bcsub($item->quantity, bcsub($poItem->received_quantity, $poItem->invoiced_quantity, 6), 6)
+                $available = $this->availableQuantity($invoice, $item, $poItem, $receiptItem);
+                $matched = bccomp($item->quantity, $available, 6) <= 0 ? $item->quantity : $available;
+                $quantityVariance = ($poItem || $receiptItem)
+                    ? bcsub($item->quantity, $available, 6)
                     : '0.000000';
                 $priceVariance = $poItem ? bcsub($item->unit_price, $poItem->unit_price, 4) : '0.0000';
                 $taxVariance = $poItem ? bccomp($item->tax_rate, $poItem->tax_rate, 4) !== 0 : false;
@@ -65,5 +70,31 @@ class SupplierInvoiceMatchingService
         $match->forceFill(['approved_by' => $userId, 'approval_reason' => $reason])->save();
 
         return $match;
+    }
+
+    private function availableQuantity(
+        SupplierInvoice $invoice,
+        SupplierInvoiceItem $item,
+        $poItem,
+        $receiptItem
+    ): string {
+        if ($receiptItem) {
+            $prior = (string) SupplierInvoiceItem::where('goods_receipt_item_id', $receiptItem->id)
+                ->where('supplier_invoice_id', '!=', $invoice->id)
+                ->whereHas('invoice', fn ($query) => $query
+                    ->whereIn('status', ['posted', 'partially_paid', 'paid', 'credited', 'overdue']))
+                ->sum('quantity');
+
+            $available = bcsub($receiptItem->accepted_quantity, $prior, 6);
+
+            return bccomp($available, '0', 6) < 0 ? '0.000000' : $available;
+        }
+        if ($poItem) {
+            $available = bcsub($poItem->received_quantity, $poItem->invoiced_quantity, 6);
+
+            return bccomp($available, '0', 6) < 0 ? '0.000000' : $available;
+        }
+
+        return '0.000000';
     }
 }

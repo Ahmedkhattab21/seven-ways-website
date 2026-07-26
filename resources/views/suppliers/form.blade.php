@@ -5,7 +5,7 @@
 <div class="sw-form-grid">
 <label>الاسم<input name="name" required value="{{ old('name',$supplier->name) }}"></label>
 <label>الاسم القانوني<input name="legal_name" value="{{ old('legal_name',$supplier->legal_name) }}"></label>
-<label>النوع<select name="supplier_type">@foreach(['manufacturer','distributor','wholesaler','service_provider','other'] as $type)<option value="{{ $type }}" @selected(old('supplier_type',$supplier->supplier_type)===$type)>{{ $type }}</option>@endforeach</select></label>
+<label>النوع<select name="supplier_type">@foreach(config('purchasing.supplier_types') as $type)<option value="{{ $type }}" @selected(old('supplier_type',$supplier->supplier_type)===$type)>{{ $type }}</option>@endforeach</select></label>
 <label>الرقم الضريبي<input name="tax_number" value="{{ old('tax_number',$supplier->tax_number) }}"></label>
 <label>السجل التجاري<input name="commercial_registration" value="{{ old('commercial_registration',$supplier->commercial_registration) }}"></label>
 <label>البريد<input type="email" name="email" value="{{ old('email',$supplier->email) }}"></label>

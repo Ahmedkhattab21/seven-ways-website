@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class SupplierRequest extends FormRequest
 {
@@ -15,7 +16,7 @@ class SupplierRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'], 'legal_name' => ['nullable', 'string', 'max:255'],
-            'supplier_type' => ['required', 'in:manufacturer,distributor,wholesaler,service_provider,other'],
+            'supplier_type' => ['required', Rule::in(config('purchasing.supplier_types'))],
             'tax_number' => ['nullable', 'string', 'max:60'], 'commercial_registration' => ['nullable', 'string', 'max:60'],
             'email' => ['nullable', 'email', 'max:255'], 'phone' => ['nullable', 'string', 'max:40'],
             'website' => ['nullable', 'url', 'max:255'], 'currency_id' => ['nullable', 'integer'],

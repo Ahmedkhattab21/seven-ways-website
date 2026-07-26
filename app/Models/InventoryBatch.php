@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InventoryBatch extends BaseModel
 {
-    protected $guarded = ['id', 'company_id', 'received_quantity', 'available_quantity', 'unit_cost', 'status'];
+    protected $guarded = [
+        'id', 'company_id', 'received_quantity', 'available_quantity', 'total_cost', 'unit_cost', 'status',
+    ];
 
     protected $casts = ['manufacture_date' => 'date', 'expiry_date' => 'date'];
 

@@ -15,13 +15,21 @@ class InventoryService
     public function __construct(
         private TenantContext $tenant,
         private StockMovementService $movements,
-        private AuditService $audit
+        private AuditService $audit,
+        private MoneyRoundingService $rounding
     ) {
     }
 
-    public function receive(Warehouse $warehouse, Product $product, string $quantity, string $unitCost, string $type, array $reference = []): StockMovement
-    {
-        return $this->change($warehouse, $product, $quantity, $unitCost, $type, 'in', $reference);
+    public function receive(
+        Warehouse $warehouse,
+        Product $product,
+        string $quantity,
+        string $unitCost,
+        string $type,
+        array $reference = [],
+        ?string $totalCost = null
+    ): StockMovement {
+        return $this->change($warehouse, $product, $quantity, $unitCost, $type, 'in', $reference, false, false, $totalCost);
     }
 
     public function issue(Warehouse $warehouse, Product $product, string $quantity, string $type, array $reference = []): StockMovement
@@ -95,13 +103,14 @@ class InventoryService
         string $direction,
         array $reference,
         bool $allowSystemTransit = false,
-        bool $preserveProvidedCost = false
+        bool $preserveProvidedCost = false,
+        ?string $providedTotalCost = null
     ): StockMovement {
         if (bccomp($quantity, '0', 6) <= 0) {
             throw new BusinessRuleException('Stock quantity must be positive.');
         }
 
-        return DB::transaction(function () use ($warehouse, $product, $quantity, $unitCost, $type, $direction, $reference, $allowSystemTransit, $preserveProvidedCost) {
+        return DB::transaction(function () use ($warehouse, $product, $quantity, $unitCost, $type, $direction, $reference, $allowSystemTransit, $preserveProvidedCost, $providedTotalCost) {
             $this->assertScope($warehouse, $product, $allowSystemTransit);
             $balance = $this->lockedBalance($warehouse, $product);
             $before = $balance->quantity;
@@ -114,9 +123,11 @@ class InventoryService
             } else {
                 $after = bcadd($before, $quantity, 6);
                 if ($product->costing_method === 'weighted_average') {
-                    $oldValue = bcmul($before, $balance->average_cost, 4);
-                    $newValue = bcmul($quantity, $unitCost ?? '0', 4);
-                    $balance->average_cost = bccomp($after, '0', 6) === 0 ? '0' : bcdiv(bcadd($oldValue, $newValue, 4), $after, 4);
+                    $oldValue = bcmul($before, $balance->average_cost, 8);
+                    $newValue = $providedTotalCost ?? bcmul($quantity, $unitCost ?? '0', 8);
+                    $balance->average_cost = bccomp($after, '0', 6) === 0
+                        ? '0.0000'
+                        : $this->rounding->round(bcdiv(bcadd($oldValue, $newValue, 8), $after, 8), 4);
                 } elseif ($product->costing_method === 'standard') {
                     $balance->average_cost = $product->standard_cost ?? '0';
                 }
@@ -127,7 +138,16 @@ class InventoryService
             $balance->save();
 
             return $this->movements->record($this->movementData(
-                $warehouse, $product, $quantity, $unitCost ?? '0', $type, $direction, $before, $after, $reference
+                $warehouse,
+                $product,
+                $quantity,
+                $unitCost ?? '0',
+                $type,
+                $direction,
+                $before,
+                $after,
+                $reference,
+                $providedTotalCost
             ));
         });
     }
@@ -151,15 +171,26 @@ class InventoryService
         }
     }
 
-    private function movementData(Warehouse $warehouse, Product $product, string $quantity, string $unitCost, string $type, string $direction, string $before, string $after, array $reference): array
-    {
+    private function movementData(
+        Warehouse $warehouse,
+        Product $product,
+        string $quantity,
+        string $unitCost,
+        string $type,
+        string $direction,
+        string $before,
+        string $after,
+        array $reference,
+        ?string $providedTotalCost = null
+    ): array {
         return [
             'company_id' => $warehouse->company_id, 'branch_id' => $warehouse->branch_id,
             'warehouse_id' => $warehouse->id, 'product_id' => $product->id,
             'movement_type' => $type, 'direction' => $direction,
             'reference_type' => $reference['type'] ?? null, 'reference_id' => $reference['id'] ?? null,
             'quantity' => $quantity, 'unit_id' => $product->stock_unit_id, 'stock_quantity' => $quantity,
-            'unit_cost' => $unitCost, 'total_cost' => bcmul($quantity, $unitCost, 4),
+            'unit_cost' => $unitCost,
+            'total_cost' => $providedTotalCost ?? bcmul($quantity, $unitCost, 4),
             'balance_before' => $before, 'balance_after' => $after,
             'reversal_of_id' => $reference['reversal_of_id'] ?? null, 'notes' => $reference['notes'] ?? null,
         ];

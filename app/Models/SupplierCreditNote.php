@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class SupplierCreditNote extends BaseModel
 {
     protected $guarded = [
-        'id', 'company_id', 'branch_id', 'credit_note_number', 'status', 'subtotal',
+        'id', 'company_id', 'branch_id', 'currency_id', 'credit_note_number', 'status', 'subtotal',
         'tax_amount', 'total', 'applied_amount', 'remaining_amount', 'created_by',
         'approved_by', 'posted_by',
     ];
@@ -30,6 +30,11 @@ class SupplierCreditNote extends BaseModel
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class);
     }
 
     public function items(): HasMany

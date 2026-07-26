@@ -17,7 +17,8 @@ class RollService
         private TenantContext $tenant,
         private DocumentNumberService $numbers,
         private InventoryService $inventory,
-        private AuditService $audit
+        private AuditService $audit,
+        private MoneyRoundingService $rounding
     ) {
     }
 
@@ -38,7 +39,7 @@ class RollService
         return DB::transaction(function () use ($warehouse, $product, $data, $reference, $width, $length) {
             $area = bcmul($width, $length, 6);
             $total = (string) $data['total_cost'];
-            $cost = bcdiv($total, $area, 4);
+            $cost = $this->rounding->round(bcdiv($total, $area, 8), 4);
             $roll = new InventoryRoll($data);
             $roll->forceFill([
                 'company_id' => $warehouse->company_id, 'branch_id' => $warehouse->branch_id,
