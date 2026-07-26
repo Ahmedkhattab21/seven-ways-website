@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class GoodsReceipt extends BaseModel
 {
+    use \App\Models\Concerns\HasAccountingPosting;
+
     protected $guarded = [
         'id', 'company_id', 'branch_id', 'goods_receipt_number', 'status', 'received_by',
         'inspected_by', 'posted_by', 'cancelled_by',

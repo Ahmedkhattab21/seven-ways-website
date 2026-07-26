@@ -1,0 +1,1 @@
+<div class="sw-card"><table class="sw-table"><thead><tr><th>الحساب</th><th>مدين ختامي</th><th>دائن ختامي</th></tr></thead><tbody>@foreach($report['rows'] as $row)<tr><td>{{ $row->account_code }} — {{ $row->name_ar }}</td><td>{{ $row->closing_debit }}</td><td>{{ $row->closing_credit }}</td></tr>@endforeach</tbody></table></div>

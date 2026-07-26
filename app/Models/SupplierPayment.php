@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SupplierPayment extends BaseModel
 {
+    use \App\Models\Concerns\HasAccountingPosting;
+
     protected $guarded = [
         'id', 'company_id', 'branch_id', 'payment_number', 'status', 'allocated_amount',
         'unallocated_amount', 'created_by', 'approved_by', 'processed_by', 'cancelled_by',

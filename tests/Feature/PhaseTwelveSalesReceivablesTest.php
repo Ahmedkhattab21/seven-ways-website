@@ -237,7 +237,7 @@ class PhaseTwelveSalesReceivablesTest extends TestCase
         $this->assertSame('50.0000', $aging[$context['currency']->id]['31_60']);
         $this->artisan('invoices:mark-overdue')->assertSuccessful();
         $this->assertSame('overdue', $invoice->fresh()->status);
-        $this->assertFalse(\Schema::hasTable('journal_entries'));
+        $this->assertSame(0, \DB::table('journal_entries')->count());
     }
 
     public function test_balance_is_rebuilt_from_official_records_and_overlapping_credit_drafts_cannot_both_issue(): void

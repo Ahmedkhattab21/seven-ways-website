@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CustomerRefund extends BaseModel
 {
-    use HasFactory;
+    use HasFactory, \App\Models\Concerns\HasAccountingPosting;
 
     protected $guarded = ['id', 'company_id', 'branch_id', 'refund_number', 'status', 'processed_by', 'approved_by', 'cancelled_by'];
 

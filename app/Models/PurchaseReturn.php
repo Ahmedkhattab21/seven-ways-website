@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseReturn extends BaseModel
 {
+    use \App\Models\Concerns\HasAccountingPosting;
+
     protected $guarded = [
         'id', 'company_id', 'branch_id', 'purchase_return_number', 'status', 'subtotal',
         'tax_amount', 'total', 'created_by', 'approved_by', 'posted_by', 'cancelled_by',

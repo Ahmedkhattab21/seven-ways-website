@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StockTransfer extends BaseModel
 {
-    use HasFactory;
+    use HasFactory, \App\Models\Concerns\HasAccountingPosting;
 
     protected $guarded = ['id', 'company_id', 'status'];
 

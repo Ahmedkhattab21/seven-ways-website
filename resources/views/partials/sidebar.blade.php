@@ -7,6 +7,7 @@
         ['label' => 'التقارير', 'icon' => 'chart'],
     ];
     $futureNavigation = array_values(array_filter($futureNavigation, fn ($item) => $item['icon'] !== 'cart'));
+    $futureNavigation = array_values(array_filter($futureNavigation, fn ($item) => $item['icon'] !== 'wallet'));
 @endphp
 <aside class="sw-sidebar" id="app-sidebar" data-sidebar aria-label="التنقل الرئيسي">
     <div class="sw-sidebar__header"><x-brand /><button class="sw-icon-button sw-sidebar__close" type="button" data-sidebar-close aria-label="إغلاق القائمة"><x-icon name="close" /></button></div>
@@ -77,6 +78,29 @@
                 <a class="sw-nav-item @if(request()->routeIs('reference.*') && request()->route('section') === $section) sw-nav-item--active @endif" href="{{ route('reference.index', $section) }}"><x-icon name="settings" /><span>{{ $label }}</span></a>
             @endif
         @endforeach
+        @if(auth()->user()->hasPermission('accounting.accounts.view'))
+            <p class="sw-sidebar__label">المحاسبة</p>
+            <a class="sw-nav-item @if(request()->routeIs('accounting.dashboard')) sw-nav-item--active @endif" href="{{ route('accounting.dashboard') }}"><x-icon name="wallet" /><span>نظرة عامة</span></a>
+            <a class="sw-nav-item @if(request()->routeIs('accounting.accounts.*')) sw-nav-item--active @endif" href="{{ route('accounting.accounts.index') }}"><x-icon name="chart" /><span>دليل الحسابات</span></a>
+            @if(auth()->user()->hasPermission('accounting.fiscal_years.view'))<a class="sw-nav-item @if(request()->routeIs('accounting.fiscal-years.*')) sw-nav-item--active @endif" href="{{ route('accounting.fiscal-years.index') }}"><x-icon name="clipboard" /><span>السنوات المالية</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.periods.view'))<a class="sw-nav-item @if(request()->routeIs('accounting.periods.*')) sw-nav-item--active @endif" href="{{ route('accounting.periods.index') }}"><x-icon name="clipboard" /><span>الفترات المحاسبية</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.cost_centers.view'))<a class="sw-nav-item @if(request()->routeIs('accounting.cost-centers.*')) sw-nav-item--active @endif" href="{{ route('accounting.cost-centers.index') }}"><x-icon name="building" /><span>مراكز التكلفة</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.settings.view'))<a class="sw-nav-item @if(request()->routeIs('accounting.settings.*','accounting.branch-settings.*')) sw-nav-item--active @endif" href="{{ route('accounting.settings.edit') }}"><x-icon name="settings" /><span>إعدادات المحاسبة</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.posting_profiles.view'))<a class="sw-nav-item @if(request()->routeIs('accounting.posting-profiles.*')) sw-nav-item--active @endif" href="{{ route('accounting.posting-profiles.index') }}"><x-icon name="clipboard" /><span>قوالب الترحيل</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.opening_balances.view'))<a class="sw-nav-item @if(request()->routeIs('accounting.opening-balances.*')) sw-nav-item--active @endif" href="{{ route('accounting.opening-balances.index') }}"><x-icon name="wallet" /><span>الأرصدة الافتتاحية</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.journals.view'))<a class="sw-nav-item @if(request()->routeIs('accounting.journals.*')) sw-nav-item--active @endif" href="{{ route('accounting.journals.index') }}"><x-icon name="clipboard" /><span>القيود اليومية</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.posting.execute'))<a class="sw-nav-item @if(request()->routeIs('accounting.posting.*')) sw-nav-item--active @endif" href="{{ route('accounting.posting.index') }}"><x-icon name="wallet" /><span>الترحيل المحاسبي</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.mappings.payment_methods') || auth()->user()->hasPermission('accounting.mappings.products'))<a class="sw-nav-item @if(request()->routeIs('accounting.mappings.*')) sw-nav-item--active @endif" href="{{ route('accounting.mappings.index') }}"><x-icon name="settings" /><span>ربط الحسابات</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.general_ledger.view'))<a class="sw-nav-item @if(request()->routeIs('accounting.reports.general-ledger')) sw-nav-item--active @endif" href="{{ route('accounting.reports.general-ledger') }}"><x-icon name="chart" /><span>الأستاذ العام</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.general_journal.view'))<a class="sw-nav-item" href="{{ route('accounting.reports.general-journal') }}"><x-icon name="clipboard" /><span>استعلام القيود</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.trial_balance.view'))<a class="sw-nav-item" href="{{ route('accounting.reports.trial-balance') }}"><x-icon name="chart" /><span>ميزان المراجعة</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.income_statement.view'))<a class="sw-nav-item" href="{{ route('accounting.reports.income-statement') }}"><x-icon name="wallet" /><span>قائمة الدخل</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.balance_sheet.view'))<a class="sw-nav-item" href="{{ route('accounting.reports.balance-sheet') }}"><x-icon name="wallet" /><span>الميزانية العمومية</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.cash_flow.view'))<a class="sw-nav-item" href="{{ route('accounting.reports.cash-flow') }}"><x-icon name="wallet" /><span>التدفقات النقدية</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.cost_center_reports.view'))<a class="sw-nav-item" href="{{ route('accounting.reports.cost-centers') }}"><x-icon name="building" /><span>تقارير مراكز التكلفة</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.branch_reports.view'))<a class="sw-nav-item" href="{{ route('accounting.reports.branches') }}"><x-icon name="building" /><span>تقارير الفروع</span></a>@endif
+            @if(auth()->user()->hasPermission('accounting.unposted_sources.view'))<a class="sw-nav-item" href="{{ route('accounting.reports.unposted-sources') }}"><x-icon name="clipboard" /><span>المستندات غير المرحلة</span></a>@endif
+        @endif
         <p class="sw-sidebar__label">الموديولات القادمة</p>
         @foreach($futureNavigation as $item)<span class="sw-nav-item sw-nav-item--disabled" aria-disabled="true"><x-icon :name="$item['icon']" /><span>{{ $item['label'] }}</span><small>قريبًا</small></span>@endforeach
     </nav>

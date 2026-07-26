@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SalesInvoice extends BaseModel
 {
-    use HasFactory;
+    use HasFactory, \App\Models\Concerns\HasAccountingPosting;
 
     protected $guarded = ['id', 'company_id', 'branch_id', 'invoice_number', 'status', 'subtotal', 'discount_amount', 'tax_amount', 'rounding_amount', 'total', 'paid_amount', 'credited_amount', 'refunded_amount', 'balance_due', 'created_by', 'submitted_by', 'approved_by', 'issued_by', 'cancelled_by', 'voided_by'];
 

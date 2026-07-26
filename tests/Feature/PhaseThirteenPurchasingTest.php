@@ -569,7 +569,7 @@ class PhaseThirteenPurchasingTest extends TestCase
             $this->assertSame(403, $exception->getStatusCode());
         }
         $this->assertSame($before, StockMovement::count());
-        $this->assertFalse(\Schema::hasTable('journal_entries'));
+        $this->assertSame(0, \DB::table('journal_entries')->count());
     }
 
     public function test_three_way_matching_blocks_unapproved_variance_and_invoice_retry(): void
@@ -633,7 +633,7 @@ class PhaseThirteenPurchasingTest extends TestCase
         } catch (BusinessRuleException) {
             $this->assertSame('2.000000', $order->items()->first()->invoiced_quantity);
             $this->assertSame($movementCount, StockMovement::count());
-            $this->assertFalse(\Schema::hasTable('journal_entries'));
+            $this->assertSame(0, \DB::table('journal_entries')->count());
         }
     }
 
@@ -716,7 +716,7 @@ class PhaseThirteenPurchasingTest extends TestCase
         $this->assertSame('50.0000', $aging[$context['currency']->id]['31_60']);
         $this->artisan('supplier-invoices:mark-overdue')->assertSuccessful();
         $this->assertSame('overdue', $invoice->fresh()->status);
-        $this->assertFalse(\Schema::hasTable('journal_entries'));
+        $this->assertSame(0, \DB::table('journal_entries')->count());
     }
 
     public function test_supplier_access_is_company_scoped(): void

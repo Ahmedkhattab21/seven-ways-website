@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StockMovement extends BaseModel
 {
+    use \App\Models\Concerns\HasAccountingPosting;
+
     public const UPDATED_AT = null;
 
     protected $guarded = ['id'];

@@ -1,23 +1,47 @@
 <?php
 
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AccountGroupController;
+use App\Http\Controllers\AccountingDashboardController;
+use App\Http\Controllers\AccountingMappingController;
+use App\Http\Controllers\AccountingPeriodController;
+use App\Http\Controllers\AccountingPostingController;
+use App\Http\Controllers\AccountingReconciliationController;
+use App\Http\Controllers\AccountingSettingsController;
+use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\AppointmentActionController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\BalanceSheetController;
 use App\Http\Controllers\BranchContextController;
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\BranchFinancialReportController;
 use App\Http\Controllers\BranchSettingsController;
+use App\Http\Controllers\CashFlowController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CostCenterController;
+use App\Http\Controllers\CostCenterFinancialReportController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerPaymentController;
 use App\Http\Controllers\CustomerRefundController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryController;
+use App\Http\Controllers\FinancialReportDefinitionController;
+use App\Http\Controllers\FiscalYearController;
+use App\Http\Controllers\GeneralJournalInquiryController;
+use App\Http\Controllers\GeneralLedgerController;
 use App\Http\Controllers\GoodsReceiptController;
+use App\Http\Controllers\IncomeStatementController;
 use App\Http\Controllers\InventoryActionController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InventoryDocumentController;
+use App\Http\Controllers\JournalEntryActionController;
+use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\LeadController;
+use App\Http\Controllers\OpeningBalanceController;
+use App\Http\Controllers\OpeningBalancePostingController;
+use App\Http\Controllers\PostingProfileController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductReferenceController;
 use App\Http\Controllers\PromotionController;
@@ -43,6 +67,8 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\SupplierCreditNoteController;
 use App\Http\Controllers\SupplierInvoiceController;
 use App\Http\Controllers\SupplierPaymentController;
+use App\Http\Controllers\TrialBalanceController;
+use App\Http\Controllers\UnpostedAccountingSourceController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\VehicleInspectionController;
@@ -108,6 +134,89 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
     Route::get('dashboard', DashboardController::class)->middleware('permission:dashboard.view')->name('dashboard');
+
+    Route::prefix('accounting')->name('accounting.')->group(function () {
+        Route::get('/', AccountingDashboardController::class)->middleware('permission:accounting.accounts.view')->name('dashboard');
+        Route::get('accounts', [AccountController::class, 'index'])->middleware('permission:accounting.accounts.view')->name('accounts.index');
+        Route::get('accounts/create', [AccountController::class, 'create'])->middleware('permission:accounting.accounts.create')->name('accounts.create');
+        Route::post('accounts', [AccountController::class, 'store'])->middleware('permission:accounting.accounts.create')->name('accounts.store');
+        Route::get('accounts/{account}/edit', [AccountController::class, 'edit'])->middleware('permission:accounting.accounts.update')->name('accounts.edit');
+        Route::put('accounts/{account}', [AccountController::class, 'update'])->middleware('permission:accounting.accounts.update')->name('accounts.update');
+        Route::post('accounts/{account}/move', [AccountController::class, 'move'])->middleware('permission:accounting.accounts.move')->name('accounts.move');
+        Route::post('accounts/{account}/disable', [AccountController::class, 'disable'])->middleware('permission:accounting.accounts.disable')->name('accounts.disable');
+
+        Route::get('account-groups', [AccountGroupController::class, 'index'])->middleware('permission:accounting.account_groups.view')->name('groups.index');
+        Route::post('account-groups', [AccountGroupController::class, 'store'])->middleware('permission:accounting.account_groups.create')->name('groups.store');
+        Route::put('account-groups/{accountGroup}', [AccountGroupController::class, 'update'])->middleware('permission:accounting.account_groups.update')->name('groups.update');
+        Route::post('account-groups/{accountGroup}/disable', [AccountGroupController::class, 'disable'])->middleware('permission:accounting.account_groups.disable')->name('groups.disable');
+        Route::get('account-types', [AccountTypeController::class, 'index'])->middleware('permission:accounting.account_types.view')->name('account-types.index');
+        Route::post('account-types', [AccountTypeController::class, 'store'])->middleware('permission:accounting.account_types.manage')->name('account-types.store');
+        Route::put('account-types/{accountType}', [AccountTypeController::class, 'update'])->middleware('permission:accounting.account_types.manage')->name('account-types.update');
+
+        Route::get('fiscal-years', [FiscalYearController::class, 'index'])->middleware('permission:accounting.fiscal_years.view')->name('fiscal-years.index');
+        Route::post('fiscal-years', [FiscalYearController::class, 'store'])->middleware('permission:accounting.fiscal_years.create')->name('fiscal-years.store');
+        Route::post('fiscal-years/{fiscalYear}/generate', [FiscalYearController::class, 'generate'])->middleware('permission:accounting.periods.create')->name('fiscal-years.generate');
+        Route::post('fiscal-years/{fiscalYear}/{action}', [FiscalYearController::class, 'action'])->whereIn('action', ['open', 'soft_close', 'reopen'])->name('fiscal-years.action');
+
+        Route::get('periods', [AccountingPeriodController::class, 'index'])->middleware('permission:accounting.periods.view')->name('periods.index');
+        Route::post('periods', [AccountingPeriodController::class, 'store'])->middleware('permission:accounting.periods.create')->name('periods.store');
+        Route::post('periods/{accountingPeriod}/{action}', [AccountingPeriodController::class, 'action'])->whereIn('action', ['open', 'soft_close', 'reopen', 'lock'])->name('periods.action');
+
+        Route::get('cost-centers', [CostCenterController::class, 'index'])->middleware('permission:accounting.cost_centers.view')->name('cost-centers.index');
+        Route::post('cost-centers', [CostCenterController::class, 'store'])->middleware('permission:accounting.cost_centers.create')->name('cost-centers.store');
+        Route::put('cost-centers/{costCenter}', [CostCenterController::class, 'update'])->middleware('permission:accounting.cost_centers.update')->name('cost-centers.update');
+        Route::post('cost-centers/{costCenter}/move', [CostCenterController::class, 'move'])->middleware('permission:accounting.cost_centers.move')->name('cost-centers.move');
+        Route::post('cost-centers/{costCenter}/disable', [CostCenterController::class, 'disable'])->middleware('permission:accounting.cost_centers.disable')->name('cost-centers.disable');
+
+        Route::get('settings', [AccountingSettingsController::class, 'edit'])->middleware('permission:accounting.settings.view')->name('settings.edit');
+        Route::put('settings', [AccountingSettingsController::class, 'update'])->middleware('permission:accounting.settings.update')->name('settings.update');
+        Route::put('branches/{branch}/settings', [AccountingSettingsController::class, 'branch'])->middleware('permission:accounting.branch_mappings.update')->name('branch-settings.update');
+
+        Route::get('posting-profiles', [PostingProfileController::class, 'index'])->middleware('permission:accounting.posting_profiles.view')->name('posting-profiles.index');
+        Route::post('posting-profiles', [PostingProfileController::class, 'store'])->middleware('permission:accounting.posting_profiles.create')->name('posting-profiles.store');
+        Route::post('posting-profiles/{postingProfile}/{action}', [PostingProfileController::class, 'action'])->whereIn('action', ['activate', 'supersede'])->name('posting-profiles.action');
+
+        Route::get('opening-balances', [OpeningBalanceController::class, 'index'])->middleware('permission:accounting.opening_balances.view')->name('opening-balances.index');
+        Route::post('opening-balances', [OpeningBalanceController::class, 'store'])->middleware('permission:accounting.opening_balances.create')->name('opening-balances.store');
+        Route::post('opening-balances/{openingBalance}/lines', [OpeningBalanceController::class, 'line'])->middleware('permission:accounting.opening_balances.update')->name('opening-balances.lines.store');
+        Route::post('opening-balances/{openingBalance}/{action}', [OpeningBalanceController::class, 'action'])->whereIn('action', ['submit', 'approve', 'mark_ready'])->name('opening-balances.action');
+        Route::post('opening-balances/{openingBalance}/post', [OpeningBalancePostingController::class, 'post'])->middleware('permission:accounting.opening_balances.post')->name('opening-balances.post');
+        Route::post('opening-balances/{openingBalance}/reverse', [OpeningBalancePostingController::class, 'reverse'])->middleware('permission:accounting.opening_balances.reverse')->name('opening-balances.reverse');
+
+        Route::get('journals', [JournalEntryController::class, 'index'])->middleware('permission:accounting.journals.view')->name('journals.index');
+        Route::get('journals/create', [JournalEntryController::class, 'create'])->middleware('permission:accounting.journals.create')->name('journals.create');
+        Route::post('journals', [JournalEntryController::class, 'store'])->middleware('permission:accounting.journals.create')->name('journals.store');
+        Route::get('journals/{journalEntry}', [JournalEntryController::class, 'show'])->middleware('permission:accounting.journals.view')->name('journals.show');
+        Route::get('journals/{journalEntry}/edit', [JournalEntryController::class, 'edit'])->middleware('permission:accounting.journals.update')->name('journals.edit');
+        Route::put('journals/{journalEntry}', [JournalEntryController::class, 'update'])->middleware('permission:accounting.journals.update')->name('journals.update');
+        Route::post('journals/{journalEntry}/{action}', [JournalEntryActionController::class, 'action'])->whereIn('action', ['submit', 'approve', 'post', 'cancel'])->name('journals.action');
+        Route::post('journals/{journalEntry}/reverse', [JournalEntryActionController::class, 'reverse'])->middleware('permission:accounting.journals.reverse')->name('journals.reverse');
+
+        Route::get('posting', [AccountingPostingController::class, 'index'])->middleware('permission:accounting.posting.execute')->name('posting.index');
+        Route::post('posting/{sourceType}/{sourceUuid}/preview', [AccountingPostingController::class, 'preview'])->middleware('permission:accounting.posting.preview')->name('posting.preview');
+        Route::post('posting/{sourceType}/{sourceUuid}', [AccountingPostingController::class, 'post'])->middleware('permission:accounting.posting.execute')->name('posting.post');
+        Route::post('posting/{sourceType}/{sourceUuid}/reverse', [AccountingPostingController::class, 'reverse'])->middleware('permission:accounting.posting.reverse')->name('posting.reverse');
+
+        Route::get('mappings', [AccountingMappingController::class, 'index'])->name('mappings.index');
+        Route::post('mappings/payment-methods', [AccountingMappingController::class, 'paymentMethod'])->middleware('permission:accounting.mappings.payment_methods')->name('mappings.payment-methods');
+        Route::post('mappings/products', [AccountingMappingController::class, 'product'])->middleware('permission:accounting.mappings.products')->name('mappings.products');
+
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('general-ledger', GeneralLedgerController::class)->middleware('permission:accounting.general_ledger.view')->name('general-ledger');
+            Route::get('general-journal', GeneralJournalInquiryController::class)->middleware('permission:accounting.general_journal.view')->name('general-journal');
+            Route::get('trial-balance', TrialBalanceController::class)->middleware('permission:accounting.trial_balance.view')->name('trial-balance');
+            Route::get('income-statement', IncomeStatementController::class)->middleware('permission:accounting.income_statement.view')->name('income-statement');
+            Route::get('balance-sheet', BalanceSheetController::class)->middleware('permission:accounting.balance_sheet.view')->name('balance-sheet');
+            Route::get('cash-flow', CashFlowController::class)->middleware('permission:accounting.cash_flow.view')->name('cash-flow');
+            Route::get('cost-centers', CostCenterFinancialReportController::class)->middleware('permission:accounting.cost_center_reports.view')->name('cost-centers');
+            Route::get('branches', BranchFinancialReportController::class)->middleware('permission:accounting.branch_reports.view')->name('branches');
+            Route::get('reconciliation', AccountingReconciliationController::class)->name('reconciliation');
+            Route::get('unposted-sources', UnpostedAccountingSourceController::class)->middleware('permission:accounting.unposted_sources.view')->name('unposted-sources');
+            Route::get('definitions', [FinancialReportDefinitionController::class, 'index'])->middleware('permission:accounting.financial_reports.manage_definitions')->name('definitions');
+            Route::post('definitions', [FinancialReportDefinitionController::class, 'store'])->middleware('permission:accounting.financial_reports.manage_definitions')->name('definitions.store');
+            Route::post('definitions/cash-flow-mappings', [FinancialReportDefinitionController::class, 'mapping'])->middleware('permission:accounting.financial_reports.manage_mappings')->name('definitions.mapping');
+        });
+    });
     Route::post('branch-context', [BranchContextController::class, 'store'])->name('branch-context.store');
 
     Route::get('settings/company', [CompanyController::class, 'edit'])->middleware('permission:companies.view')->name('company.edit');

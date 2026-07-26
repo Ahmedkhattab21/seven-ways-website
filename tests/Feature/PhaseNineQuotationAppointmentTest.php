@@ -158,7 +158,7 @@ class PhaseNineQuotationAppointmentTest extends TestCase
         $this->assertSame('paid', $appointment->fresh()->deposit_status);
         $this->assertSame('recorded', $deposit->status);
         $this->assertSame('checked_in', $appointment->fresh()->status);
-        $this->assertFalse(\Schema::hasTable('journal_entries'));
+        $this->assertSame(0, \DB::table('journal_entries')->count());
         $this->assertSame(0, \App\Models\WorkOrder::query()->count());
     }
 

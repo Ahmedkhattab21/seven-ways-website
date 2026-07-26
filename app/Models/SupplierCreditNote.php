@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SupplierCreditNote extends BaseModel
 {
+    use \App\Models\Concerns\HasAccountingPosting;
+
     protected $guarded = [
         'id', 'company_id', 'branch_id', 'currency_id', 'credit_note_number', 'status', 'subtotal',
         'tax_amount', 'total', 'applied_amount', 'remaining_amount', 'created_by',
@@ -25,6 +27,11 @@ class SupplierCreditNote extends BaseModel
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(SupplierInvoice::class, 'supplier_invoice_id');
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     public function branch(): BelongsTo

@@ -1,0 +1,1 @@
+<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>ميزان المراجعة</title><body><h1>ميزان المراجعة</h1>@include('accounting.reports._trial-summary',['report'=>['rows'=>$rows??collect()]])</body></html>

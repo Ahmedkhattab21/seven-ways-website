@@ -14,11 +14,16 @@ class AuditService
 
     public function record(string $event, Model $model, array $metadata = []): void
     {
+        $this->recordAs($event, $model, $this->tenant->companyId(), $this->tenant->user()?->id, $metadata);
+    }
+
+    public function recordAs(string $event, Model $model, ?int $companyId, ?int $userId, array $metadata = []): void
+    {
         $log = new AuditLog(['event' => $event, 'metadata' => $metadata]);
         $log->forceFill([
-            'company_id' => $this->tenant->companyId(),
-            'branch_id' => $this->tenant->branchId(),
-            'user_id' => $this->tenant->user()?->id,
+            'company_id' => $companyId,
+            'branch_id' => $this->tenant->companyId() === $companyId ? $this->tenant->branchId() : null,
+            'user_id' => $userId,
         ]);
         $log->auditable()->associate($model);
         $log->save();

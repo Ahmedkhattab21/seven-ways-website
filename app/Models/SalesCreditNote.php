@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SalesCreditNote extends BaseModel
 {
-    use HasFactory;
+    use HasFactory, \App\Models\Concerns\HasAccountingPosting;
 
     protected $guarded = ['id', 'company_id', 'branch_id', 'credit_note_number', 'status', 'subtotal', 'tax_amount', 'total', 'applied_amount', 'refunded_amount', 'remaining_amount', 'created_by', 'approved_by', 'issued_by', 'cancelled_by'];
 

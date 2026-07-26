@@ -27,6 +27,9 @@ class DatabaseSeeder extends Seeder
             QualityWarrantySeeder::class,
             SalesReceivablesSeeder::class,
             PurchasingSeeder::class,
+            AccountingFoundationSeeder::class,
+            AccountingPostingSeeder::class,
+            FinancialReportingSeeder::class,
         ]);
     }
 }

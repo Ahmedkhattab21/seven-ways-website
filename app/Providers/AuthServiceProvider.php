@@ -2,6 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\Account;
+use App\Models\AccountGroup;
+use App\Models\AccountingPeriod;
+use App\Models\AccountingSetting;
+use App\Models\AccountType;
 use App\Models\Appointment;
 use App\Models\AppointmentDeposit;
 use App\Models\Attachment;
@@ -9,21 +14,28 @@ use App\Models\Branch;
 use App\Models\BranchService;
 use App\Models\BranchSetting;
 use App\Models\Company;
+use App\Models\CostCenter;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\CustomerPayment;
 use App\Models\CustomerRefund;
 use App\Models\DocumentSequence;
 use App\Models\EmployeeServiceSkill;
+use App\Models\FinancialReportDefinition;
 use App\Models\FiscalYear;
 use App\Models\GoodsReceipt;
 use App\Models\InventoryCount;
 use App\Models\InventoryReservation;
 use App\Models\InventoryRoll;
+use App\Models\JournalEntry;
 use App\Models\Lead;
+use App\Models\OpeningBalanceDocument;
 use App\Models\PaymentAllocation;
 use App\Models\PaymentMethod;
+use App\Models\PaymentMethodAccountMapping;
+use App\Models\PostingProfile;
 use App\Models\Product;
+use App\Models\ProductAccountingMapping;
 use App\Models\ProductBrand;
 use App\Models\ProductCategory;
 use App\Models\Promotion;
@@ -69,6 +81,11 @@ use App\Models\WorkOrder;
 use App\Models\WorkOrderMaterial;
 use App\Models\WorkOrderService as WorkOrderServiceModel;
 use App\Models\WorkOrderWasteRecord;
+use App\Policies\AccountGroupPolicy;
+use App\Policies\AccountingPeriodPolicy;
+use App\Policies\AccountingSettingsPolicy;
+use App\Policies\AccountPolicy;
+use App\Policies\AccountTypePolicy;
 use App\Policies\AppointmentDepositPolicy;
 use App\Policies\AppointmentPolicy;
 use App\Policies\AttachmentPolicy;
@@ -76,16 +93,24 @@ use App\Policies\BranchPolicy;
 use App\Policies\BranchServicePolicy;
 use App\Policies\BranchSettingPolicy;
 use App\Policies\CompanyPolicy;
+use App\Policies\CostCenterPolicy;
 use App\Policies\CustomerPaymentPolicy;
 use App\Policies\CustomerPolicy;
 use App\Policies\CustomerRefundPolicy;
 use App\Policies\EmployeeServiceSkillPolicy;
+use App\Policies\FinancialReportDefinitionPolicy;
+use App\Policies\FiscalYearPolicy;
 use App\Policies\GoodsReceiptPolicy;
 use App\Policies\InventoryCountPolicy;
 use App\Policies\InventoryReservationPolicy;
 use App\Policies\InventoryRollPolicy;
+use App\Policies\JournalEntryPolicy;
 use App\Policies\LeadPolicy;
+use App\Policies\OpeningBalancePolicy;
 use App\Policies\PaymentAllocationPolicy;
+use App\Policies\PaymentMethodAccountMappingPolicy;
+use App\Policies\PostingProfilePolicy;
+use App\Policies\ProductAccountingMappingPolicy;
 use App\Policies\ProductBrandPolicy;
 use App\Policies\ProductCategoryPolicy;
 use App\Policies\ProductPolicy;
@@ -139,6 +164,17 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Company::class => CompanyPolicy::class,
+        AccountType::class => AccountTypePolicy::class,
+        AccountGroup::class => AccountGroupPolicy::class,
+        Account::class => AccountPolicy::class,
+        AccountingPeriod::class => AccountingPeriodPolicy::class,
+        CostCenter::class => CostCenterPolicy::class,
+        AccountingSetting::class => AccountingSettingsPolicy::class,
+        PostingProfile::class => PostingProfilePolicy::class,
+        OpeningBalanceDocument::class => OpeningBalancePolicy::class,
+        JournalEntry::class => JournalEntryPolicy::class,
+        PaymentMethodAccountMapping::class => PaymentMethodAccountMappingPolicy::class,
+        ProductAccountingMapping::class => ProductAccountingMappingPolicy::class,
         Branch::class => BranchPolicy::class,
         User::class => UserPolicy::class,
         Role::class => RolePolicy::class,
@@ -151,7 +187,8 @@ class AuthServiceProvider extends ServiceProvider
         VehicleModel::class => ReferenceDataPolicy::class,
         VehicleSize::class => ReferenceDataPolicy::class,
         VehicleType::class => ReferenceDataPolicy::class,
-        FiscalYear::class => ReferenceDataPolicy::class,
+        FiscalYear::class => FiscalYearPolicy::class,
+        FinancialReportDefinition::class => FinancialReportDefinitionPolicy::class,
         DocumentSequence::class => ReferenceDataPolicy::class,
         Customer::class => CustomerPolicy::class,
         Vehicle::class => VehiclePolicy::class,

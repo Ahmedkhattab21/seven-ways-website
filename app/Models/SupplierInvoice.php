@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SupplierInvoice extends BaseModel
 {
+    use \App\Models\Concerns\HasAccountingPosting;
+
     protected $guarded = [
         'id', 'company_id', 'branch_id', 'internal_invoice_number', 'status', 'subtotal',
         'discount_amount', 'tax_amount', 'rounding_amount', 'total', 'paid_amount',
