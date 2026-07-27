@@ -13,11 +13,27 @@ jobs:
   deploy:
     name: Deploy to Hostinger
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, intl, bcmath, curl, zip, fileinfo, pdo_mysql
+          tools: composer:v2
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: |
+          composer install \
+            --no-dev \
+            --no-interaction \
+            --prefer-dist \
+            --optimize-autoloader
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -58,7 +74,6 @@ jobs:
             --exclude=".git/" \
             --exclude=".github/" \
             --exclude=".env" \
-            --exclude="vendor/" \
             --exclude="node_modules/" \
             --exclude="storage/" \
             --exclude="bootstrap/cache/" \
@@ -91,12 +106,7 @@ jobs:
             bootstrap/cache
 
           chmod -R 775 storage bootstrap/cache
-
-          composer install \
-            --no-dev \
-            --no-interaction \
-            --prefer-dist \
-            --optimize-autoloader
+          chmod 600 .env
 
           if ! grep -q '^APP_KEY=base64:' .env; then
             php artisan key:generate --force
@@ -122,8 +132,11 @@ jobs:
             "s#__DIR__.'/../bootstrap/app.php'#__DIR__.'/../app/bootstrap/app.php'#" \
             "$PUBLIC_PATH/index.php"
 
+          rm -f "$PUBLIC_PATH/default.php"
+
           ln -sfn "$DEPLOY_PATH/storage/app/public" "$PUBLIC_PATH/storage"
 
           chmod 644 "$PUBLIC_PATH/index.php"
+
           php artisan up || true
           EOF
