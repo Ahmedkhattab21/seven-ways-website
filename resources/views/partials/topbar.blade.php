@@ -5,6 +5,8 @@
     $branches = $tenant->accessibleBranches();
     $initials = collect(preg_split('/\s+/', trim($user->name ?? 'مستخدم')))
         ->filter()->take(2)->map(fn ($part) => mb_substr($part, 0, 1))->implode('');
+    $unreadNotifications = \App\Models\SystemNotification::query()
+        ->where('company_id', $user->company_id)->where('user_id', $user->id)->whereNull('read_at')->count();
 @endphp
 
 <header class="sw-topbar">
@@ -24,7 +26,7 @@
         @elseif($currentBranch)
             <div class="sw-branch-selector"><x-icon name="building" :size="18" /><strong>{{ $currentBranch->name }}</strong></div>
         @endif
-        <button class="sw-icon-button sw-topbar__notification" type="button" disabled aria-label="الإشعارات غير مفعلة"><x-icon name="bell" /></button>
+        @if($user->hasPermission('notifications.view'))<a class="sw-icon-button sw-topbar__notification" href="{{ route('notifications.index') }}" aria-label="الإشعارات"><x-icon name="bell" />@if($unreadNotifications)<small>{{ $unreadNotifications }}</small>@endif</a>@endif
         <div class="sw-user-menu" data-dropdown>
             <button class="sw-user-menu__trigger" type="button" data-dropdown-trigger aria-expanded="false">
                 <span class="sw-avatar">{{ $initials ?: 'SW' }}</span>

@@ -7,7 +7,7 @@
         @auth
             <a href="{{ route('dashboard') }}">{{ __('website.navigation.dashboard') }}</a>
         @else
-            <a href="{{ route('login') }}">{{ __('website.navigation.login') }}</a>
+            <a href="{{ route('website.register') }}">{{ __('website.navigation.register') }}</a>
         @endauth
     </nav>
 </div>

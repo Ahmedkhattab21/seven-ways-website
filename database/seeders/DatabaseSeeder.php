@@ -35,6 +35,7 @@ class DatabaseSeeder extends Seeder
             BankReconciliationSeeder::class,
             TreasuryOperationsSeeder::class,
             EmployeeFinanceSeeder::class,
+            CentralWorkflowSeeder::class,
         ]);
     }
 }

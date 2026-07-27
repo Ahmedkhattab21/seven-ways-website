@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Core\Exceptions\BusinessRuleException;
 use App\Core\Tenancy\TenantContext;
 use App\Events\PurchaseOrderApproved;
+use App\Events\PurchaseOrderSubmitted;
 use App\Models\PurchaseOrder;
 use App\Models\SupplierProduct;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,11 @@ class PurchaseOrderApprovalService
 
     public function submit(PurchaseOrder $order): PurchaseOrder
     {
-        return $this->transition($order, 'draft', 'pending_approval', 'submitted');
+        $order = $this->transition($order, 'draft', 'pending_approval', 'submitted');
+        $this->audit->record('purchase_order.submitted', $order);
+        DB::afterCommit(fn () => event(new PurchaseOrderSubmitted($order->id)));
+
+        return $order;
     }
 
     public function approve(PurchaseOrder $order): PurchaseOrder

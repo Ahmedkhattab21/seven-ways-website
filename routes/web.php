@@ -19,6 +19,8 @@ use App\Http\Controllers\AccountingSettingsController;
 use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\AppointmentActionController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\ApprovalController;
+use App\Http\Controllers\ApprovalDelegationController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BalanceSheetController;
@@ -42,6 +44,7 @@ use App\Http\Controllers\CashBoxController;
 use App\Http\Controllers\CashBoxSessionController;
 use App\Http\Controllers\CashFlowController;
 use App\Http\Controllers\CashOperationController;
+use App\Http\Controllers\CentralWorkflowReportController;
 use App\Http\Controllers\ChequeController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CostCenterController;
@@ -95,12 +98,14 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\SupplierCreditNoteController;
 use App\Http\Controllers\SupplierInvoiceController;
 use App\Http\Controllers\SupplierPaymentController;
+use App\Http\Controllers\SystemNotificationController;
 use App\Http\Controllers\TreasuryApprovalLimitController;
 use App\Http\Controllers\TreasuryDashboardController;
 use App\Http\Controllers\TreasuryMappingController;
 use App\Http\Controllers\TreasuryReportController;
 use App\Http\Controllers\TreasuryTransferController;
 use App\Http\Controllers\TrialBalanceController;
+use App\Http\Controllers\UnifiedAuditController;
 use App\Http\Controllers\UnpostedAccountingSourceController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\VehicleController;
@@ -110,6 +115,7 @@ use App\Http\Controllers\WarrantyClaimController;
 use App\Http\Controllers\WarrantyController;
 use App\Http\Controllers\WarrantyVerificationController;
 use App\Http\Controllers\Website\ContactController as WebsiteContactController;
+use App\Http\Controllers\Website\RegistrationController as WebsiteRegistrationController;
 use App\Http\Controllers\Website\WebsiteController;
 use App\Http\Controllers\WorkOrderActionController;
 use App\Http\Controllers\WorkOrderController;
@@ -140,6 +146,10 @@ Route::middleware(SetWebsiteLocale::class)->name('website.')->group(function () 
     Route::get('about-us', [WebsiteController::class, 'about'])->name('about');
     Route::get('our-services', [WebsiteController::class, 'services'])->name('services');
     Route::get('contact-us', [WebsiteController::class, 'contact'])->name('contact');
+    Route::get('register', [WebsiteController::class, 'register'])->name('register');
+    Route::post('register', [WebsiteRegistrationController::class, 'store'])
+        ->middleware('throttle:5,1')
+        ->name('register.submit');
     Route::post('contact-us', [WebsiteContactController::class, 'store'])
         ->middleware('throttle:5,1')
         ->name('contact.submit');
@@ -167,6 +177,22 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
+    Route::get('approvals', [ApprovalController::class, 'index'])->name('approvals.index');
+    Route::get('approval-reports', CentralWorkflowReportController::class)->name('approvals.reports');
+    Route::get('approvals/{approval}', [ApprovalController::class, 'show'])->name('approvals.show');
+    Route::post('approvals/{approval}/{decision}', [ApprovalController::class, 'decide'])
+        ->whereIn('decision', ['approve', 'reject'])->name('approvals.decide');
+    Route::get('delegations', [ApprovalDelegationController::class, 'index'])->name('delegations.index');
+    Route::post('delegations', [ApprovalDelegationController::class, 'store'])->name('delegations.store');
+    Route::post('delegations/{delegation}/cancel', [ApprovalDelegationController::class, 'cancel'])
+        ->name('delegations.cancel');
+    Route::get('notifications', [SystemNotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/read-all', [SystemNotificationController::class, 'readAll'])
+        ->name('notifications.read-all');
+    Route::post('notifications/{notification}/read', [SystemNotificationController::class, 'read'])
+        ->name('notifications.read');
+    Route::get('audit', [UnifiedAuditController::class, 'index'])->name('audit.index');
+
     Route::prefix('treasury')->name('treasury.')->group(function () {
         Route::get('/', TreasuryDashboardController::class)->name('dashboard');
         Route::get('banks', [BankController::class, 'index'])->name('banks.index');

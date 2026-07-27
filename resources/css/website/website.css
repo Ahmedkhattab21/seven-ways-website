@@ -1955,6 +1955,269 @@ html[dir="ltr"] .sw-website .sw-home-services .sw-home-brand.sw-reveal.is-visibl
     }
 }
 
+.sw-website .sw-registration-page {
+    min-height: 100svh;
+    padding: 156px 20px 84px;
+    color: #202124;
+    background:
+        linear-gradient(rgba(244, 238, 238, 0.94), rgba(244, 238, 238, 0.96)),
+        url("/assets/website/images/branches-bg-b-euROWx.webp") center / cover fixed;
+}
+
+.sw-website .sw-registration-shell {
+    width: min(760px, 100%);
+    margin-inline: auto;
+}
+
+.sw-website .sw-registration-form {
+    display: grid;
+    gap: 14px;
+}
+
+.sw-website .sw-registration-card {
+    position: relative;
+    padding: 28px 24px 26px;
+    background: #fff;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.08);
+}
+
+.sw-website .sw-registration-card--intro,
+.sw-website .sw-registration-card--status {
+    padding-top: 34px;
+    overflow: hidden;
+}
+
+.sw-website .sw-registration-card__accent {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 10px;
+    background: var(--sw-primary);
+}
+
+.sw-website .sw-registration-card--intro > img,
+.sw-website .sw-registration-card--status > img {
+    display: block;
+    width: 98px;
+    margin-bottom: 18px;
+}
+
+.sw-website .sw-registration-card--intro h1,
+.sw-website .sw-registration-card--status h1 {
+    margin: 0 0 14px;
+    color: #202124;
+    font-size: clamp(30px, 5vw, 42px);
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.sw-website .sw-registration-card--intro p,
+.sw-website .sw-registration-card--status p {
+    margin: 0;
+    color: #3c4043;
+    font-size: 16px;
+    line-height: 1.8;
+}
+
+.sw-website .sw-registration-required-note {
+    margin-top: 24px;
+    padding-top: 14px;
+    color: #d93025;
+    font-size: 14px;
+    border-top: 1px solid #dadce0;
+}
+
+.sw-website .sw-registration-card > label,
+.sw-website .sw-registration-card legend {
+    display: block;
+    margin-bottom: 25px;
+    color: #202124;
+    font-size: 17px;
+    font-weight: 500;
+}
+
+.sw-website .sw-registration-card label b,
+.sw-website .sw-registration-card legend b {
+    color: #d93025;
+    font-weight: 500;
+}
+
+.sw-website .sw-registration-card fieldset {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+}
+
+.sw-website .sw-registration-card input:not([type="radio"]),
+.sw-website .sw-registration-card select,
+.sw-website .sw-registration-card textarea {
+    display: block;
+    width: min(100%, 410px);
+    padding: 10px 2px 8px;
+    color: #202124;
+    font: inherit;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid #80868b;
+    border-radius: 0;
+    outline: 0;
+    transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.sw-website .sw-registration-card select {
+    padding-inline-end: 30px;
+}
+
+.sw-website .sw-registration-card textarea {
+    width: 100%;
+    resize: vertical;
+}
+
+.sw-website .sw-registration-card input:not([type="radio"]):focus,
+.sw-website .sw-registration-card select:focus,
+.sw-website .sw-registration-card textarea:focus {
+    border-color: var(--sw-primary);
+    box-shadow: 0 2px 0 var(--sw-primary);
+}
+
+.sw-website .sw-registration-card input::placeholder,
+.sw-website .sw-registration-card textarea::placeholder {
+    color: #70757a;
+    opacity: 1;
+}
+
+.sw-website .sw-registration-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    padding: 9px 0;
+    color: #3c4043;
+    font-size: 16px;
+    font-weight: 400;
+    cursor: pointer;
+}
+
+.sw-website .sw-registration-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.sw-website .sw-registration-option span {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    border: 2px solid #5f6368;
+    border-radius: 50%;
+}
+
+.sw-website .sw-registration-option input:checked + span {
+    border-color: var(--sw-primary);
+}
+
+.sw-website .sw-registration-option input:checked + span::after {
+    position: absolute;
+    inset: 3px;
+    background: var(--sw-primary);
+    border-radius: 50%;
+    content: "";
+}
+
+.sw-website .sw-registration-option input:focus-visible + span {
+    box-shadow: 0 0 0 7px rgba(230, 39, 47, 0.12);
+}
+
+.sw-website .sw-registration-card small {
+    display: block;
+    margin-top: 10px;
+    color: #d93025;
+    font-size: 13px;
+}
+
+.sw-website .sw-registration-alert {
+    padding: 16px 18px;
+    color: #b3261e;
+    background: #fff;
+    border: 1px solid #f2b8b5;
+    border-radius: 8px;
+}
+
+.sw-website .sw-registration-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 2px 0;
+}
+
+.sw-website .sw-registration-actions button {
+    min-width: 96px;
+    padding: 10px 24px;
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    background: var(--sw-primary);
+    border: 0;
+    border-radius: 5px;
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3);
+    transition: background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.sw-website .sw-registration-actions button:hover,
+.sw-website .sw-registration-actions button:focus-visible {
+    background: #c91f27;
+    box-shadow: 0 2px 5px rgba(60, 64, 67, 0.35);
+    transform: translateY(-1px);
+}
+
+.sw-website .sw-registration-actions button[type="reset"] {
+    min-width: auto;
+    padding-inline: 10px;
+    color: var(--sw-primary);
+    background: transparent;
+    box-shadow: none;
+}
+
+.sw-website .sw-registration-card--status {
+    text-align: center;
+}
+
+.sw-website .sw-registration-card--status > img {
+    margin-inline: auto;
+}
+
+.sw-website .sw-registration-card--status a {
+    display: inline-block;
+    margin-top: 24px;
+    padding: 10px 22px;
+    color: #fff;
+    font-weight: 700;
+    background: var(--sw-primary);
+    border-radius: 5px;
+}
+
+@media (max-width: 768px) {
+    .sw-website .sw-registration-page {
+        padding: 110px 12px 50px;
+        background-attachment: scroll;
+    }
+
+    .sw-website .sw-registration-form {
+        gap: 12px;
+    }
+
+    .sw-website .sw-registration-card {
+        padding: 24px 20px;
+    }
+
+    .sw-website .sw-registration-card--intro,
+    .sw-website .sw-registration-card--status {
+        padding-top: 32px;
+    }
+}
+
 .sw-website .sw-contact-page {
     color: var(--sw-white);
     background: var(--sw-black);

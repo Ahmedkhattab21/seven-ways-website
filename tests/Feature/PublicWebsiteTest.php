@@ -17,13 +17,14 @@ class PublicWebsiteTest extends TestCase
             'website.about',
             'website.services',
             'website.contact',
+            'website.register',
         ] as $routeName) {
             $this->get(route($routeName))->assertOk();
         }
 
         $this->get(route('website.home'))
             ->assertOk()
-            ->assertSee(route('login'), false)
+            ->assertSee(route('website.register'), false)
             ->assertSee('name="_token"', false);
     }
 
@@ -154,6 +155,53 @@ class PublicWebsiteTest extends TestCase
             ->assertSee('Egypt')
             ->assertSee('Riyadh Branch')
             ->assertSee('Nasr City');
+    }
+
+    public function test_registration_page_has_the_google_form_composition_in_both_locales(): void
+    {
+        $this->get(route('website.register', ['lang' => 'ar']))
+            ->assertOk()
+            ->assertSee('sw-registration-form', false)
+            ->assertSee('sw-registration-card--intro', false)
+            ->assertSee('name="country"', false)
+            ->assertSee('name="service"', false);
+
+        $this->get(route('website.register', ['lang' => 'en']))
+            ->assertOk()
+            ->assertSee('Registration Form')
+            ->assertSee('Full name')
+            ->assertSee('Vehicle model')
+            ->assertSee('Clear form');
+    }
+
+    public function test_registration_form_validates_and_sends_the_request(): void
+    {
+        $this->from(route('website.register'))
+            ->post(route('website.register.submit'), [])
+            ->assertRedirect(route('website.register'))
+            ->assertSessionHasErrors(['full_name', 'phone', 'country', 'city', 'vehicle_type', 'vehicle_model', 'service']);
+
+        Mail::fake();
+
+        $this->from(route('website.register'))
+            ->post(route('website.register.submit'), [
+                'full_name' => 'Ahmed Test',
+                'phone' => '+201000000000',
+                'email' => 'ahmed@example.com',
+                'country' => 'egypt',
+                'city' => 'Cairo',
+                'vehicle_type' => 'Mercedes',
+                'vehicle_model' => 'G Class',
+                'vehicle_year' => 2025,
+                'service' => 'ppf',
+                'preferred_branch' => 'nasr-city',
+                'notes' => 'Please contact me in the evening.',
+                'website' => '',
+            ])
+            ->assertRedirect(route('website.register'))
+            ->assertSessionHas('registration_success');
+
+        Mail::assertSent(WebsiteContactMessage::class, 1);
     }
 
     public function test_footer_keeps_the_reference_composition_in_both_locales(): void

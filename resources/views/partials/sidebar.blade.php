@@ -14,6 +14,10 @@
     <nav class="sw-sidebar__nav">
         <p class="sw-sidebar__label">مساحة العمل</p>
         <a class="sw-nav-item @if(request()->routeIs('dashboard')) sw-nav-item--active @endif" href="{{ route('dashboard') }}"><x-icon name="dashboard" /><span>الرئيسية</span></a>
+        @if(auth()->user()->hasPermission('approvals.view'))<a class="sw-nav-item @if(request()->routeIs('approvals.*')) sw-nav-item--active @endif" href="{{ route('approvals.index') }}"><x-icon name="clipboard" /><span>صندوق الاعتمادات</span></a>@endif
+        @if(auth()->user()->hasPermission('approvals.view'))<a class="sw-nav-item @if(request()->routeIs('approvals.reports')) sw-nav-item--active @endif" href="{{ route('approvals.reports') }}"><x-icon name="chart" /><span>تقارير الاعتمادات</span></a>@endif
+        @if(auth()->user()->hasPermission('delegations.view'))<a class="sw-nav-item @if(request()->routeIs('delegations.*')) sw-nav-item--active @endif" href="{{ route('delegations.index') }}"><x-icon name="users" /><span>تفويضات الاعتماد</span></a>@endif
+        @if(auth()->user()->hasPermission('audit.view'))<a class="sw-nav-item @if(request()->routeIs('audit.*')) sw-nav-item--active @endif" href="{{ route('audit.index') }}"><x-icon name="chart" /><span>سجل التدقيق</span></a>@endif
         @if(auth()->user()->hasPermission('customers.view'))<a class="sw-nav-item @if(request()->routeIs('customers.*')) sw-nav-item--active @endif" href="{{ route('customers.index') }}"><x-icon name="users" /><span>العملاء</span></a>@endif
         @if(auth()->user()->hasPermission('vehicles.view'))<a class="sw-nav-item @if(request()->routeIs('vehicles.*')) sw-nav-item--active @endif" href="{{ route('vehicles.index') }}"><x-icon name="wrench" /><span>السيارات</span></a>@endif
         @if(auth()->user()->hasPermission('leads.view'))<a class="sw-nav-item @if(request()->routeIs('leads.*')) sw-nav-item--active @endif" href="{{ route('leads.index') }}"><x-icon name="sales" /><span>العملاء المحتملون</span></a>@endif

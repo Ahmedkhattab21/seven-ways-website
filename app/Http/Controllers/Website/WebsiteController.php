@@ -30,6 +30,11 @@ class WebsiteController extends Controller
         return $this->page('contact');
     }
 
+    public function register(): View
+    {
+        return $this->page('register');
+    }
+
     public function language(Request $request, string $locale): RedirectResponse
     {
         abort_unless(in_array($locale, ['ar', 'en'], true), 404);
@@ -38,7 +43,7 @@ class WebsiteController extends Controller
 
         $redirectTo = $request->string('redirect_to')->toString();
         $redirectPath = parse_url($redirectTo, PHP_URL_PATH);
-        $allowedPaths = ['/', '/about-us', '/our-services', '/contact-us'];
+        $allowedPaths = ['/', '/about-us', '/our-services', '/contact-us', '/register'];
 
         if (
             ! is_string($redirectPath)

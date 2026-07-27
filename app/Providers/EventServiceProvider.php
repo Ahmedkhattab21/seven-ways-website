@@ -18,6 +18,27 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
+        \App\Events\PurchaseOrderSubmitted::class => [
+            \App\Listeners\CreateCentralApprovalTask::class,
+        ],
+        \App\Events\PurchaseRequisitionSubmitted::class => [
+            \App\Listeners\CreateCentralApprovalTask::class,
+        ],
+        \App\Events\TreasuryTransferSubmitted::class => [
+            \App\Listeners\CreateCentralApprovalTask::class,
+        ],
+        \App\Events\PurchaseOrderApproved::class => [
+            \App\Listeners\CloseCentralApprovalTask::class,
+        ],
+        \App\Events\PurchaseRequisitionApproved::class => [
+            \App\Listeners\CloseCentralApprovalTask::class,
+        ],
+        \App\Events\PurchaseRequisitionRejected::class => [
+            \App\Listeners\CloseCentralApprovalTask::class,
+        ],
+        \App\Events\TreasuryTransferApproved::class => [
+            \App\Listeners\CloseCentralApprovalTask::class,
+        ],
     ];
 
     /**
