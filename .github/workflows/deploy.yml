@@ -1,0 +1,129 @@
+name: Deploy Seven Ways
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: sevenways-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Hostinger
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          SSH_HOST: ${{ secrets.HOSTINGER_HOST }}
+          SSH_PORT: ${{ secrets.HOSTINGER_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/hostinger_key
+          chmod 600 ~/.ssh/hostinger_key
+          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Upload Laravel application
+        env:
+          SSH_HOST: ${{ secrets.HOSTINGER_HOST }}
+          SSH_PORT: ${{ secrets.HOSTINGER_PORT }}
+          SSH_USERNAME: ${{ secrets.HOSTINGER_USERNAME }}
+          DEPLOY_PATH: ${{ secrets.HOSTINGER_DEPLOY_PATH }}
+        run: |
+          rsync -az --delete \
+            --exclude=".git/" \
+            --exclude=".github/" \
+            --exclude=".env" \
+            --exclude="vendor/" \
+            --exclude="node_modules/" \
+            --exclude="storage/" \
+            --exclude="bootstrap/cache/" \
+            -e "ssh -i ~/.ssh/hostinger_key -p $SSH_PORT" \
+            ./ "$SSH_USERNAME@$SSH_HOST:$DEPLOY_PATH/"
+
+      - name: Finalize Laravel deployment
+        env:
+          SSH_HOST: ${{ secrets.HOSTINGER_HOST }}
+          SSH_PORT: ${{ secrets.HOSTINGER_PORT }}
+          SSH_USERNAME: ${{ secrets.HOSTINGER_USERNAME }}
+          DEPLOY_PATH: ${{ secrets.HOSTINGER_DEPLOY_PATH }}
+          PUBLIC_PATH: ${{ secrets.HOSTINGER_PUBLIC_PATH }}
+        run: |
+          ssh -i ~/.ssh/hostinger_key \
+            -p "$SSH_PORT" \
+            "$SSH_USERNAME@$SSH_HOST" \
+            "DEPLOY_PATH='$DEPLOY_PATH' PUBLIC_PATH='$PUBLIC_PATH' bash -s" << 'EOF'
+          set -e
+
+          cd "$DEPLOY_PATH"
+
+          mkdir -p \
+            storage/app/public \
+            storage/framework/cache/data \
+            storage/framework/sessions \
+            storage/framework/testing \
+            storage/framework/views \
+            storage/logs \
+            bootstrap/cache
+
+          chmod -R 775 storage bootstrap/cache
+
+          composer install \
+            --no-dev \
+            --no-interaction \
+            --prefer-dist \
+            --optimize-autoloader
+
+          if ! grep -q '^APP_KEY=base64:' .env; then
+            php artisan key:generate --force
+          fi
+
+          php artisan optimize:clear
+          php artisan migrate --force
+          php artisan config:cache
+          php artisan view:cache
+
+          mkdir -p "$PUBLIC_PATH"
+
+          rsync -a --delete \
+            --exclude=".well-known/" \
+            --exclude="storage" \
+            public/ "$PUBLIC_PATH/"
+
+          sed -i \
+            "s#__DIR__.'/../vendor/autoload.php'#__DIR__.'/../app/vendor/autoload.php'#" \
+            "$PUBLIC_PATH/index.php"
+
+          sed -i \
+            "s#__DIR__.'/../bootstrap/app.php'#__DIR__.'/../app/bootstrap/app.php'#" \
+            "$PUBLIC_PATH/index.php"
+
+          ln -sfn "$DEPLOY_PATH/storage/app/public" "$PUBLIC_PATH/storage"
+
+          chmod 644 "$PUBLIC_PATH/index.php"
+          php artisan up || true
+          EOF
