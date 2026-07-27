@@ -68,6 +68,9 @@ class EgyptLocalizationStaticTest extends TestCase
         $this->assertSame('EGP', config('website.defaults.currency_code'));
         $this->assertSame('Africa/Cairo', config('website.defaults.timezone'));
         $this->assertSame('ar_EG', config('website.defaults.locale'));
+        $login = file_get_contents(resource_path('views/auth/login.blade.php'));
+        $this->assertStringContainsString('placeholder="name@sevenways.com"', $login);
+        $this->assertStringNotContainsString('sevenways.sa', $login);
         $footer = file_get_contents(resource_path('views/website/partials/footer.blade.php'));
         $this->assertStringContainsString('value="egypt" data-sw-footer-country checked', $footer);
         $this->assertStringContainsString('footer_socials.egypt', $footer);

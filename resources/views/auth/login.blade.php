@@ -33,7 +33,7 @@
                 <form method="POST" action="{{ route('login') }}" class="sw-form" data-loading-form>
                     @csrf
                     <x-form.input name="email" type="email" label="البريد الإلكتروني" required
-                        autocomplete="email" inputmode="email" placeholder="name@sevenways.sa" autofocus>
+                        autocomplete="email" inputmode="email" placeholder="name@sevenways.com" autofocus>
                         <x-slot name="suffix">
                             <span class="sw-field__icon"><x-icon name="mail" :size="19" /></span>
                         </x-slot>
