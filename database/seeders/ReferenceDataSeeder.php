@@ -14,10 +14,10 @@ class ReferenceDataSeeder extends Seeder
     public function run(): void
     {
         foreach ([
+            ['EGP', 'جنيه مصري', 'Egyptian Pound', 'ج.م', 2],
             ['SAR', 'ريال سعودي', 'Saudi Riyal', 'ر.س', 2],
             ['USD', 'دولار أمريكي', 'US Dollar', '$', 2],
             ['AED', 'درهم إماراتي', 'UAE Dirham', 'د.إ', 2],
-            ['EGP', 'جنيه مصري', 'Egyptian Pound', 'ج.م', 2],
         ] as [$code, $nameAr, $nameEn, $symbol, $decimals]) {
             Currency::query()->updateOrCreate(
                 ['code' => $code],
@@ -27,10 +27,10 @@ class ReferenceDataSeeder extends Seeder
 
         Company::query()->whereNull('currency_id')->each(function (Company $company) {
             $currency = Currency::query()
-                ->where('code', $company->currency_code ?: 'SAR')
+                ->where('code', $company->currency_code ?: 'EGP')
                 ->where('is_active', true)
                 ->first()
-                ?? Currency::query()->where('code', 'SAR')->first();
+                ?? Currency::query()->where('code', 'EGP')->where('is_active', true)->first();
 
             $company->forceFill(['currency_id' => $currency?->id])->save();
         });

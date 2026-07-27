@@ -26,7 +26,7 @@ class CashBoxSessionController extends Controller
         return view('treasury.cash-sessions', [
             'sessions' => CashBoxSession::query()->where('company_id', $tenant->companyId())
                 ->whereIn('branch_id', $tenant->accessibleBranches()->pluck('id'))
-                ->with(['cashBox', 'counts.lines'])->latest('id')->paginate(30),
+                ->with(['cashBox', 'counts.lines', 'counts.adjustment'])->latest('id')->paginate(30),
             'cashBoxes' => CashBox::query()->where('company_id', $tenant->companyId())
                 ->whereIn('branch_id', $tenant->accessibleBranches()->pluck('id'))
                 ->where('status', 'active')->get(),

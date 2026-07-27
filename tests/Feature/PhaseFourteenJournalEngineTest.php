@@ -149,7 +149,7 @@ class PhaseFourteenJournalEngineTest extends TestCase
         $this->assertSame($first->id, $second->id);
         $this->assertSame(1, JournalEntry::query()->where('source_type', SalesInvoice::class)->where('source_id', $invoice->id)->count());
         $this->assertFalse($first->lines()->where('account_id', $this->account($context, '500000')->id)->exists());
-        $this->assertSame('115.0000', $first->total_debit);
+        $this->assertSame('114.0000', $first->total_debit);
         $this->assertSame($first->total_debit, $first->total_credit);
     }
 

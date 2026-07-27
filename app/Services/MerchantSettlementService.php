@@ -10,6 +10,7 @@ use App\Models\CustomerPayment;
 use App\Models\MerchantSettlement;
 use App\Models\MerchantSettlementLine;
 use App\Models\PaymentMethodAccountMapping;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -40,7 +41,7 @@ class MerchantSettlementService
                     ->where('payment_method_id', $data['payment_method_id'])->findOrFail($line['source_id']);
                 if (! $this->tenant->user()->canAccessBranch($source->branch)
                     || (! empty($data['branch_id']) && (int) $data['branch_id'] !== $source->branch_id)) {
-                    throw new BusinessRuleException('Merchant clearing source is outside the settlement branch scope.');
+                    throw new AuthorizationException('Merchant clearing source is outside the settlement branch scope.');
                 }
                 $mapping = PaymentMethodAccountMapping::query()
                     ->where('company_id', $source->company_id)->where('branch_id', $source->branch_id)

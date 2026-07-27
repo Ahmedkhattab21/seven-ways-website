@@ -6,6 +6,7 @@ use App\Core\Exceptions\BusinessRuleException;
 use App\Core\Tenancy\TenantContext;
 use App\Models\Branch;
 use App\Models\TreasuryApprovalLimit;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class TreasuryOperationAuthorizationService
 {
@@ -31,7 +32,7 @@ class TreasuryOperationAuthorizationService
         if ($branchId) {
             $branch = Branch::query()->where('company_id', $this->tenant->companyId())->findOrFail($branchId);
             if (! $user->canAccessBranch($branch)) {
-                throw new BusinessRuleException('Treasury branch is outside the actor scope.');
+                throw new AuthorizationException('Treasury branch is outside the actor scope.');
             }
         }
         if ($ability === 'approve' && $creatorId === $user->id) {

@@ -9,6 +9,7 @@ use App\Http\Requests\CashReceiptActionRequest;
 use App\Http\Requests\CashReceiptRequest;
 use App\Models\Account;
 use App\Models\CashBox;
+use App\Models\CashBoxSession;
 use App\Models\CashPayment;
 use App\Models\CashReceipt;
 use App\Services\CashOperationService;
@@ -78,6 +79,10 @@ class CashOperationController extends Controller
                 ->whereIn('branch_id', $tenant->accessibleBranches()->pluck('id'))->latest('id')->paginate(30),
             'cashBoxes' => CashBox::query()->where('company_id', $tenant->companyId())
                 ->whereIn('branch_id', $tenant->accessibleBranches()->pluck('id'))->where('status', 'active')->get(),
+            'openSessions' => CashBoxSession::query()->where('company_id', $tenant->companyId())
+                ->whereIn('branch_id', $tenant->accessibleBranches()->pluck('id'))
+                ->where('active_guard', 'active')->whereIn('status', ['opened', 'counting'])
+                ->with('cashBox')->get(),
             'accounts' => Account::query()->where('company_id', $tenant->companyId())
                 ->where('is_active', true)->where('is_posting', true)->get(),
             'company' => $tenant->company(),

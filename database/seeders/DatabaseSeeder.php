@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             TreasuryFoundationSeeder::class,
             BankReconciliationSeeder::class,
             TreasuryOperationsSeeder::class,
+            EmployeeFinanceSeeder::class,
         ]);
     }
 }

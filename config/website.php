@@ -3,6 +3,13 @@
 return [
     'locales' => ['ar', 'en'],
 
+    'defaults' => [
+        'country_code' => 'EG',
+        'currency_code' => 'EGP',
+        'timezone' => 'Africa/Cairo',
+        'locale' => 'ar_EG',
+    ],
+
     'contact' => [
         'recipient' => env('WEBSITE_CONTACT_EMAIL') ?: env('MAIL_FROM_ADDRESS'),
     ],
@@ -14,33 +21,93 @@ return [
         'xpel' => 'https://www.xpel.com',
     ],
 
+    'footer_socials' => [
+        'saudi_arabia' => [
+            'instagram' => 'https://www.instagram.com/7sevenways',
+            'tiktok' => 'https://www.tiktok.com/@7sevenways?_t=ZS-8y8bGfLUQSW&_r=1',
+            'facebook' => 'https://www.facebook.com/share/1AfhixGZwR/?mibextid=wwXIfr',
+        ],
+        'egypt' => [
+            'instagram' => 'https://www.instagram.com/sevenwayseg?igsh=MW92M2RzYTQ1ZnY0Mw==',
+            'tiktok' => 'https://www.tiktok.com/@sevenwayeseg?_t=ZS-8y8a6wRrVUA&_r=1',
+            'facebook' => 'https://www.facebook.com/profile.php?id=61577794306595&mibextid=ZbWKwL',
+        ],
+    ],
+
     'branches' => [
         [
-            'id' => 'qadisiyah',
+            'id' => 'riyadh',
+            'country_code' => 'saudi_arabia',
             'country' => ['ar' => 'السعودية', 'en' => 'Saudi Arabia'],
-            'name' => ['ar' => 'القادسية', 'en' => 'Al Qadisiyah'],
+            'name' => ['ar' => 'فرع الرياض', 'en' => 'Riyadh Branch'],
             'address' => [
-                'ar' => 'فرع الرياض - القادسية - معارض السيارات',
-                'en' => 'Riyadh Branch - Al Qadisiyah - Car Showrooms',
+                'ar' => 'القادسية - معارض السيارات',
+                'en' => 'Al Qadisiyah - Car Showrooms',
             ],
             'phone' => '+966534899166',
             'whatsapp' => 'https://wa.me/966534899166',
-            'map_embed' => 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3621.109458180303!2d46.826651000000005!3d24.825930099999997!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3e2e55e2569c1033%3A0x58a5ab5b9930ee16!2sSEVEN%20WAYS!5e0!3m2!1sar!2seg!4v1754321572499!5m2!1sar!2seg',
+            'map_link' => 'https://www.google.com/maps/search/?api=1&query=Seven+Ways+Riyadh',
+            'map_embed' => 'https://www.google.com/maps?q=Seven+Ways+Riyadh&output=embed',
         ],
         [
             'id' => 'jazan',
+            'country_code' => 'saudi_arabia',
             'country' => ['ar' => 'السعودية', 'en' => 'Saudi Arabia'],
-            'name' => ['ar' => 'جازان', 'en' => 'Jazan'],
+            'name' => ['ar' => 'فرع جيزان', 'en' => 'Jazan Branch'],
             'address' => [
-                'ar' => 'فرع جازان - صبيا - طريق الملك فهد',
-                'en' => 'Jazan Branch - Sabya - King Fahd Road',
+                'ar' => 'صبيا - طريق الملك فهد',
+                'en' => 'Sabya - King Fahd Road',
             ],
             'phone' => '+966504118823',
             'whatsapp' => 'https://wa.me/966504118823',
-            'map_embed' => 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3812.218296091228!2d42.6290111!3d17.159589!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x15fd53c4b043abfd%3A0x685382d5362607fa!2sSEVEN%20WAYS!5e0!3m2!1sar!2seg!4v1754321640995!5m2!1sar!2seg',
+            'map_link' => 'https://www.google.com/maps/search/?api=1&query=Seven+Ways+Sabya',
+            'map_embed' => 'https://www.google.com/maps?q=Seven+Ways+Sabya&output=embed',
+        ],
+        [
+            'id' => 'khamis-mushait',
+            'country_code' => 'saudi_arabia',
+            'country' => ['ar' => 'السعودية', 'en' => 'Saudi Arabia'],
+            'name' => ['ar' => 'فرع خميس مشيط', 'en' => 'Khamis Mushait Branch'],
+            'address' => [
+                'ar' => 'معارض السيارات',
+                'en' => 'Car Showrooms',
+            ],
+            'phone' => '+966534899166',
+            'whatsapp' => 'https://wa.me/966534899166',
+            'map_link' => 'https://www.google.com/maps/search/?api=1&query=Seven+Ways+Khamis+Mushait',
+            'map_embed' => 'https://www.google.com/maps?q=Seven+Ways+Khamis+Mushait&output=embed',
+        ],
+        [
+            'id' => 'dammam',
+            'country_code' => 'saudi_arabia',
+            'country' => ['ar' => 'السعودية', 'en' => 'Saudi Arabia'],
+            'name' => ['ar' => 'فرع الدمام', 'en' => 'Dammam Branch'],
+            'address' => [
+                'ar' => 'الدمام، المملكة العربية السعودية',
+                'en' => 'Dammam, Saudi Arabia',
+            ],
+            'phone' => '+966504118823',
+            'whatsapp' => 'https://wa.me/966504118823',
+            'map_link' => 'https://www.google.com/maps/search/?api=1&query=Seven+Ways+Dammam',
+            'map_embed' => 'https://www.google.com/maps?q=Seven+Ways+Dammam&output=embed',
+        ],
+        [
+            'id' => 'jeddah',
+            'country_code' => 'saudi_arabia',
+            'country' => ['ar' => 'السعودية', 'en' => 'Saudi Arabia'],
+            'name' => ['ar' => 'فرع جدة', 'en' => 'Jeddah Branch'],
+            'address' => [
+                'ar' => 'جدة، المملكة العربية السعودية',
+                'en' => 'Jeddah, Saudi Arabia',
+            ],
+            'phone' => '+966534899166',
+            'whatsapp' => 'https://wa.me/966534899166',
+            'map_link' => 'https://www.google.com/maps/search/?api=1&query=Seven+Ways+Jeddah',
+            'map_embed' => 'https://www.google.com/maps?q=Seven+Ways+Jeddah&output=embed',
         ],
         [
             'id' => 'nasr-city',
+            'country_code' => 'egypt',
             'country' => ['ar' => 'مصر', 'en' => 'Egypt'],
             'name' => ['ar' => 'مدينة نصر', 'en' => 'Nasr City'],
             'address' => [
@@ -49,6 +116,7 @@ return [
             ],
             'phone' => '+201099025564',
             'whatsapp' => 'https://wa.me/201099025564',
+            'map_link' => 'https://www.google.com/maps/search/?api=1&query=Seven+Ways+Nasr+City',
             'map_embed' => 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3453.6884222212807!2d31.358420824582655!3d30.045795518506964!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14583d002493452f%3A0xe7f18626b13860ec!2sSeven%20Ways!5e0!3m2!1sar!2seg!4v1754321669152!5m2!1sar!2seg',
         ],
     ],
@@ -57,7 +125,7 @@ return [
         'saudi_arabia' => [
             'ar' => [
                 'فرع الرياض - القادسية - معارض السيارات',
-                'فرع جازان - صبيا - طريق الملك فهد',
+                'فرع جيزان - صبيا - طريق الملك فهد',
                 'فرع خميس مشيط - معارض السيارات',
                 'فرع الدمام',
                 'فرع جدة',
@@ -77,7 +145,7 @@ return [
     ],
 
     'footer_phones' => [
-        'saudi_arabia' => ['+966534899166', '+966504118823'],
+        'saudi_arabia' => ['966534899166', '966504118823'],
         'egypt' => ['01099025564', '01095584458'],
     ],
 
@@ -91,6 +159,9 @@ return [
         'page_title_background' => 'assets/website/images/pages-title-bg-DHr8j9_V.webp',
         'services_background' => 'assets/website/images/services-bg-BTO8wyrl.webp',
         'advantages_background' => 'assets/website/images/adv-bg-DhCImAKt.webp',
+        'advantages_car' => 'assets/website/images/white-car-2kDVYj1h.webp',
+        'secondary_logo' => 'assets/website/images/secondary-logo-MgVH3Knt.webp',
+        'xpel_logo' => 'assets/website/images/logo-BBmOnB6N.webp',
         'products_background' => 'assets/website/images/products-bg-BKw9Wbq6.webp',
         'branches_background' => 'assets/website/images/branches-bg-b-euROWx.webp',
         'footer_car' => 'assets/website/images/audi-ar-DVxr30Bb.webp',
@@ -99,12 +170,12 @@ return [
     ],
 
     'brand_logos' => [
-        ['name' => 'XPEL', 'image' => 'assets/website/images/logo-BBmOnB6N.webp'],
-        ['name' => 'Hexis', 'image' => 'assets/website/images/logo-DguEO2O0.webp'],
-        ['name' => 'UPX', 'image' => 'assets/website/images/logo-D3wbkwtS.webp'],
-        ['name' => '3M', 'image' => 'assets/website/images/logo-L2ly5kkF.webp'],
-        ['name' => 'CarPro', 'image' => 'assets/website/images/logo-CGkfx9mt.webp'],
-        ['name' => 'Project 3', 'image' => 'assets/website/images/logo-D0I4roVz.webp'],
+        ['id' => 'xpel', 'name' => 'XPEL', 'image' => 'assets/website/images/logo-BBmOnB6N.webp', 'background' => '#ffb81c'],
+        ['id' => 'hexis', 'name' => 'Hexis', 'image' => 'assets/website/images/logo-DguEO2O0.webp', 'background' => '#ffffff'],
+        ['id' => 'upx', 'name' => 'UPX', 'image' => 'assets/website/images/logo-D3wbkwtS.webp', 'background' => '#000000'],
+        ['id' => '3m', 'name' => '3M', 'image' => 'assets/website/images/logo-L2ly5kkF.webp', 'background' => '#d7b6a3'],
+        ['id' => 'carpro', 'name' => 'CarPro', 'image' => 'assets/website/images/logo-CGkfx9mt.webp', 'background' => '#a1a1a1'],
+        ['id' => 'project3', 'name' => 'Project 3', 'image' => 'assets/website/images/logo-D0I4roVz.webp', 'background' => '#b1b1b1'],
     ],
 
     'service_media' => [
@@ -134,37 +205,54 @@ return [
         [
             'id' => 'xpel',
             'brand' => 'XPEL',
-            'image' => 'assets/website/images/xpel-package-(1)-Cy0PwtMp.webp',
+            'images' => [
+                'assets/website/images/xpel-package-(1)-Cy0PwtMp.webp',
+                'assets/website/images/xpel-package-(3)-sWI_VhrM.webp',
+            ],
             'sections' => ['ppf', 'thermal'],
         ],
         [
             'id' => 'hexis',
             'brand' => 'Hexis',
-            'image' => 'assets/website/images/hexis-package-(1)-Blm3ZWSg.webp',
+            'images' => [
+                'assets/website/images/hexis-package-(1)-Blm3ZWSg.webp',
+                'assets/website/images/hexis-package-(2)-DnveVTkO.webp',
+            ],
             'sections' => ['ppf', 'thermal', 'nano'],
         ],
         [
             'id' => 'upx',
             'brand' => 'UPX',
-            'image' => 'assets/website/images/uxp-package-(1)-C11Q91bg.webp',
+            'images' => [
+                'assets/website/images/uxp-package-(1)-C11Q91bg.webp',
+                'assets/website/images/uxp-package-(2)-DCCBpFP1.webp',
+            ],
             'sections' => ['ppf', 'thermal', 'nano'],
         ],
         [
             'id' => '3m',
             'brand' => '3M',
-            'image' => 'assets/website/images/3m-package-(1)-DTO3noni.webp',
+            'images' => [
+                'assets/website/images/3m-package-(1)-DTO3noni.webp',
+                'assets/website/images/3m-package-(2)-C52kz2Uf.webp',
+            ],
             'sections' => ['ppf', 'thermal', 'nano'],
         ],
         [
             'id' => 'carpro',
             'brand' => 'CarPro',
-            'image' => 'assets/website/images/carpro-package-(1)-gn69KU65.webp',
+            'images' => [
+                'assets/website/images/carpro-package-(1)-gn69KU65.webp',
+                'assets/website/images/carpro-package-(2)-D5ajrG_X.webp',
+            ],
             'sections' => ['nano'],
         ],
         [
             'id' => 'project3',
             'brand' => 'Project 3',
-            'image' => 'assets/website/images/project3-package-(1)-BTb8wbbJ.webp',
+            'images' => [
+                'assets/website/images/project3-package-(1)-BTb8wbbJ.webp',
+            ],
             'sections' => ['ppf', 'thermal'],
         ],
     ],

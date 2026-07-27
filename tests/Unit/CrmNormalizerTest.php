@@ -8,12 +8,13 @@ use PHPUnit\Framework\TestCase;
 
 class CrmNormalizerTest extends TestCase
 {
-    public function test_phone_normalizer_handles_arabic_digits_and_sa_local_and_international_numbers(): void
+    public function test_phone_normalizer_handles_egyptian_local_e164_and_international_numbers(): void
     {
         $normalizer = new PhoneNormalizer();
 
-        $this->assertSame('966501234567', $normalizer->normalize('٠٥٠ ١٢٣-٤٥٦٧'));
-        $this->assertSame('966501234567', $normalizer->normalize('+966 (50) 123 4567'));
+        $this->assertSame('201012345678', $normalizer->normalize('٠١٠ ١٢٣٤-٥٦٧٨'));
+        $this->assertSame('201012345678', $normalizer->normalize('+20 (10) 1234 5678'));
+        $this->assertSame('20212345678', $normalizer->normalize('02 1234 5678'));
         $this->assertSame('442071838750', $normalizer->normalize('00 44 20 7183 8750'));
     }
 

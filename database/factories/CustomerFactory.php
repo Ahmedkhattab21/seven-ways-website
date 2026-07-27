@@ -14,7 +14,7 @@ class CustomerFactory extends Factory
 
     public function definition(): array
     {
-        $phone = '05'.fake()->unique()->numerify('########');
+        $phone = '010'.fake()->unique()->numerify('########');
 
         return [
             'company_id' => 1,
@@ -24,7 +24,7 @@ class CustomerFactory extends Factory
             'customer_type' => 'individual',
             'name' => fake()->name(),
             'phone' => $phone,
-            'normalized_phone' => '966'.substr($phone, 1),
+            'normalized_phone' => '20'.substr($phone, 1),
             'preferred_language' => 'ar',
             'credit_limit' => 0,
             'payment_term_days' => 0,

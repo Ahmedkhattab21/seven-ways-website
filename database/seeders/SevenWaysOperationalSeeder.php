@@ -10,6 +10,7 @@ use App\Models\FiscalYear;
 use App\Models\PaymentMethod;
 use App\Models\Tax;
 use App\Services\DocumentNumberService;
+use App\Services\FinancialHistoryInspector;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use RuntimeException;
@@ -23,8 +24,17 @@ class SevenWaysOperationalSeeder extends Seeder
         }
 
         $company = Company::query()->where('name', 'Seven Ways')->firstOrFail();
-        $sar = Currency::query()->where('code', 'SAR')->firstOrFail();
-        $company->forceFill(['currency_id' => $sar->id, 'currency_code' => 'SAR'])->save();
+        $egp = Currency::query()->where('code', 'EGP')->where('is_active', true)->first();
+        if (! $egp) {
+            throw new RuntimeException('Active EGP currency is required. Run ReferenceDataSeeder first.');
+        }
+        $hasHistory = app(FinancialHistoryInspector::class)->hasPostedFinancialMovements($company);
+        if (! $hasHistory) {
+            $company->forceFill([
+                'country_code' => 'EG', 'currency_id' => $egp->id,
+                'currency_code' => 'EGP', 'timezone' => 'Africa/Cairo',
+            ])->save();
+        }
 
         foreach ([
             'walk_in' => 'زيارة مباشرة', 'google' => 'Google', 'instagram' => 'Instagram',
@@ -39,13 +49,17 @@ class SevenWaysOperationalSeeder extends Seeder
         }
 
         $vat = Tax::query()->updateOrCreate(
-            ['company_id' => $company->id, 'code' => 'VAT15'],
+            ['company_id' => $company->id, 'code' => 'VAT14-EG'],
             [
-                'name' => 'ضريبة القيمة المضافة 15%', 'rate' => 15, 'tax_type' => 'both',
-                'is_default' => true, 'is_inclusive' => false, 'is_active' => true,
+                'name' => 'ضريبة القيمة المضافة المصرية 14%', 'rate' => 14, 'tax_type' => 'both',
+                'is_default' => ! $hasHistory, 'is_inclusive' => false, 'is_active' => true,
             ]
         );
-        $company->forceFill(['default_tax_id' => $vat->id])->save();
+        if (! $hasHistory) {
+            Tax::query()->where('company_id', $company->id)->whereKeyNot($vat->id)
+                ->update(['is_default' => false]);
+            $company->forceFill(['default_tax_id' => $vat->id])->save();
+        }
 
         foreach ([
             ['CASH', 'نقدي', 'cash', false, true],
@@ -110,10 +124,12 @@ class SevenWaysOperationalSeeder extends Seeder
 
         $defaultPayment = PaymentMethod::query()->where('company_id', $company->id)->where('code', 'CASH')->first();
         foreach ($company->branches as $branch) {
-            $branch->settings()->updateOrCreate([], [
-                'default_tax_id' => $vat->id,
-                'default_payment_method_id' => $defaultPayment?->id,
-            ]);
+            $settings = $branch->settings()->firstOrNew();
+            $settings->default_payment_method_id = $defaultPayment?->id;
+            if (! $hasHistory) {
+                $settings->default_tax_id = $vat->id;
+            }
+            $settings->save();
         }
     }
 }

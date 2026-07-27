@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Attachment;
 use App\Models\Customer;
+use App\Models\EmployeeExpenseClaim;
 use App\Models\GoodsReceipt;
 use App\Models\QualityCheck;
 use App\Models\ReworkOrder;
@@ -56,6 +57,11 @@ class AttachmentPolicy
             return $user->hasPermission($action === 'view' ? 'goods_receipts.view' : 'goods_receipts.inspect')
                 && $user->canAccessBranch($attachment->attachable->branch)
                 && ($action === 'view' || ! in_array($attachment->attachable->status, ['posted', 'cancelled'], true));
+        }
+        if ($attachment->attachable instanceof EmployeeExpenseClaim) {
+            return $user->hasPermission($action === 'view' ? 'employee_expenses.view' : 'employee_expenses.create')
+                && $user->canAccessBranch($attachment->attachable->branch)
+                && ($action === 'view' || in_array($attachment->attachable->status, ['draft', 'submitted'], true));
         }
         $prefix = $attachment->attachable instanceof Customer ? 'customers' : 'vehicles';
         $branch = $attachment->attachable instanceof Customer

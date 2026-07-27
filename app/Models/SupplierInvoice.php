@@ -4,12 +4,13 @@ namespace App\Models;
 
 use App\Core\Database\BaseModel;
 use App\Core\Exceptions\BusinessRuleException;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SupplierInvoice extends BaseModel
 {
-    use \App\Models\Concerns\HasAccountingPosting;
+    use HasFactory, \App\Models\Concerns\HasAccountingPosting;
 
     protected $guarded = [
         'id', 'company_id', 'branch_id', 'internal_invoice_number', 'status', 'subtotal',

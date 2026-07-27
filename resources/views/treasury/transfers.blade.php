@@ -29,7 +29,11 @@
     <td>{{ $transfer->transfer_date->toDateString() }}</td><td>{{ $transfer->amount }} + {{ $transfer->fees_amount }}</td>
     <td>{{ $transfer->status }} @if($transfer->failure_reason)<small>{{ $transfer->failure_reason }}</small>@endif</td>
     <td>{{ $transfer->journal_entry_id ?: '—' }}</td><td>
-        @foreach(['submit','approve','cancel'] as $action)
+        @php($workflowActions = match($transfer->status) {
+            'draft' => ['submit','cancel'], 'pending_approval' => ['approve','cancel'],
+            'approved' => ['cancel'], default => []
+        })
+        @foreach($workflowActions as $action)
             @if(auth()->user()->hasPermission('treasury.transfers.'.$action))
             <form method="POST" action="{{ route('treasury.transfers.action',[$transfer,$action]) }}" style="display:inline">@csrf
                 @if($action === 'cancel')<input type="hidden" name="reason" value="Approved transfer cancellation">@endif
@@ -37,10 +41,10 @@
             </form>
             @endif
         @endforeach
-        @if(auth()->user()->hasPermission('treasury.transfers.process'))
+        @if(in_array($transfer->status, ['approved','failed']) && auth()->user()->hasPermission('treasury.transfers.process'))
         <form method="POST" action="{{ route('treasury.transfers.process',$transfer) }}" style="display:inline">@csrf<button class="sw-btn">process</button></form>
         @endif
-        @if(auth()->user()->hasPermission('treasury.transfers.reverse'))
+        @if($transfer->status === 'completed' && auth()->user()->hasPermission('treasury.transfers.reverse'))
         <form method="POST" action="{{ route('treasury.transfers.reverse',$transfer) }}" style="display:inline">@csrf<input type="hidden" name="reason" value="Approved transfer reversal"><button class="sw-btn">reverse</button></form>
         @endif
     </td>

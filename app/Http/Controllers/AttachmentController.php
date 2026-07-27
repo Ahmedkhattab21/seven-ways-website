@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AttachmentRequest;
+use App\Http\Requests\EmployeeExpenseAttachmentRequest;
 use App\Http\Requests\GoodsReceiptAttachmentRequest;
 use App\Models\Attachment;
 use App\Models\Customer;
+use App\Models\EmployeeExpenseClaim;
 use App\Models\GoodsReceipt;
 use App\Models\Vehicle;
 use App\Services\AttachmentService;
@@ -44,6 +46,16 @@ class AttachmentController extends Controller
         $service->store($goodsReceipt, $request->file('file'), $request->string('category')->toString());
 
         return back()->with('status', 'Goods receipt attachment uploaded.');
+    }
+
+    public function storeForExpenseClaim(
+        EmployeeExpenseAttachmentRequest $request,
+        EmployeeExpenseClaim $expenseClaim,
+        AttachmentService $service
+    ): RedirectResponse {
+        $service->store($expenseClaim, $request->file('file'), $request->string('category')->toString());
+
+        return back()->with('status', 'Expense attachment uploaded.');
     }
 
     public function destroy(Attachment $attachment, AttachmentService $service): RedirectResponse

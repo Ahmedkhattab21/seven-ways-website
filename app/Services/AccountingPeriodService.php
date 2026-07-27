@@ -79,13 +79,13 @@ class AccountingPeriodService
     public function assertCompleteCoverage(FiscalYear $year): void
     {
         $periods = $year->periods()->where('is_adjustment_period', false)->orderBy('start_date')->get();
-        if ($periods->isEmpty() || ! $periods->first()->start_date->equalTo($year->start_date)
-            || ! $periods->last()->end_date->equalTo($year->end_date)) {
+        if ($periods->isEmpty() || ! $periods->first()->start_date->isSameDay($year->start_date)
+            || ! $periods->last()->end_date->isSameDay($year->end_date)) {
             throw new BusinessRuleException('Periods must cover the complete fiscal year.');
         }
         $expected = $year->start_date->copy();
         foreach ($periods as $period) {
-            if (! $period->start_date->equalTo($expected)) {
+            if (! $period->start_date->isSameDay($expected)) {
                 throw new BusinessRuleException('Accounting periods cannot contain gaps.');
             }
             $expected = $period->end_date->copy()->addDay();

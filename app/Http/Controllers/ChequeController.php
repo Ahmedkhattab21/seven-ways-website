@@ -92,7 +92,8 @@ class ChequeController extends Controller
             'direction' => $direction,
             'cheques' => Cheque::query()->where('company_id', $tenant->companyId())
                 ->whereIn('branch_id', $tenant->accessibleBranches()->pluck('id'))
-                ->where('direction', $direction)->with('histories')->latest('id')->paginate(30),
+                ->where('direction', $direction)->with(['histories', 'endorsements'])
+                ->latest('id')->paginate(30),
             'banks' => Bank::query()->where(fn ($q) => $q->whereNull('company_id')
                 ->orWhere('company_id', $tenant->companyId()))->where('is_active', true)->get(),
             'bankAccounts' => BankAccount::query()->where('company_id', $tenant->companyId())

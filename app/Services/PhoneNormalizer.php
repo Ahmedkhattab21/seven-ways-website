@@ -4,7 +4,7 @@ namespace App\Services;
 
 class PhoneNormalizer
 {
-    public function normalize(?string $phone, string $defaultCountry = 'SA'): ?string
+    public function normalize(?string $phone, ?string $defaultCountry = null): ?string
     {
         if (! $phone) {
             return null;
@@ -21,6 +21,21 @@ class PhoneNormalizer
         }
         if (str_starts_with($digits, '00')) {
             return substr($digits, 2);
+        }
+        $configuredCountry = app()->bound('config')
+            ? config('localization.default_country_code', 'EG')
+            : 'EG';
+        $defaultCountry = strtoupper($defaultCountry ?? $configuredCountry);
+        if ($defaultCountry === 'EG') {
+            if (preg_match('/^01[0125]\d{8}$/', $digits)) {
+                return '20'.substr($digits, 1);
+            }
+            if (preg_match('/^1[0125]\d{8}$/', $digits)) {
+                return '20'.$digits;
+            }
+            if (preg_match('/^0[2-9]\d{7,9}$/', $digits)) {
+                return '20'.substr($digits, 1);
+            }
         }
         if ($defaultCountry === 'SA') {
             if (preg_match('/^05\d{8}$/', $digits)) {

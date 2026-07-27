@@ -12,6 +12,6 @@ class SalesInvoiceItemFactory extends Factory
 
     public function definition(): array
     {
-        return ['uuid' => (string) Str::uuid(), 'item_type' => 'custom', 'description' => $this->faker->words(3, true), 'quantity' => 1, 'unit_price' => 100, 'gross_amount' => 100, 'discount_value' => 0, 'discount_amount' => 0, 'net_amount' => 100, 'tax_rate' => 15, 'tax_amount' => 15, 'total' => 115, 'sort_order' => 0];
+        return ['uuid' => (string) Str::uuid(), 'item_type' => 'custom', 'description' => $this->faker->words(3, true), 'quantity' => 1, 'unit_price' => 100, 'gross_amount' => 100, 'discount_value' => 0, 'discount_amount' => 0, 'net_amount' => 100, 'tax_rate' => 14, 'tax_amount' => 14, 'total' => 114, 'sort_order' => 0];
     }
 }

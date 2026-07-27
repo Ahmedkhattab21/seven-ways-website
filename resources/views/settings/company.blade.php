@@ -12,7 +12,7 @@
             <x-form.input name="commercial_registration" label="السجل التجاري" :value="$company->commercial_registration" />
             <x-form.input name="tax_number" label="الرقم الضريبي" :value="$company->tax_number" />
             <x-form.input name="email" type="email" label="البريد الإلكتروني" :value="$company->email" />
-            <x-form.input name="phone" label="الهاتف" :value="$company->phone" />
+            <x-form.input name="phone" label="الهاتف" :value="$company->phone" placeholder="+201000000000 أو 01000000000" />
             <x-form.input name="country_code" label="رمز الدولة" :value="$company->country_code" required />
             <x-form.select name="currency_id" label="العملة الأساسية" required>
                 @foreach($currencies as $currency)<option value="{{ $currency->id }}" @selected(old('currency_id', $company->currency_id) == $currency->id)>{{ $currency->code }} — {{ $currency->name_ar }}</option>@endforeach

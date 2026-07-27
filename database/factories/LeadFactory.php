@@ -14,7 +14,7 @@ class LeadFactory extends Factory
 
     public function definition(): array
     {
-        $phone = '05'.fake()->unique()->numerify('########');
+        $phone = '010'.fake()->unique()->numerify('########');
 
         return [
             'company_id' => 1,
@@ -22,7 +22,7 @@ class LeadFactory extends Factory
             'lead_number' => 'LEAD-'.fake()->unique()->numerify('######'),
             'name' => fake()->name(),
             'phone' => $phone,
-            'normalized_phone' => '966'.substr($phone, 1),
+            'normalized_phone' => '20'.substr($phone, 1),
             'status' => 'new',
             'priority' => 'normal',
             'created_by' => 1,

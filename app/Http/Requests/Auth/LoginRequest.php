@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -41,12 +42,39 @@ class LoginRequest extends FormRequest
         if (! Auth::attempt([...$this->only('email', 'password'), 'status' => 'active'], $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
-            throw ValidationException::withMessages([
-                'email' => 'بيانات تسجيل الدخول غير صحيحة.',
-            ]);
+            $this->throwAuthenticationException();
+        }
+
+        $user = Auth::user();
+        if (! $user->hasRole('system_admin')
+            && (! $user->company?->is_active || ! $this->hasAccessibleBranch($user))) {
+            Auth::logout();
+            RateLimiter::hit($this->throttleKey());
+            $this->throwAuthenticationException();
         }
 
         RateLimiter::clear($this->throttleKey());
+    }
+
+    private function hasAccessibleBranch(User $user): bool
+    {
+        if ($user->isCompanyAdministrator()) {
+            return $user->company->branches()->where('is_active', true)->exists();
+        }
+
+        return $user->company->branches()->where('is_active', true)
+            ->where(function ($query) use ($user) {
+                $query->whereKey($user->branch_id)
+                    ->orWhereHas('accessibleUsers', fn ($access) => $access
+                        ->whereKey($user->id)->where('user_branch_access.can_view', true));
+            })->exists();
+    }
+
+    private function throwAuthenticationException(): never
+    {
+        throw ValidationException::withMessages([
+            'email' => 'بيانات تسجيل الدخول غير صحيحة.',
+        ]);
     }
 
     private function ensureIsNotRateLimited(): void

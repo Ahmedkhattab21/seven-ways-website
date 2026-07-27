@@ -41,8 +41,8 @@
     <meta property="og:description" content="{{ $description }}">
     <meta property="og:url" content="{{ $localizedUrl }}">
     <meta property="og:image" content="{{ $shareImage }}">
-    <meta property="og:locale" content="{{ $locale === 'ar' ? 'ar_SA' : 'en_US' }}">
-    <meta property="og:locale:alternate" content="{{ $locale === 'ar' ? 'en_US' : 'ar_SA' }}">
+    <meta property="og:locale" content="{{ $locale === 'ar' ? 'ar_EG' : 'en_US' }}">
+    <meta property="og:locale:alternate" content="{{ $locale === 'ar' ? 'en_US' : 'ar_EG' }}">
 
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@yield('title', __('website.meta.default_title'))">
@@ -54,7 +54,7 @@
     @vite(['resources/css/website/website.css', 'resources/js/website/website.js'])
     <script type="application/ld+json">{!! json_encode($organization, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
 </head>
-<body class="sw-website">
+<body class="sw-website @yield('body_class')">
     <a class="sw-skip-link" href="#sw-main">{{ __('website.navigation.skip') }}</a>
 
     @include('website.partials.header')

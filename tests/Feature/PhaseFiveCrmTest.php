@@ -45,7 +45,7 @@ class PhaseFiveCrmTest extends TestCase
         $this->assertSame($company->id, $customer->company_id);
         $this->assertSame($branch->id, $customer->created_branch_id);
         $this->assertSame('CUS-000001', $customer->customer_code);
-        $this->assertSame('966501234567', $customer->normalized_phone);
+        $this->assertSame('201012345678', $customer->normalized_phone);
         $this->assertDatabaseHas('audit_logs', [
             'company_id' => $company->id, 'event' => 'customer.created',
             'auditable_type' => Customer::class, 'auditable_id' => $customer->id,
@@ -204,7 +204,7 @@ class PhaseFiveCrmTest extends TestCase
         $this->sequence($company, $branch, 'customer', 'CUS-', 'never');
         $this->sequence($company, $branch, 'lead', '{BRANCH}-LEAD-{YYYY}-', 'yearly');
         $lead = app(LeadService::class)->save(new Lead(), [
-            'name' => 'Lead One', 'phone' => '0501234567', 'status' => 'new', 'priority' => 'high',
+            'name' => 'Lead One', 'phone' => '01012345678', 'status' => 'new', 'priority' => 'high',
         ]);
         $next = now()->addDay()->setMicrosecond(0);
         app(LeadFollowUpService::class)->create($lead, [
@@ -248,11 +248,11 @@ class PhaseFiveCrmTest extends TestCase
         $this->sequence($company, $branch, 'lead', '{BRANCH}-LEAD-{YYYY}-', 'yearly');
         $customer = Customer::factory()->create([
             'company_id' => $company->id, 'created_branch_id' => $branch->id,
-            'assigned_branch_id' => $branch->id, 'phone' => '0501234567',
-            'normalized_phone' => '966501234567',
+            'assigned_branch_id' => $branch->id, 'phone' => '01012345678',
+            'normalized_phone' => '201012345678',
         ]);
         $lead = app(LeadService::class)->save(new Lead(), [
-            'name' => 'Existing', 'phone' => '0501234567', 'status' => 'new', 'priority' => 'normal',
+            'name' => 'Existing', 'phone' => '01012345678', 'status' => 'new', 'priority' => 'normal',
         ]);
 
         try {
@@ -265,7 +265,7 @@ class PhaseFiveCrmTest extends TestCase
         $linked = app(LeadConversionService::class)->convert($lead->fresh(), ['customer_id' => $customer->id]);
         $this->assertSame($customer->id, $linked->id);
         $this->assertSame(1, Customer::query()->where('company_id', $company->id)
-            ->where('normalized_phone', '966501234567')->count());
+            ->where('normalized_phone', '201012345678')->count());
         $this->assertSame($user->id, $lead->fresh()->updated_by);
     }
 
@@ -351,7 +351,7 @@ class PhaseFiveCrmTest extends TestCase
     {
         return [
             'customer_type' => 'individual', 'name' => 'Customer '.uniqid(),
-            'phone' => '050 123 4567', 'preferred_language' => 'ar',
+            'phone' => '010 1234 5678', 'preferred_language' => 'ar',
             'credit_limit' => 0, 'payment_term_days' => 0, 'status' => 'active',
             'assigned_branch_id' => $branch->id,
         ];

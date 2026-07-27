@@ -21,19 +21,25 @@
         </nav>
 
         <div class="sw-header__actions">
-            <form class="sw-language" method="POST" action="{{ route('website.language', app()->getLocale() === 'ar' ? 'en' : 'ar') }}">
-                @csrf
-                <input type="hidden" name="redirect_to" value="{{ request()->getRequestUri() }}">
-                <button type="submit" aria-label="{{ __('website.navigation.language') }}">
-                    {{ app()->getLocale() === 'ar' ? 'EN' : 'AR' }}
-                </button>
-            </form>
-
             @auth
                 <a class="sw-system-link" href="{{ route('dashboard') }}">{{ __('website.navigation.dashboard') }}</a>
             @else
                 <a class="sw-system-link" href="{{ route('login') }}">{{ __('website.navigation.login') }}</a>
             @endauth
+
+            <form
+                class="sw-language"
+                method="POST"
+                action="{{ route('website.language', app()->getLocale() === 'ar' ? 'en' : 'ar') }}"
+                data-locale="{{ app()->getLocale() }}"
+            >
+                @csrf
+                <input type="hidden" name="redirect_to" value="{{ request()->getRequestUri() }}">
+                <button type="submit" aria-label="{{ __('website.navigation.language') }}">
+                    <span class="sw-language__thumb" aria-hidden="true"></span>
+                    <span>{{ strtoupper(app()->getLocale()) }}</span>
+                </button>
+            </form>
 
             <button
                 class="sw-menu-toggle"

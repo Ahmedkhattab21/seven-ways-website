@@ -7,11 +7,11 @@ return [
         'home_title' => 'Seven Ways | Premium Protection, Enduring Elegance',
         'home_description' => 'Protect your car with premium films, nano ceramic, thermal insulation, and professional polishing from Seven Ways.',
         'about_title' => 'About Seven Ways | Car Protection Specialists',
-        'about_description' => 'Discover the Seven Ways story and our commitment to professional car protection across Saudi Arabia and Egypt.',
+        'about_description' => 'Discover the Seven Ways story and our commitment to professional car protection across Egypt.',
         'services_title' => 'Seven Ways Services | Car Protection Solutions',
         'services_description' => 'Explore Seven Ways paint protection films, thermal insulation, nano ceramic, and car polishing services.',
         'contact_title' => 'Contact Seven Ways | Branches and Enquiries',
-        'contact_description' => 'Find Seven Ways branches in Saudi Arabia and Egypt or send our team an enquiry.',
+        'contact_description' => 'Find Seven Ways branches in Egypt or send our team an enquiry.',
     ],
 
     'navigation' => [
@@ -31,9 +31,9 @@ return [
     'home' => [
         'hero_title' => 'Premium Protection, Enduring Elegance',
         'hero_body' => 'Where elegance meets durability — our premium films offer protection that stands the test of time.',
-        'about_cta' => 'Discover Seven Ways',
+        'about_cta' => 'ABOUT US',
         'hero_image_alt' => 'Red luxury vehicle protected by Seven Ways',
-        'why_title' => 'Why Seven Ways?',
+        'why_title' => 'Why choose SevenWays?',
         'advantages' => [
             [
                 'title' => 'Longest warranty period',
@@ -63,7 +63,7 @@ return [
         ],
         'visit_xpel' => 'Visit XPEL',
         'brands_title' => 'Trusted protection brands',
-        'services_title' => 'Our Services',
+        'services_title' => 'Our Services & Products',
         'services' => [
             'ppf' => [
                 'title' => 'Paint Protection Films PPF',
@@ -82,7 +82,7 @@ return [
                 'body' => "Shine through the streets and make your car sparkle like a star with expert polishing services. Enjoy a lasting shine and protection against paint erosion. Polishing adds irresistible brilliance and preserves your car's elegant appearance.",
             ],
         ],
-        'show_more' => 'Explore All Services',
+        'show_more' => 'SHOW MORE',
     ],
 
     'about' => [
@@ -94,7 +94,8 @@ return [
     ],
 
     'services' => [
-        'page_title' => 'Our Services',
+        'page_title' => 'Our Services & Products',
+        'showcase_title' => 'Our Services',
         'our_services' => 'Protection Made for Every Journey',
         'previous' => 'Previous service',
         'next' => 'Next service',
@@ -212,6 +213,7 @@ return [
         'branches' => 'Our Branches',
         'saudi_arabia' => 'Saudi Arabia',
         'egypt' => 'Egypt',
+        'social_country' => 'Choose social accounts country',
         'sitemap' => 'Sitemap',
     ],
 

@@ -10,6 +10,7 @@ use App\Models\CashBox;
 use App\Models\CashBoxCustodian;
 use App\Models\CashBoxSession;
 use App\Models\CashOverShortAdjustment;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
 class CashBoxSessionService
@@ -29,7 +30,7 @@ class CashBoxSessionService
             $box = CashBox::query()->where('company_id', $this->tenant->companyId())
                 ->where('status', 'active')->whereKey($data['cash_box_id'])->lockForUpdate()->firstOrFail();
             if (! $this->tenant->user()->canAccessBranch($box->branch)) {
-                throw new BusinessRuleException('Cash box branch is outside the actor scope.');
+                throw new AuthorizationException('Cash box branch is outside the actor scope.');
             }
             $custodian = CashBoxCustodian::query()->where('cash_box_id', $box->id)
                 ->where('user_id', $data['custodian_user_id'])->where('is_active', true)
@@ -75,7 +76,7 @@ class CashBoxSessionService
             $session = CashBoxSession::query()->where('company_id', $this->tenant->companyId())
                 ->whereKey($session->id)->lockForUpdate()->firstOrFail();
             if (! $this->tenant->user()->canAccessBranch($session->cashBox->branch)) {
-                throw new BusinessRuleException('Cash session branch is outside the actor scope.');
+                throw new AuthorizationException('Cash session branch is outside the actor scope.');
             }
             if ($action === 'reopen') {
                 if ($session->status !== 'closed') {

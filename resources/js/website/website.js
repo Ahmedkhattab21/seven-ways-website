@@ -34,7 +34,7 @@ if (websiteRoot) {
     window.addEventListener('scroll', syncHeader, { passive: true });
     syncHeader();
 
-    const revealItems = Array.from(websiteRoot.querySelectorAll('.sw-reveal'));
+    const revealItems = Array.from(websiteRoot.querySelectorAll('.sw-reveal, .sw-product-reveal'));
 
     if ('IntersectionObserver' in window && !reducedMotion) {
         const revealObserver = new IntersectionObserver((entries, observer) => {
@@ -76,8 +76,52 @@ if (websiteRoot) {
         next?.addEventListener('click', () => scrollByCard(1));
     });
 
+    websiteRoot.querySelectorAll('[data-sw-services-slider]').forEach((slider) => {
+        const slides = Array.from(slider.querySelectorAll('[data-sw-services-slide]'));
+        const previous = slider.querySelector('[data-sw-services-previous]');
+        const next = slider.querySelector('[data-sw-services-next]');
+        let activeIndex = Math.max(0, slides.findIndex((slide) => slide.classList.contains('is-active')));
+
+        const setActiveSlide = (index) => {
+            activeIndex = (index + slides.length) % slides.length;
+
+            slides.forEach((slide, slideIndex) => {
+                const active = slideIndex === activeIndex;
+                const video = slide.querySelector('video');
+
+                slide.classList.toggle('is-active', active);
+                slide.setAttribute('aria-hidden', String(!active));
+
+                if (!(video instanceof HTMLVideoElement)) return;
+
+                if (active && !reducedMotion) {
+                    video.play().catch(() => {});
+                } else {
+                    video.pause();
+                }
+            });
+        };
+
+        previous?.addEventListener('click', () => setActiveSlide(activeIndex - 1));
+        next?.addEventListener('click', () => setActiveSlide(activeIndex + 1));
+        setActiveSlide(activeIndex);
+    });
+
+    websiteRoot.querySelectorAll('[data-sw-footer-country]').forEach((countryInput) => {
+        countryInput.addEventListener('change', () => {
+            if (!(countryInput instanceof HTMLInputElement) || !countryInput.checked) return;
+
+            websiteRoot.querySelectorAll('[data-sw-footer-social]').forEach((socialLink) => {
+                const countryKey = countryInput.value === 'egypt' ? 'egyptUrl' : 'saudiArabiaUrl';
+                const url = socialLink.dataset[countryKey];
+
+                if (url) socialLink.setAttribute('href', url);
+            });
+        });
+    });
+
     const websiteVideos = Array.from(websiteRoot.querySelectorAll('video'));
-    const serviceVideos = Array.from(websiteRoot.querySelectorAll('.sw-video-card video'));
+    const serviceVideos = Array.from(websiteRoot.querySelectorAll('.sw-video-card video, .sw-service-slide.is-active video'));
 
     if (reducedMotion) {
         websiteVideos.forEach((video) => {

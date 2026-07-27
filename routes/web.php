@@ -51,6 +51,8 @@ use App\Http\Controllers\CustomerPaymentController;
 use App\Http\Controllers\CustomerRefundController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryController;
+use App\Http\Controllers\EmployeeFinanceController;
+use App\Http\Controllers\EmployeeFinanceReportController;
 use App\Http\Controllers\FinancialReportDefinitionController;
 use App\Http\Controllers\FiscalYearController;
 use App\Http\Controllers\GeneralJournalInquiryController;
@@ -738,4 +740,39 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
     Route::get('suppliers/{supplier}/statement', [PurchasingReportController::class, 'statement'])->middleware('permission:supplier_statements.view')->name('supplier-statements.show');
     Route::get('reports/accounts-payable-aging', [PurchasingReportController::class, 'aging'])->middleware('permission:accounts_payable.aging')->name('purchasing-reports.aging');
     Route::get('reports/purchasing/{report}', [PurchasingReportController::class, 'operational'])->whereIn('report', ['open-orders', 'pending-receipts', 'unmatched-invoices', 'purchase-returns'])->name('purchasing-reports.operational');
+
+    Route::prefix('employee-finance')->name('employee-finance.')->group(function () {
+        Route::get('/', [EmployeeFinanceController::class, 'index'])
+            ->middleware('permission:employees.view')->name('index');
+        Route::post('commission-rules', [EmployeeFinanceController::class, 'storeRule'])
+            ->name('commission-rules.store');
+        Route::post('invoices/{salesInvoice}/calculate', [EmployeeFinanceController::class, 'calculate'])
+            ->middleware('permission:commissions.calculate')->name('commissions.calculate');
+        Route::post('credit-notes/{salesCreditNote}/calculate-adjustment', [EmployeeFinanceController::class, 'calculateCreditAdjustment'])
+            ->middleware('permission:commissions.calculate')->name('commissions.calculate-adjustment');
+        Route::post('commission-accruals/{commissionAccrual}/{action}', [EmployeeFinanceController::class, 'accrualAction'])
+            ->whereIn('action', ['submit', 'approve', 'post', 'reverse'])->name('commission-accruals.action');
+        Route::post('commission-settlements', [EmployeeFinanceController::class, 'storeSettlement'])
+            ->name('commission-settlements.store');
+        Route::post('commission-settlements/{commissionSettlement}/{action}', [EmployeeFinanceController::class, 'settlementAction'])
+            ->whereIn('action', ['submit', 'approve', 'settle', 'reverse'])->name('commission-settlements.action');
+        Route::post('expense-claims', [EmployeeFinanceController::class, 'storeExpense'])
+            ->name('expense-claims.store');
+        Route::post('expense-claims/{expenseClaim}/attachments', [AttachmentController::class, 'storeForExpenseClaim'])
+            ->name('expense-claims.attachments.store');
+        Route::post('expense-claims/{expenseClaim}/{action}', [EmployeeFinanceController::class, 'expenseAction'])
+            ->whereIn('action', ['submit', 'approve', 'reject', 'post', 'pay', 'reverse'])->name('expense-claims.action');
+        Route::post('advances', [EmployeeFinanceController::class, 'storeAdvance'])
+            ->name('advances.store');
+        Route::post('advances/{employeeAdvance}/settlements', [EmployeeFinanceController::class, 'settleAdvance'])
+            ->name('advances.settlements.store');
+        Route::post('advances/{employeeAdvance}/{action}', [EmployeeFinanceController::class, 'advanceAction'])
+            ->whereIn('action', ['submit', 'approve', 'disburse', 'close', 'reverse'])->name('advances.action');
+        Route::get('reports/{report}', EmployeeFinanceReportController::class)
+            ->whereIn('report', [
+                'commission-accruals', 'commission-settlements', 'commission-balance',
+                'expense-claims', 'expense-analysis', 'outstanding-advances',
+                'custody-aging', 'employee-balances',
+            ])->name('reports.show');
+    });
 });

@@ -11,6 +11,23 @@ class Company extends BaseModel
 {
     use SoftDeletes;
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $company) {
+            $company->country_code ??= config('localization.default_country_code', 'EG');
+            $company->currency_code ??= config('localization.default_currency_code', 'EGP');
+            $company->timezone ??= config('localization.default_timezone', 'Africa/Cairo');
+            if (! $company->currency_id) {
+                $currency = Currency::query()->where('code', $company->currency_code)
+                    ->where('is_active', true)->first();
+                if ($currency) {
+                    $company->currency_id = $currency->id;
+                    $company->currency_code = $currency->code;
+                }
+            }
+        });
+    }
+
     protected $fillable = [
         'name', 'legal_name', 'commercial_registration', 'tax_number', 'email',
         'phone', 'logo_path', 'address', 'country_code', 'currency_code', 'currency_id',

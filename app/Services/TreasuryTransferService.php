@@ -8,8 +8,10 @@ use App\Events\TreasuryTransferApproved;
 use App\Events\TreasuryTransferCreated;
 use App\Events\TreasuryTransferSubmitted;
 use App\Models\BankAccount;
+use App\Models\Branch;
 use App\Models\CashBox;
 use App\Models\TreasuryTransfer;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
 class TreasuryTransferService
@@ -141,7 +143,17 @@ class TreasuryTransferService
 
     private function locked(TreasuryTransfer $transfer): TreasuryTransfer
     {
-        return TreasuryTransfer::query()->where('company_id', $this->tenant->companyId())
+        $transfer = TreasuryTransfer::query()->where('company_id', $this->tenant->companyId())
             ->whereKey($transfer->id)->lockForUpdate()->firstOrFail();
+        $branches = Branch::query()->where('company_id', $transfer->company_id)
+            ->whereIn('id', array_filter([$transfer->branch_id, $transfer->destination_branch_id]))
+            ->get();
+        foreach ($branches as $branch) {
+            if (! $this->tenant->user()->canAccessBranch($branch)) {
+                throw new AuthorizationException('Treasury transfer branch is outside the actor scope.');
+            }
+        }
+
+        return $transfer;
     }
 }

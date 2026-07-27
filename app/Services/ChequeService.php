@@ -10,6 +10,7 @@ use App\Models\Bank;
 use App\Models\BankAccount;
 use App\Models\Cheque;
 use App\Models\ChequeEndorsement;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
 class ChequeService
@@ -84,7 +85,7 @@ class ChequeService
             $cheque = Cheque::query()->where('company_id', $this->tenant->companyId())
                 ->whereKey($cheque->id)->lockForUpdate()->firstOrFail();
             if (! $this->tenant->user()->canAccessBranch($cheque->branch)) {
-                throw new BusinessRuleException('Cheque branch is outside the actor scope.');
+                throw new AuthorizationException('Cheque branch is outside the actor scope.');
             }
             $from = $cheque->status;
             $changes = [];
@@ -211,7 +212,7 @@ class ChequeService
                 ->where('direction', 'received')->where('status', 'on_hand')
                 ->whereKey($cheque->id)->lockForUpdate()->firstOrFail();
             if (! $this->tenant->user()->canAccessBranch($cheque->branch)) {
-                throw new BusinessRuleException('Cheque branch is outside the actor scope.');
+                throw new AuthorizationException('Cheque branch is outside the actor scope.');
             }
             $endorsement = new ChequeEndorsement($data);
             $endorsement->forceFill([
@@ -233,7 +234,7 @@ class ChequeService
                 ->whereIn('status', ['bounced', 'returned', 'cancelled'])
                 ->whereKey($cheque->id)->lockForUpdate()->firstOrFail();
             if (! $this->tenant->user()->canAccessBranch($cheque->branch)) {
-                throw new BusinessRuleException('Cheque branch is outside the actor scope.');
+                throw new AuthorizationException('Cheque branch is outside the actor scope.');
             }
             foreach (['replacement_cheque_number', 'replacement_issue_date', 'replacement_due_date'] as $field) {
                 if (blank($data[$field] ?? null)) {

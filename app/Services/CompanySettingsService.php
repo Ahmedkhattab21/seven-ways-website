@@ -10,6 +10,10 @@ use Illuminate\Validation\ValidationException;
 
 class CompanySettingsService
 {
+    public function __construct(private FinancialHistoryInspector $history)
+    {
+    }
+
     public function update(Company $company, array $data): Company
     {
         if (isset($data['currency_id'])
@@ -27,25 +31,24 @@ class CompanySettingsService
                 'default_tax_id' => 'الضريبة المختارة لا تتبع الشركة الحالية أو غير نشطة.',
             ]);
         }
-        if (isset($data['currency_id'])
-            && (int) $data['currency_id'] !== (int) $company->currency_id
-            && $this->hasPostedFinancialMovements($company)) {
-            throw ValidationException::withMessages([
-                'currency_id' => 'لا يمكن تغيير العملة الأساسية بعد وجود حركات مالية مرحلة.',
-            ]);
-        }
 
         return DB::transaction(function () use ($company, $data) {
-            $company->update($data);
+            $lockedCompany = Company::query()->whereKey($company->id)->lockForUpdate()->firstOrFail();
+            if (isset($data['currency_id'])
+                && (int) $data['currency_id'] !== (int) $lockedCompany->currency_id
+                && $this->hasPostedFinancialMovements($lockedCompany)) {
+                throw ValidationException::withMessages([
+                    'currency_id' => 'لا يمكن تغيير العملة الأساسية بعد وجود حركات مالية مرحلة.',
+                ]);
+            }
+            $lockedCompany->update($data);
 
-            return $company;
+            return $lockedCompany;
         });
     }
 
     private function hasPostedFinancialMovements(Company $company): bool
     {
-        // Phase 4 has no commercial document tables yet. This hook will enforce
-        // the restriction when posted financial movements are introduced.
-        return false;
+        return $this->history->hasPostedFinancialMovements($company);
     }
 }

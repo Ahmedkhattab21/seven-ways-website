@@ -174,7 +174,7 @@ class PhaseFourSettingsTest extends TestCase
             'name' => $company->name,
             'country_code' => 'SA',
             'currency_id' => $currency->id,
-            'timezone' => 'Asia/Riyadh',
+            'timezone' => 'Africa/Cairo',
             'fiscal_year_start_month' => 1,
             'date_format' => 'Y-m-d',
             'time_format' => 'H:i',

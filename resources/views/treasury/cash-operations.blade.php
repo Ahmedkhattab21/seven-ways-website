@@ -1,13 +1,16 @@
 @extends('layouts.app')
 @php($plural = $direction === 'receipt' ? 'cash-receipts' : 'cash-payments')
+@php($permissionBase = str_replace('-', '_', $plural))
 @section('title', $direction === 'receipt' ? 'المقبوضات النقدية' : 'المدفوعات النقدية')
 @section('page-title', $direction === 'receipt' ? 'المقبوضات النقدية العامة' : 'المدفوعات النقدية العامة')
 @section('content')
 <div class="sw-card"><p>لا تستخدم هذه الشاشة بدل تحصيلات العملاء أو مدفوعات الموردين المرتبطة بالفواتير.</p></div>
+@if(auth()->user()->hasPermission('treasury.'.$permissionBase.'.create'))
 <form class="sw-card" method="POST" action="{{ route('treasury.'.$plural.'.store') }}">@csrf
     <div class="sw-form-grid">
         <select name="branch_id" required>@foreach($branches as $branch)<option value="{{ $branch->id }}">{{ $branch->name }}</option>@endforeach</select>
         <select name="cash_box_id" required>@foreach($cashBoxes as $box)<option value="{{ $box->id }}">{{ $box->name }}</option>@endforeach</select>
+        <select name="cash_box_session_id"><option value="">جلسة الصندوق — اختيارية</option>@foreach($openSessions as $session)<option value="{{ $session->id }}">{{ $session->session_number }} — {{ $session->cashBox->name }}</option>@endforeach</select>
         @if($direction === 'receipt')
             <select name="receipt_type"><option value="other_income">Other income</option><option value="employee_return">Employee return</option><option value="supplier_refund">Supplier refund</option><option value="capital_injection">Capital injection</option><option value="miscellaneous">Miscellaneous</option></select>
         @else
@@ -21,9 +24,18 @@
     </div>
     <button class="sw-btn">حفظ مسودة</button>
 </form>
+@endif
 <div class="sw-card"><table class="sw-table"><thead><tr><th>الرقم</th><th>التاريخ</th><th>القيمة</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>
 @foreach($operations as $operation)<tr><td>{{ $operation->document_number }}</td><td>{{ $operation->document_date->toDateString() }}</td><td>{{ $operation->amount }}</td><td>{{ $operation->status }}</td><td>
-@foreach(['submit','approve','post','reverse'] as $action)<form method="POST" action="{{ route('treasury.'.$plural.'.action', [$operation, $action]) }}" style="display:inline">@csrf @if($action === 'reverse')<input type="hidden" name="reason" value="Approved treasury reversal">@endif<button class="sw-btn">{{ $action }}</button></form>@endforeach
+@php($actions = ['draft'=>'submit','pending_approval'=>'approve','approved'=>'post','posted'=>'reverse'])
+@if($action = $actions[$operation->status] ?? null)
+    @if(auth()->user()->hasPermission('treasury.'.$permissionBase.'.'.$action))
+    <form method="POST" action="{{ route('treasury.'.$plural.'.action', [$operation, $action]) }}" style="display:inline">@csrf
+        @if($action === 'reverse')<input type="hidden" name="reason" value="Approved treasury reversal">@endif
+        <button class="sw-btn">{{ $action }}</button>
+    </form>
+    @endif
+@endif
 </td></tr>@endforeach
 </tbody></table></div>{{ $operations->links() }}
 @endsection

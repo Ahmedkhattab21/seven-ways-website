@@ -20,7 +20,7 @@ class SevenWaysTenantSeeder extends Seeder
 
         $company = Company::query()->firstOrCreate(
             ['name' => 'Seven Ways'],
-            ['country_code' => 'SA', 'currency_code' => 'SAR', 'timezone' => 'Asia/Riyadh', 'is_active' => true]
+            ['country_code' => 'EG', 'currency_code' => 'EGP', 'timezone' => 'Africa/Cairo', 'is_active' => true]
         );
 
         $branch = Branch::query()->firstOrCreate(

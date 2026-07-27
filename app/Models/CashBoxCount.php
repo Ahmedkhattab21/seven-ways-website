@@ -7,6 +7,7 @@ use App\Core\Exceptions\BusinessRuleException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class CashBoxCount extends BaseModel
 {
@@ -39,5 +40,10 @@ class CashBoxCount extends BaseModel
     public function lines(): HasMany
     {
         return $this->hasMany(CashBoxCountLine::class);
+    }
+
+    public function adjustment(): HasOne
+    {
+        return $this->hasOne(CashOverShortAdjustment::class);
     }
 }

@@ -58,19 +58,18 @@ class TreasuryFoundationSeeder extends Seeder
         Role::query()->whereIn('name', ['cashier', 'receptionist'])->get()
             ->each(fn (Role $role) => $role->permissions()->syncWithoutDetaching($custodian));
 
-        foreach ([
-            ['SNB', 'البنك الأهلي السعودي', 'Saudi National Bank', 'NCBKSAJE'],
-            ['RJHI', 'مصرف الراجحي', 'Al Rajhi Bank', 'RJHISARI'],
-            ['RIBL', 'بنك الرياض', 'Riyad Bank', 'RIBLSARI'],
-            ['SABB', 'البنك السعودي الأول', 'Saudi Awwal Bank', 'SABBSARI'],
-        ] as [$code, $nameAr, $nameEn, $swift]) {
-            $bank = Bank::withTrashed()->firstOrNew(['scope_key' => 'system:'.$code]);
-            $bank->forceFill([
-                'company_id' => null, 'scope_key' => 'system:'.$code, 'code' => $code,
-                'name_ar' => $nameAr, 'name_en' => $nameEn, 'swift_code' => $swift,
-                'is_system' => true, 'is_active' => true, 'deleted_at' => null,
-            ])->save();
-        }
+        $bank = Bank::withTrashed()->firstOrNew(['scope_key' => 'system:OTHER']);
+        $bank->forceFill([
+            'company_id' => null,
+            'scope_key' => 'system:OTHER',
+            'code' => 'OTHER',
+            'name_ar' => 'بنك آخر',
+            'name_en' => 'Other Bank',
+            'swift_code' => null,
+            'is_system' => true,
+            'is_active' => true,
+            'deleted_at' => null,
+        ])->save();
 
         Company::query()->with(['branches', 'users'])->get()->each(fn (Company $company) => $this->company($company));
     }

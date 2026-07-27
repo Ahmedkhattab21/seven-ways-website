@@ -2,6 +2,7 @@
 @section('title', 'تسويات نقاط البيع')
 @section('page-title', 'تسويات نقاط البيع والتجار')
 @section('content')
+@if(auth()->user()->hasPermission('treasury.merchant_settlements.create'))
 <form class="sw-card" method="POST" action="{{ route('treasury.merchant-settlements.store') }}">@csrf
     <input type="hidden" name="currency_id" value="{{ $company->currency_id }}">
     <div class="sw-form-grid">
@@ -19,7 +20,23 @@
         <input name="lines[0][allocated_amount]" type="number" min="0.01" step="0.01" required placeholder="Allocated">
     </div><button class="sw-btn">إنشاء التسوية</button>
 </form>
-<div class="sw-card"><table class="sw-table"><thead><tr><th>الرقم</th><th>Gross</th><th>Fees</th><th>VAT</th><th>Net</th><th>Status</th></tr></thead><tbody>
-@foreach($settlements as $settlement)<tr><td>{{ $settlement->document_number }}</td><td>{{ $settlement->gross_amount }}</td><td>{{ $settlement->fees_amount }}</td><td>{{ $settlement->tax_amount }}</td><td>{{ $settlement->net_amount }}</td><td>{{ $settlement->status }}</td></tr>@endforeach
+@endif
+<div class="sw-card"><table class="sw-table"><thead><tr><th>الرقم</th><th>Gross</th><th>Fees</th><th>VAT</th><th>Net</th><th>Allocated</th><th>Remaining</th><th>Status</th><th>Journal</th><th>Action</th></tr></thead><tbody>
+@foreach($settlements as $settlement)<tr>
+    <td>{{ $settlement->document_number }}</td><td>{{ $settlement->gross_amount }}</td><td>{{ $settlement->fees_amount }}</td><td>{{ $settlement->tax_amount }}</td><td>{{ $settlement->net_amount }}</td>
+    @php($allocated = $settlement->lines->sum('allocated_amount'))
+    <td>{{ $allocated }}</td><td>{{ bcsub((string) $settlement->gross_amount, (string) $allocated, 4) }}</td>
+    <td>{{ $settlement->status }}</td><td>{{ $settlement->journal_entry_id ?: '—' }}</td><td>
+        @php($settlementActions = ['draft'=>'submit','pending_approval'=>'approve','approved'=>'post','posted'=>'reverse'])
+        @if($action = $settlementActions[$settlement->status] ?? null)
+            @if(auth()->user()->hasPermission('treasury.merchant_settlements.'.$action))
+            <form method="POST" action="{{ route('treasury.merchant-settlements.action', [$settlement, $action]) }}">@csrf
+                @if($action === 'reverse')<input type="hidden" name="reason" value="Approved QA settlement reversal">@endif
+                <button class="sw-btn">{{ $action }}</button>
+            </form>
+            @endif
+        @endif
+    </td>
+</tr>@endforeach
 </tbody></table></div>{{ $settlements->links() }}
 @endsection

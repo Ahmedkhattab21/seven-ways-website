@@ -15,6 +15,8 @@ use App\Models\AccountingSetting;
 use App\Models\BankAdjustment;
 use App\Models\CustomerPayment;
 use App\Models\CustomerRefund;
+use App\Models\EmployeeCommissionAccrual;
+use App\Models\EmployeeExpenseClaim;
 use App\Models\GoodsReceipt;
 use App\Models\JournalEntry;
 use App\Models\OpeningBalanceDocument;
@@ -168,6 +170,53 @@ class AccountingPostingService
                     'credit_amount', 'description']),
             ])->all();
         }
+        if ($source instanceof EmployeeCommissionAccrual) {
+            $rule = $source->rule()->firstOrFail();
+            $amount = ltrim((string) $source->commission_amount, '-');
+            if (bccomp((string) $source->commission_amount, '0', 4) === -1) {
+                return [
+                    $this->debit($rule->payable_account_id, $amount, [
+                        'employee_id' => $source->employee_id,
+                    ]),
+                    $this->credit($rule->expense_account_id, $amount, [
+                        'employee_id' => $source->employee_id,
+                    ]),
+                ];
+            }
+
+            return [
+                $this->debit($rule->expense_account_id, $amount, [
+                    'employee_id' => $source->employee_id,
+                ]),
+                $this->credit($rule->payable_account_id, $amount, [
+                    'employee_id' => $source->employee_id,
+                ]),
+            ];
+        }
+        if ($source instanceof EmployeeExpenseClaim) {
+            $lines = [];
+            foreach ($source->items()->get() as $item) {
+                $lines[] = $this->debit($item->expense_account_id, $item->net_amount, [
+                    'employee_id' => $source->employee_id,
+                    'cost_center_id' => $source->cost_center_id,
+                    'tax_id' => $item->tax_id,
+                ]);
+                if (bccomp($item->tax_amount, '0', 4) === 1) {
+                    $lines[] = $this->debit(
+                        $this->accounts->branch(
+                            $source->company_id, $source->branch_id, 'vat_input_account_id'
+                        ),
+                        $item->tax_amount,
+                        ['employee_id' => $source->employee_id, 'tax_id' => $item->tax_id, 'tax_component' => 'input']
+                    );
+                }
+            }
+            $lines[] = $this->credit($source->payable_account_id, $source->total_amount, [
+                'employee_id' => $source->employee_id,
+            ]);
+
+            return $lines;
+        }
         $company = $source->company_id;
         $branch = $this->branchId($source);
         if ($source instanceof SalesInvoice) {
@@ -296,6 +345,8 @@ class AccountingPostingService
             $source instanceof OpeningBalanceDocument => $source->status === 'ready_for_posting',
             $source instanceof StockMovement => true,
             $source instanceof BankAdjustment => $source->status === 'approved',
+            $source instanceof EmployeeCommissionAccrual => $source->status === 'approved',
+            $source instanceof EmployeeExpenseClaim => $source->status === 'approved',
             default => false,
         };
         if (! $eligible) {
@@ -372,6 +423,8 @@ class AccountingPostingService
             $source instanceof StockMovement => [$source->occurred_at->toDateString(), 'inventory'],
             $source instanceof StockTransfer => [($source->received_at ?? now())->toDateString(), 'inventory'],
             $source instanceof BankAdjustment => [$source->adjustment_date->toDateString(), 'treasury'],
+            $source instanceof EmployeeCommissionAccrual => [$source->accrual_date->toDateString(), 'employee_finance'],
+            $source instanceof EmployeeExpenseClaim => [$source->claim_date->toDateString(), 'employee_finance'],
             default => [now()->toDateString(), 'inventory'],
         };
     }

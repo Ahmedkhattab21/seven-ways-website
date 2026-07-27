@@ -51,6 +51,11 @@ class Cheque extends BaseModel
         return $this->hasMany(ChequeStatusHistory::class)->orderBy('id');
     }
 
+    public function endorsements(): HasMany
+    {
+        return $this->hasMany(ChequeEndorsement::class)->orderBy('id');
+    }
+
     public function maskedNumber(): string
     {
         $visible = substr($this->cheque_number, -4);

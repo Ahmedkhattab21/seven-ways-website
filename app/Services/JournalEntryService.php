@@ -15,6 +15,8 @@ use App\Models\BankAdjustment;
 use App\Models\Branch;
 use App\Models\CostCenter;
 use App\Models\Customer;
+use App\Models\EmployeeCommissionAccrual;
+use App\Models\EmployeeExpenseClaim;
 use App\Models\JournalEntry;
 use App\Models\Supplier;
 use Illuminate\Support\Facades\DB;
@@ -130,7 +132,10 @@ class JournalEntryService
             }
             $date ??= now()->toDateString();
             $module = $entry->source_type === BankAdjustment::class || $entry->entry_type === 'treasury'
-                ? 'treasury' : ($entry->entry_type === 'adjustment' ? 'adjustments' : 'journals');
+                ? 'treasury'
+                : (in_array($entry->source_type, [EmployeeCommissionAccrual::class, EmployeeExpenseClaim::class], true)
+                    ? 'employee_finance'
+                    : ($entry->entry_type === 'adjustment' ? 'adjustments' : 'journals'));
             $period = $this->periods->resolve($entry->company_id, $date, $module, $this->tenant->user());
             $reversal = $entry->replicate([
                 'uuid', 'journal_number', 'status', 'source_id', 'source_uuid', 'source_number',

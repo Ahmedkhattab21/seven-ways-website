@@ -272,8 +272,8 @@ class PhaseNineQuotationAppointmentTest extends TestCase
 
     private function context(bool $owner = false): array
     {
-        $currency = Currency::query()->firstOrCreate(['code' => 'SAR'], [
-            'name_ar' => 'ريال', 'name_en' => 'Riyal', 'symbol' => 'ر.س', 'decimal_places' => 2, 'is_active' => true,
+        $currency = Currency::query()->firstOrCreate(['code' => 'EGP'], [
+            'name_ar' => 'جنيه مصري', 'name_en' => 'Egyptian Pound', 'symbol' => 'ج.م', 'decimal_places' => 2, 'is_active' => true,
         ]);
         $company = Company::query()->create(['name' => 'Phase Nine '.uniqid(), 'currency_id' => $currency->id, 'is_active' => true]);
         $branch = Branch::query()->create([

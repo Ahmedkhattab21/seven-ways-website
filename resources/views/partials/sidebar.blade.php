@@ -59,6 +59,9 @@
         @if(auth()->user()->hasPermission('roles.view'))<a class="sw-nav-item @if(request()->routeIs('roles.*')) sw-nav-item--active @endif" href="{{ route('roles.index') }}"><x-icon name="settings" /><span>الأدوار والصلاحيات</span></a>@endif
         @if(auth()->user()->hasPermission('companies.view'))<a class="sw-nav-item @if(request()->routeIs('company.*')) sw-nav-item--active @endif" href="{{ route('company.edit') }}"><x-icon name="settings" /><span>بيانات الشركة</span></a>@endif
         @if(auth()->user()->hasPermission('branch_settings.view'))<a class="sw-nav-item @if(request()->routeIs('branch-settings.*')) sw-nav-item--active @endif" href="{{ route('branch-settings.edit') }}"><x-icon name="settings" /><span>إعدادات الفرع</span></a>@endif
+        @if(auth()->user()->hasPermission('employees.view'))
+            <a class="sw-nav-item @if(request()->routeIs('employee-finance.*')) sw-nav-item--active @endif" href="{{ route('employee-finance.index') }}"><x-icon name="users" /><span>مالية الموظفين</span></a>
+        @endif
         @php
             $referenceLinks = [
                 'currencies' => ['settings.view', 'العملات'],

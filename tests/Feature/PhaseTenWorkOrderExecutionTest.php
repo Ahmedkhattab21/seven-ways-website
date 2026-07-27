@@ -453,7 +453,7 @@ class PhaseTenWorkOrderExecutionTest extends TestCase
 
     private function context(): array
     {
-        $currency = Currency::firstOrCreate(['code' => 'SAR'], ['name_ar' => 'Riyal', 'name_en' => 'Riyal', 'symbol' => 'SAR', 'decimal_places' => 2, 'is_active' => true]);
+        $currency = Currency::firstOrCreate(['code' => 'EGP'], ['name_ar' => 'جنيه مصري', 'name_en' => 'Egyptian Pound', 'symbol' => 'ج.م', 'decimal_places' => 2, 'is_active' => true]);
         $company = Company::create(['name' => 'Phase Ten '.uniqid(), 'currency_id' => $currency->id, 'is_active' => true]);
         $branch = Branch::create(['company_id' => $company->id, 'code' => 'B'.uniqid(), 'name' => 'Branch', 'is_main' => true, 'is_active' => true]);
         $branch->settings()->create(['working_day_start' => '08:00:00', 'working_day_end' => '20:00:00', 'weekend_days' => []]);

@@ -872,8 +872,8 @@ class PhaseThirteenPurchasingTest extends TestCase
     private function context(): array
     {
         $currency = Currency::firstOrCreate(
-            ['code' => 'SAR'],
-            ['name_ar' => 'Riyal', 'name_en' => 'Riyal', 'symbol' => 'SAR', 'decimal_places' => 2, 'is_active' => true]
+            ['code' => 'EGP'],
+            ['name_ar' => 'جنيه مصري', 'name_en' => 'Egyptian Pound', 'symbol' => 'ج.م', 'decimal_places' => 2, 'is_active' => true]
         );
         $company = Company::create(['name' => 'Phase 13 '.uniqid(), 'currency_id' => $currency->id, 'is_active' => true]);
         $branch = Branch::create([

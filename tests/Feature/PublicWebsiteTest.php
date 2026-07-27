@@ -35,6 +35,145 @@ class PublicWebsiteTest extends TestCase
             ->assertSee(route('dashboard'), false);
     }
 
+    public function test_home_hero_keeps_the_reference_composition_in_both_locales(): void
+    {
+        $this->get(route('website.home', ['lang' => 'ar']))
+            ->assertOk()
+            ->assertSee('حماية متقدمة، أناقة مستمرة')
+            ->assertSee('من نحن')
+            ->assertSee('data-locale="ar"', false)
+            ->assertSee('sw-hero__cta', false)
+            ->assertSee('sw-hero__cta-frame', false)
+            ->assertSee('sw-hero__cta-arrow', false);
+
+        $this->get(route('website.home', ['lang' => 'en']))
+            ->assertOk()
+            ->assertSee('Premium Protection, Enduring Elegance')
+            ->assertSee('ABOUT US')
+            ->assertSee('data-locale="en"', false)
+            ->assertSee('sw-hero__cta', false)
+            ->assertSee('sw-hero__cta-frame', false)
+            ->assertSee('sw-hero__cta-arrow', false);
+    }
+
+    public function test_home_advantages_keep_the_reference_composition_in_both_locales(): void
+    {
+        $this->get(route('website.home', ['lang' => 'ar']))
+            ->assertOk()
+            ->assertSee('لماذا أختار سفن وايز ؟')
+            ->assertSee('sw-advantages__sliders', false)
+            ->assertSee('sw-advantages__car', false)
+            ->assertSee('sw-advantages__tyre-divider', false)
+            ->assertSee('sw-advantage__xpel', false);
+
+        $this->get(route('website.home', ['lang' => 'en']))
+            ->assertOk()
+            ->assertSee('Why choose SevenWays?')
+            ->assertSee('Automatic cutting machines')
+            ->assertSee('sw-advantages__sliders', false)
+            ->assertSee('sw-advantages__car', false)
+            ->assertSee('sw-advantages__tyre-divider', false)
+            ->assertSee('sw-advantage__xpel', false);
+    }
+
+    public function test_home_services_and_products_keep_the_reference_composition(): void
+    {
+        $this->get(route('website.home', ['lang' => 'ar']))
+            ->assertOk()
+            ->assertSee('خدماتنا ومنتجاتنا')
+            ->assertSee('sw-home-service__shape', false)
+            ->assertSee('sw-home-brands', false)
+            ->assertSee('sw-home-services__cta', false)
+            ->assertSee('href="'.route('website.services').'#xpel"', false);
+
+        $this->get(route('website.home', ['lang' => 'en']))
+            ->assertOk()
+            ->assertSee('Our Services &amp; Products', false)
+            ->assertSee('Paint Protection Films PPF')
+            ->assertSee('SHOW MORE')
+            ->assertSee('sw-home-service__shape', false)
+            ->assertSee('sw-home-brands', false);
+
+        $this->get(route('website.services'))
+            ->assertOk()
+            ->assertSee('id="xpel"', false)
+            ->assertSee('id="project3"', false);
+    }
+
+    public function test_about_page_keeps_the_reference_composition_in_both_locales(): void
+    {
+        $this->get(route('website.about', ['lang' => 'ar']))
+            ->assertOk()
+            ->assertSee('من نحن')
+            ->assertSee('تاريخنا')
+            ->assertSee('sw-about-hero__title', false)
+            ->assertSee('sw-about__media', false)
+            ->assertSee(config('website.assets.about_video'), false);
+
+        $this->get(route('website.about', ['lang' => 'en']))
+            ->assertOk()
+            ->assertSee('Who We Are')
+            ->assertSee('Our History')
+            ->assertSee('sw-about__copy', false)
+            ->assertSee('sw-about__heading', false);
+    }
+
+    public function test_services_page_keeps_the_reference_composition_in_both_locales(): void
+    {
+        $this->get(route('website.services', ['lang' => 'ar']))
+            ->assertOk()
+            ->assertSee('sw-services-hero__title', false)
+            ->assertSee('data-sw-services-slider', false)
+            ->assertSee('sw-service-slide__media', false)
+            ->assertSee('sw-product__packages', false)
+            ->assertSee(config('website.assets.products_background'), false);
+
+        $this->get(route('website.services', ['lang' => 'en']))
+            ->assertOk()
+            ->assertSee('Our Services &amp; Products', false)
+            ->assertSee('Our Services')
+            ->assertSee('Our Products')
+            ->assertSee('id="xpel"', false)
+            ->assertSee('id="project3"', false);
+    }
+
+    public function test_contact_page_keeps_the_reference_composition_in_both_locales(): void
+    {
+        $this->get(route('website.contact', ['lang' => 'ar']))
+            ->assertOk()
+            ->assertSee('sw-contact-hero__title', false)
+            ->assertSee('sw-contact-countries', false)
+            ->assertSee('sw-contact-branch__map', false)
+            ->assertSee('https://wa.me/966534899166', false);
+
+        $this->get(route('website.contact', ['lang' => 'en']))
+            ->assertOk()
+            ->assertSee('Contact Us')
+            ->assertSee('Our Branches')
+            ->assertSee('Saudi Arabia')
+            ->assertSee('Egypt')
+            ->assertSee('Riyadh Branch')
+            ->assertSee('Nasr City');
+    }
+
+    public function test_footer_keeps_the_reference_composition_in_both_locales(): void
+    {
+        $this->get(route('website.home', ['lang' => 'ar']))
+            ->assertOk()
+            ->assertSee('فروعنا')
+            ->assertSee('السعودية')
+            ->assertSee('مصر')
+            ->assertSee('sw-footer__country-switch', false)
+            ->assertSee('sw-footer__car', false);
+
+        $this->get(route('website.home', ['lang' => 'en']))
+            ->assertOk()
+            ->assertSee('Our Branches')
+            ->assertSee('Saudi Arabia')
+            ->assertSee('Egypt')
+            ->assertSee('data-sw-footer-social', false);
+    }
+
     public function test_language_switch_is_scoped_to_public_website(): void
     {
         $this->post(route('website.language', 'en'), [
@@ -73,7 +212,7 @@ class PublicWebsiteTest extends TestCase
         $this->from(route('website.contact'))
             ->post(route('website.contact.submit'), [
                 'name' => 'Ahmed Test',
-                'phone' => '+966500000000',
+                'phone' => '+201000000000',
                 'branch' => 'unknown-branch',
                 'subject' => 'PPF service',
                 'message' => 'I would like to ask about the available PPF packages.',
@@ -90,9 +229,9 @@ class PublicWebsiteTest extends TestCase
         $this->from(route('website.contact'))
             ->post(route('website.contact.submit'), [
                 'name' => 'Ahmed Test',
-                'phone' => '+966500000000',
+                'phone' => '+201000000000',
                 'email' => 'ahmed@example.com',
-                'branch' => 'qadisiyah',
+                'branch' => 'nasr-city',
                 'subject' => 'PPF service',
                 'message' => 'I would like to ask about the available PPF packages.',
                 'website' => '',
@@ -109,7 +248,7 @@ class PublicWebsiteTest extends TestCase
         $request = $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.77']);
         $payload = [
             'name' => 'Rate Limit Test',
-            'phone' => '+966500000001',
+            'phone' => '+201000000001',
             'subject' => 'Service question',
             'message' => 'This is a valid website contact message for the throttle test.',
             'website' => '',
@@ -151,6 +290,18 @@ class PublicWebsiteTest extends TestCase
             'assets/website/images/logo-DHNnkSwZ.webp',
             'assets/website/images/home-bg-DkJ_mK4W.webp',
             'assets/website/images/g-class-ar-Cv_phCfN.webp',
+            'assets/website/images/white-car-2kDVYj1h.webp',
+            'assets/website/images/secondary-logo-MgVH3Knt.webp',
+            'assets/website/images/tyre-mark-1-Bcet6rRb.png',
+            'assets/website/images/logo-BBmOnB6N.webp',
+            'assets/website/images/logo-D0I4roVz.webp',
+            'assets/website/images/services-bg-BTO8wyrl.webp',
+            'assets/website/images/protection-Bojyp1bE.webp',
+            'assets/website/images/thermal-insulation-D5pv4bAo.webp',
+            'assets/website/images/nano-ceramic-ClspLSNk.webp',
+            'assets/website/images/polishing-kT06SIma.webp',
+            'assets/website/images/audi-ar-DVxr30Bb.webp',
+            'assets/website/images/tyre-mark-2-BISH33e4.png',
             'assets/website/fonts/cairo-arabic.woff2',
             'assets/website/videos/paint-protection-films-BFI-I27J.mp4',
         ] as $asset) {
