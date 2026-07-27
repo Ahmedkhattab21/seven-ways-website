@@ -11,6 +11,7 @@ use App\Events\JournalEntryPosted;
 use App\Events\JournalEntryReversed;
 use App\Events\JournalEntrySubmitted;
 use App\Models\AccountingSetting;
+use App\Models\BankAdjustment;
 use App\Models\Branch;
 use App\Models\CostCenter;
 use App\Models\Customer;
@@ -108,7 +109,8 @@ class JournalEntryService
             }
             $changes = ['status' => $to, $actor => $this->tenant->user()->id, $timestamp => now()];
             if ($action === 'post') {
-                $period = $this->periods->resolve($entry->company_id, $entry->entry_date->toDateString(), 'manual_journals', $this->tenant->user());
+                $module = $entry->entry_type === 'adjustment' ? 'adjustments' : 'manual_journals';
+                $period = $this->periods->resolve($entry->company_id, $entry->entry_date->toDateString(), $module, $this->tenant->user());
                 $changes += ['accounting_period_id' => $period->id, 'fiscal_year_id' => $period->fiscal_year_id, 'posting_date' => $entry->entry_date];
             }
             $entry->forceFill($changes)->save();
@@ -127,7 +129,9 @@ class JournalEntryService
                 throw new BusinessRuleException('Only an unreversed posted journal can be reversed.');
             }
             $date ??= now()->toDateString();
-            $period = $this->periods->resolve($entry->company_id, $date, 'journals', $this->tenant->user());
+            $module = $entry->source_type === BankAdjustment::class || $entry->entry_type === 'treasury'
+                ? 'treasury' : ($entry->entry_type === 'adjustment' ? 'adjustments' : 'journals');
+            $period = $this->periods->resolve($entry->company_id, $date, $module, $this->tenant->user());
             $reversal = $entry->replicate([
                 'uuid', 'journal_number', 'status', 'source_id', 'source_uuid', 'source_number',
                 'reversal_of_id', 'reversed_by_entry_id', 'created_by', 'submitted_by', 'submitted_at',

@@ -12,6 +12,7 @@ use App\Events\OpeningBalancePosted;
 use App\Events\OpeningBalanceReversed;
 use App\Models\AccountingPostingLink;
 use App\Models\AccountingSetting;
+use App\Models\BankAdjustment;
 use App\Models\CustomerPayment;
 use App\Models\CustomerRefund;
 use App\Models\GoodsReceipt;
@@ -146,6 +147,20 @@ class AccountingPostingService
 
     private function buildLines(Model $source): array
     {
+        if ($source instanceof BankAdjustment) {
+            $bank = $source->bankAccount()->firstOrFail();
+            $increase = in_array($source->adjustment_type, ['interest_income', 'unidentified_receipt'], true);
+            if (in_array($source->adjustment_type, ['rounding', 'other'], true)) {
+                if (! $source->statementLine) {
+                    throw new BusinessRuleException('Rounding and other bank adjustments require a statement line direction.');
+                }
+                $increase = $source->statementLine->direction() === 'credit';
+            }
+
+            return $increase
+                ? [$this->debit($bank->gl_account_id, $source->amount), $this->credit($source->offset_account_id, $source->amount)]
+                : [$this->debit($source->offset_account_id, $source->amount), $this->credit($bank->gl_account_id, $source->amount)];
+        }
         if ($source instanceof OpeningBalanceDocument) {
             return $source->lines()->get()->map(fn ($line) => [
                 ...$line->only(['account_id', 'branch_id', 'cost_center_id', 'currency_id', 'customer_id',
@@ -173,14 +188,14 @@ class AccountingPostingService
         }
         if ($source instanceof CustomerPayment) {
             return [
-                $this->debit($this->accounts->paymentMethod($company, $branch, $source->payment_method_id), $source->amount),
+                $this->debit($this->accounts->paymentMethod($company, $branch, $source->payment_method_id, 'receipt', $source->currency_id, (string) $source->amount), $source->amount),
                 $this->credit($this->accounts->branch($company, $branch, 'customer_advance_account_id'), $source->amount, ['customer_id' => $source->customer_id]),
             ];
         }
         if ($source instanceof CustomerRefund) {
             return [
                 $this->debit($this->accounts->branch($company, $branch, 'customer_advance_account_id'), $source->amount, ['customer_id' => $source->customer_id]),
-                $this->credit($this->accounts->paymentMethod($company, $branch, $source->payment_method_id), $source->amount),
+                $this->credit($this->accounts->paymentMethod($company, $branch, $source->payment_method_id, 'refund', $source->currency_id, (string) $source->amount), $source->amount),
             ];
         }
         if ($source instanceof SupplierInvoice) {
@@ -202,7 +217,7 @@ class AccountingPostingService
         if ($source instanceof SupplierPayment) {
             return [
                 $this->debit($this->accounts->branch($company, $branch, 'supplier_advance_account_id'), $source->amount, ['supplier_id' => $source->supplier_id]),
-                $this->credit($this->accounts->paymentMethod($company, $branch, $source->payment_method_id), $source->amount),
+                $this->credit($this->accounts->paymentMethod($company, $branch, $source->payment_method_id, 'payment', $source->currency_id, (string) $source->amount), $source->amount),
             ];
         }
         if ($source instanceof GoodsReceipt || $source instanceof PurchaseReturn) {
@@ -280,6 +295,7 @@ class AccountingPostingService
             $source instanceof StockTransfer => in_array($source->status, ['received', 'received_with_discrepancy'], true),
             $source instanceof OpeningBalanceDocument => $source->status === 'ready_for_posting',
             $source instanceof StockMovement => true,
+            $source instanceof BankAdjustment => $source->status === 'approved',
             default => false,
         };
         if (! $eligible) {
@@ -355,6 +371,7 @@ class AccountingPostingService
             $source instanceof OpeningBalanceDocument => [$source->balance_date->toDateString(), 'opening_balances'],
             $source instanceof StockMovement => [$source->occurred_at->toDateString(), 'inventory'],
             $source instanceof StockTransfer => [($source->received_at ?? now())->toDateString(), 'inventory'],
+            $source instanceof BankAdjustment => [$source->adjustment_date->toDateString(), 'treasury'],
             default => [now()->toDateString(), 'inventory'],
         };
     }

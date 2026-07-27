@@ -4,15 +4,36 @@ namespace App\Providers;
 
 use App\Models\Account;
 use App\Models\AccountGroup;
+use App\Models\AccountingAdjustment;
+use App\Models\AccountingClosingChecklist;
+use App\Models\AccountingClosingException;
+use App\Models\AccountingClosingRun;
 use App\Models\AccountingPeriod;
 use App\Models\AccountingSetting;
 use App\Models\AccountType;
 use App\Models\Appointment;
 use App\Models\AppointmentDeposit;
 use App\Models\Attachment;
+use App\Models\Bank;
+use App\Models\BankAccount;
+use App\Models\BankAdjustment;
+use App\Models\BankMatchingRule;
+use App\Models\BankReconciliationMatch;
+use App\Models\BankReconciliationSession;
+use App\Models\BankStatementImport;
+use App\Models\BankStatementLine;
 use App\Models\Branch;
 use App\Models\BranchService;
 use App\Models\BranchSetting;
+use App\Models\CashBox;
+use App\Models\CashBoxCount;
+use App\Models\CashBoxCustodian;
+use App\Models\CashBoxSession;
+use App\Models\CashOverShortAdjustment;
+use App\Models\CashPayment;
+use App\Models\CashReceipt;
+use App\Models\Cheque;
+use App\Models\ChequeEndorsement;
 use App\Models\Company;
 use App\Models\CostCenter;
 use App\Models\Currency;
@@ -29,6 +50,7 @@ use App\Models\InventoryReservation;
 use App\Models\InventoryRoll;
 use App\Models\JournalEntry;
 use App\Models\Lead;
+use App\Models\MerchantSettlement;
 use App\Models\OpeningBalanceDocument;
 use App\Models\PaymentAllocation;
 use App\Models\PaymentMethod;
@@ -51,6 +73,7 @@ use App\Models\Role;
 use App\Models\RollScrap;
 use App\Models\SalesCreditNote;
 use App\Models\SalesInvoice;
+use App\Models\ScheduledJournalReversal;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceCommissionRule;
@@ -66,6 +89,8 @@ use App\Models\SupplierCreditNote;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierPayment;
 use App\Models\Tax;
+use App\Models\TreasuryApprovalLimit;
+use App\Models\TreasuryTransfer;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -81,7 +106,13 @@ use App\Models\WorkOrder;
 use App\Models\WorkOrderMaterial;
 use App\Models\WorkOrderService as WorkOrderServiceModel;
 use App\Models\WorkOrderWasteRecord;
+use App\Models\YearEndClosingSetting;
 use App\Policies\AccountGroupPolicy;
+use App\Policies\AccountingAdjustmentPolicy;
+use App\Policies\AccountingClosingChecklistPolicy;
+use App\Policies\AccountingClosingExceptionPolicy;
+use App\Policies\AccountingClosingRunPolicy;
+use App\Policies\AccountingClosingSettingsPolicy;
 use App\Policies\AccountingPeriodPolicy;
 use App\Policies\AccountingSettingsPolicy;
 use App\Policies\AccountPolicy;
@@ -89,9 +120,26 @@ use App\Policies\AccountTypePolicy;
 use App\Policies\AppointmentDepositPolicy;
 use App\Policies\AppointmentPolicy;
 use App\Policies\AttachmentPolicy;
+use App\Policies\BankAccountPolicy;
+use App\Policies\BankAdjustmentPolicy;
+use App\Policies\BankMatchingRulePolicy;
+use App\Policies\BankPolicy;
+use App\Policies\BankReconciliationMatchPolicy;
+use App\Policies\BankReconciliationSessionPolicy;
+use App\Policies\BankStatementImportPolicy;
+use App\Policies\BankStatementLinePolicy;
 use App\Policies\BranchPolicy;
 use App\Policies\BranchServicePolicy;
 use App\Policies\BranchSettingPolicy;
+use App\Policies\CashBoxCountPolicy;
+use App\Policies\CashBoxCustodianPolicy;
+use App\Policies\CashBoxPolicy;
+use App\Policies\CashBoxSessionPolicy;
+use App\Policies\CashOverShortPolicy;
+use App\Policies\CashPaymentPolicy;
+use App\Policies\CashReceiptPolicy;
+use App\Policies\ChequeEndorsementPolicy;
+use App\Policies\ChequePolicy;
 use App\Policies\CompanyPolicy;
 use App\Policies\CostCenterPolicy;
 use App\Policies\CustomerPaymentPolicy;
@@ -106,9 +154,9 @@ use App\Policies\InventoryReservationPolicy;
 use App\Policies\InventoryRollPolicy;
 use App\Policies\JournalEntryPolicy;
 use App\Policies\LeadPolicy;
+use App\Policies\MerchantSettlementPolicy;
 use App\Policies\OpeningBalancePolicy;
 use App\Policies\PaymentAllocationPolicy;
-use App\Policies\PaymentMethodAccountMappingPolicy;
 use App\Policies\PostingProfilePolicy;
 use App\Policies\ProductAccountingMappingPolicy;
 use App\Policies\ProductBrandPolicy;
@@ -128,6 +176,7 @@ use App\Policies\RolePolicy;
 use App\Policies\RollScrapPolicy;
 use App\Policies\SalesCreditNotePolicy;
 use App\Policies\SalesInvoicePolicy;
+use App\Policies\ScheduledJournalReversalPolicy;
 use App\Policies\ServiceCategoryPolicy;
 use App\Policies\ServiceCommissionRulePolicy;
 use App\Policies\ServiceMaterialRequirementPolicy;
@@ -142,6 +191,9 @@ use App\Policies\SupplierCreditNotePolicy;
 use App\Policies\SupplierInvoicePolicy;
 use App\Policies\SupplierPaymentPolicy;
 use App\Policies\SupplierPolicy;
+use App\Policies\TreasuryApprovalLimitPolicy;
+use App\Policies\TreasuryMappingPolicy;
+use App\Policies\TreasuryTransferPolicy;
 use App\Policies\UserPolicy;
 use App\Policies\VehicleInspectionPolicy;
 use App\Policies\VehiclePolicy;
@@ -164,16 +216,42 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Company::class => CompanyPolicy::class,
+        Bank::class => BankPolicy::class,
+        BankAccount::class => BankAccountPolicy::class,
+        BankStatementImport::class => BankStatementImportPolicy::class,
+        BankStatementLine::class => BankStatementLinePolicy::class,
+        BankReconciliationSession::class => BankReconciliationSessionPolicy::class,
+        BankReconciliationMatch::class => BankReconciliationMatchPolicy::class,
+        BankMatchingRule::class => BankMatchingRulePolicy::class,
+        BankAdjustment::class => BankAdjustmentPolicy::class,
+        CashBox::class => CashBoxPolicy::class,
+        CashBoxCustodian::class => CashBoxCustodianPolicy::class,
+        CashBoxSession::class => CashBoxSessionPolicy::class,
+        CashBoxCount::class => CashBoxCountPolicy::class,
+        CashOverShortAdjustment::class => CashOverShortPolicy::class,
+        CashReceipt::class => CashReceiptPolicy::class,
+        CashPayment::class => CashPaymentPolicy::class,
+        Cheque::class => ChequePolicy::class,
+        ChequeEndorsement::class => ChequeEndorsementPolicy::class,
+        MerchantSettlement::class => MerchantSettlementPolicy::class,
+        TreasuryApprovalLimit::class => TreasuryApprovalLimitPolicy::class,
+        TreasuryTransfer::class => TreasuryTransferPolicy::class,
         AccountType::class => AccountTypePolicy::class,
         AccountGroup::class => AccountGroupPolicy::class,
         Account::class => AccountPolicy::class,
         AccountingPeriod::class => AccountingPeriodPolicy::class,
+        AccountingClosingRun::class => AccountingClosingRunPolicy::class,
+        AccountingClosingChecklist::class => AccountingClosingChecklistPolicy::class,
+        AccountingClosingException::class => AccountingClosingExceptionPolicy::class,
+        AccountingAdjustment::class => AccountingAdjustmentPolicy::class,
+        ScheduledJournalReversal::class => ScheduledJournalReversalPolicy::class,
+        YearEndClosingSetting::class => AccountingClosingSettingsPolicy::class,
         CostCenter::class => CostCenterPolicy::class,
         AccountingSetting::class => AccountingSettingsPolicy::class,
         PostingProfile::class => PostingProfilePolicy::class,
         OpeningBalanceDocument::class => OpeningBalancePolicy::class,
         JournalEntry::class => JournalEntryPolicy::class,
-        PaymentMethodAccountMapping::class => PaymentMethodAccountMappingPolicy::class,
+        PaymentMethodAccountMapping::class => TreasuryMappingPolicy::class,
         ProductAccountingMapping::class => ProductAccountingMappingPolicy::class,
         Branch::class => BranchPolicy::class,
         User::class => UserPolicy::class,

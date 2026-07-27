@@ -13,11 +13,16 @@ class AccountingPeriodResolver
     {
         $periods = AccountingPeriod::query()->where('company_id', $companyId)
             ->whereDate('start_date', '<=', $date)->whereDate('end_date', '>=', $date)
-            ->where('is_adjustment_period', false)->get();
-        if ($periods->count() !== 1) {
+            ->when($module === 'adjustments', fn ($query) => $query->orderByDesc('is_adjustment_period'),
+                fn ($query) => $query->where('is_adjustment_period', false))
+            ->get();
+        if (($module !== 'adjustments' && $periods->count() !== 1) || ($module === 'adjustments' && $periods->isEmpty())) {
             throw new BusinessRuleException('Posting date must resolve to exactly one accounting period.');
         }
         $period = $periods->first();
+        if ($period->is_adjustment_period && ! in_array($module, ['adjustments', 'manual_journals', 'closing'], true)) {
+            throw new BusinessRuleException('Operational source posting is not allowed in an adjustment period.');
+        }
         if (in_array($period->status, ['closed', 'locked'], true)) {
             throw new BusinessRuleException('The accounting period is closed or locked.');
         }

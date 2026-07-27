@@ -80,14 +80,17 @@ class AccountingPostingSeeder extends Seeder
             $this->sequence($company->id, $branch->id, 'journal_entry', '{BRANCH}-JE-{YYYY}-');
             PaymentMethod::query()->where(fn ($query) => $query->whereNull('company_id')->orWhere('company_id', $company->id))
                 ->where('is_active', true)->get()->each(function (PaymentMethod $method) use ($mapping, $branch, $company, $actor) {
-                    PaymentMethodAccountMapping::query()->updateOrCreate(
-                        ['branch_id' => $branch->id, 'payment_method_id' => $method->id],
-                        [
-                            'company_id' => $company->id,
-                            'account_id' => $method->is_cash ? $mapping->cash_account_id : $mapping->bank_account_id,
-                            'is_active' => true, 'created_by' => $actor->id,
-                        ]
-                    );
+                    $scopeKey = implode(':', [$company->id, $method->id, $branch->id, 'receipt']);
+                    $paymentMapping = PaymentMethodAccountMapping::query()->where('scope_key', $scopeKey)
+                        ->first() ?? new PaymentMethodAccountMapping;
+                    $paymentMapping->forceFill([
+                        'company_id' => $company->id, 'scope_key' => $scopeKey,
+                        'branch_id' => $branch->id, 'payment_method_id' => $method->id,
+                        'operation_type' => 'receipt',
+                        'account_id' => $method->is_cash ? $mapping->cash_account_id : $mapping->bank_account_id,
+                        'bank_account_id' => null, 'cash_box_id' => null,
+                        'is_active' => true, 'created_by' => $actor->id,
+                    ])->save();
                 });
         }
         $this->sequence($company->id, null, 'journal_entry', 'ALL-JE-{YYYY}-');

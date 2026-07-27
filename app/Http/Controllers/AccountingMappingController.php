@@ -6,11 +6,11 @@ use App\Core\Tenancy\TenantContext;
 use App\Http\Requests\PaymentMethodAccountMappingRequest;
 use App\Http\Requests\ProductAccountingMappingRequest;
 use App\Models\Account;
-use App\Models\Branch;
 use App\Models\PaymentMethod;
 use App\Models\PaymentMethodAccountMapping;
 use App\Models\Product;
 use App\Models\ProductAccountingMapping;
+use App\Services\TreasuryMappingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -35,19 +35,13 @@ class AccountingMappingController extends Controller
         ]);
     }
 
-    public function paymentMethod(PaymentMethodAccountMappingRequest $request): RedirectResponse
-    {
+    public function paymentMethod(
+        PaymentMethodAccountMappingRequest $request,
+        TreasuryMappingService $service
+    ): RedirectResponse {
         abort_unless($this->tenant->user()->hasPermission('accounting.mappings.payment_methods'), 403);
         $data = $request->validated();
-        $companyId = $this->tenant->companyId();
-        $branch = Branch::query()->where('company_id', $companyId)->findOrFail($data['branch_id']);
-        abort_unless($this->tenant->user()->canAccessBranch($branch), 403);
-        Account::query()->where('company_id', $companyId)->where('is_posting', true)->findOrFail($data['account_id']);
-        PaymentMethod::query()->where('company_id', $companyId)->findOrFail($data['payment_method_id']);
-        PaymentMethodAccountMapping::query()->updateOrCreate(
-            ['branch_id' => $data['branch_id'], 'payment_method_id' => $data['payment_method_id']],
-            $data + ['company_id' => $companyId, 'created_by' => $this->tenant->user()->id, 'updated_by' => $this->tenant->user()->id]
-        );
+        $service->save($data + ['operation_type' => 'receipt']);
 
         return back()->with('success', 'Payment method mapping saved.');
     }

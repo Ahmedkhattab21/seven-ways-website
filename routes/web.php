@@ -2,8 +2,16 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountGroupController;
+use App\Http\Controllers\AccountingAdjustmentActionController;
+use App\Http\Controllers\AccountingAdjustmentController;
+use App\Http\Controllers\AccountingClosingActionController;
+use App\Http\Controllers\AccountingClosingController;
+use App\Http\Controllers\AccountingClosingExceptionController;
+use App\Http\Controllers\AccountingClosingReportController;
+use App\Http\Controllers\AccountingClosingSettingsController;
 use App\Http\Controllers\AccountingDashboardController;
 use App\Http\Controllers\AccountingMappingController;
+use App\Http\Controllers\AccountingModuleLockController;
 use App\Http\Controllers\AccountingPeriodController;
 use App\Http\Controllers\AccountingPostingController;
 use App\Http\Controllers\AccountingReconciliationController;
@@ -14,11 +22,27 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BalanceSheetController;
+use App\Http\Controllers\BankAccountController;
+use App\Http\Controllers\BankAdjustmentActionController;
+use App\Http\Controllers\BankAdjustmentController;
+use App\Http\Controllers\BankController;
+use App\Http\Controllers\BankMatchingRuleController;
+use App\Http\Controllers\BankReconciliationActionController;
+use App\Http\Controllers\BankReconciliationController;
+use App\Http\Controllers\BankReconciliationMatchController;
+use App\Http\Controllers\BankStatementImportActionController;
+use App\Http\Controllers\BankStatementImportController;
+use App\Http\Controllers\BankStatementImportProfileController;
+use App\Http\Controllers\BankStatementLineController;
 use App\Http\Controllers\BranchContextController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BranchFinancialReportController;
 use App\Http\Controllers\BranchSettingsController;
+use App\Http\Controllers\CashBoxController;
+use App\Http\Controllers\CashBoxSessionController;
 use App\Http\Controllers\CashFlowController;
+use App\Http\Controllers\CashOperationController;
+use App\Http\Controllers\ChequeController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CostCenterController;
 use App\Http\Controllers\CostCenterFinancialReportController;
@@ -39,6 +63,7 @@ use App\Http\Controllers\InventoryDocumentController;
 use App\Http\Controllers\JournalEntryActionController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\LeadController;
+use App\Http\Controllers\MerchantSettlementController;
 use App\Http\Controllers\OpeningBalanceController;
 use App\Http\Controllers\OpeningBalancePostingController;
 use App\Http\Controllers\PostingProfileController;
@@ -59,6 +84,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalesCreditNoteController;
 use App\Http\Controllers\SalesInvoiceController;
 use App\Http\Controllers\SalesReportController;
+use App\Http\Controllers\ScheduledJournalReversalController;
 use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServicePackageController;
@@ -67,6 +93,11 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\SupplierCreditNoteController;
 use App\Http\Controllers\SupplierInvoiceController;
 use App\Http\Controllers\SupplierPaymentController;
+use App\Http\Controllers\TreasuryApprovalLimitController;
+use App\Http\Controllers\TreasuryDashboardController;
+use App\Http\Controllers\TreasuryMappingController;
+use App\Http\Controllers\TreasuryReportController;
+use App\Http\Controllers\TreasuryTransferController;
 use App\Http\Controllers\TrialBalanceController;
 use App\Http\Controllers\UnpostedAccountingSourceController;
 use App\Http\Controllers\UserManagementController;
@@ -81,6 +112,7 @@ use App\Http\Controllers\Website\WebsiteController;
 use App\Http\Controllers\WorkOrderActionController;
 use App\Http\Controllers\WorkOrderController;
 use App\Http\Controllers\WorkOrderMaterialController;
+use App\Http\Controllers\YearEndClosingController;
 use App\Http\Middleware\SetWebsiteLocale;
 use Illuminate\Support\Facades\Route;
 
@@ -133,6 +165,126 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
+    Route::prefix('treasury')->name('treasury.')->group(function () {
+        Route::get('/', TreasuryDashboardController::class)->name('dashboard');
+        Route::get('banks', [BankController::class, 'index'])->name('banks.index');
+        Route::post('banks', [BankController::class, 'store'])->name('banks.store');
+        Route::put('banks/{bank}', [BankController::class, 'update'])->name('banks.update');
+        Route::post('banks/{bank}/disable', [BankController::class, 'disable'])->name('banks.disable');
+        Route::get('bank-accounts', [BankAccountController::class, 'index'])->name('bank-accounts.index');
+        Route::post('bank-accounts', [BankAccountController::class, 'store'])->name('bank-accounts.store');
+        Route::put('bank-accounts/{bankAccount}', [BankAccountController::class, 'update'])->name('bank-accounts.update');
+        Route::post('bank-accounts/{bankAccount}/access', [BankAccountController::class, 'access'])->name('bank-accounts.access');
+        Route::post('bank-accounts/{bankAccount}/{action}', [BankAccountController::class, 'action'])
+            ->whereIn('action', ['activate', 'suspend', 'close'])->name('bank-accounts.action');
+        Route::get('cash-boxes', [CashBoxController::class, 'index'])->name('cash-boxes.index');
+        Route::post('cash-boxes', [CashBoxController::class, 'store'])->name('cash-boxes.store');
+        Route::put('cash-boxes/{cashBox}', [CashBoxController::class, 'update'])->name('cash-boxes.update');
+        Route::post('cash-boxes/{cashBox}/custodians', [CashBoxController::class, 'custodian'])->name('cash-boxes.custodians');
+        Route::post('cash-box-custodians/{cashBoxCustodian}/revoke', [CashBoxController::class, 'revoke'])
+            ->name('cash-box-custodians.revoke');
+        Route::post('cash-boxes/{cashBox}/{action}', [CashBoxController::class, 'action'])
+            ->whereIn('action', ['activate', 'suspend', 'close'])->name('cash-boxes.action');
+        Route::get('mappings', [TreasuryMappingController::class, 'index'])->name('mappings.index');
+        Route::post('mappings', [TreasuryMappingController::class, 'store'])->name('mappings.store');
+        Route::get('transfers', [TreasuryTransferController::class, 'index'])->name('transfers.index');
+        Route::post('transfers', [TreasuryTransferController::class, 'store'])->name('transfers.store');
+        Route::put('transfers/{treasuryTransfer}', [TreasuryTransferController::class, 'update'])->name('transfers.update');
+        Route::post('transfers/{treasuryTransfer}/{action}', [TreasuryTransferController::class, 'action'])
+            ->whereIn('action', ['submit', 'approve', 'cancel'])->name('transfers.action');
+        Route::post('transfers/{treasuryTransfer}/process', [TreasuryTransferController::class, 'process'])
+            ->name('transfers.process');
+        Route::post('transfers/{treasuryTransfer}/reverse', [TreasuryTransferController::class, 'reverse'])
+            ->name('transfers.reverse');
+        Route::get('cash-sessions', [CashBoxSessionController::class, 'index'])->name('cash-sessions.index');
+        Route::post('cash-sessions', [CashBoxSessionController::class, 'store'])->name('cash-sessions.store');
+        Route::post('cash-sessions/{cashBoxSession}/counts', [CashBoxSessionController::class, 'count'])
+            ->name('cash-sessions.counts.store');
+        Route::post('cash-sessions/{cashBoxSession}/{action}', [CashBoxSessionController::class, 'action'])
+            ->whereIn('action', ['start_counting', 'submit', 'approve', 'close', 'cancel', 'reopen'])
+            ->name('cash-sessions.action');
+        Route::post('cash-counts/{cashBoxCount}/{action}', [CashBoxSessionController::class, 'countAction'])
+            ->whereIn('action', ['submit', 'review', 'approve', 'cancel'])->name('cash-counts.action');
+        Route::post('cash-counts/{cashBoxCount}/adjustment', [CashBoxSessionController::class, 'adjustment'])
+            ->name('cash-counts.adjustment');
+        Route::post('cash-over-short/{cashOverShortAdjustment}/{action}', [CashBoxSessionController::class, 'adjustmentAction'])
+            ->whereIn('action', ['submit', 'approve', 'post', 'reverse'])->name('cash-over-short.action');
+        Route::get('cash-receipts', [CashOperationController::class, 'receipts'])->name('cash-receipts.index');
+        Route::post('cash-receipts', [CashOperationController::class, 'storeReceipt'])->name('cash-receipts.store');
+        Route::post('cash-receipts/{cashReceipt}/{action}', [CashOperationController::class, 'receiptAction'])
+            ->whereIn('action', ['submit', 'approve', 'post', 'reverse'])->name('cash-receipts.action');
+        Route::get('cash-payments', [CashOperationController::class, 'payments'])->name('cash-payments.index');
+        Route::post('cash-payments', [CashOperationController::class, 'storePayment'])->name('cash-payments.store');
+        Route::post('cash-payments/{cashPayment}/{action}', [CashOperationController::class, 'paymentAction'])
+            ->whereIn('action', ['submit', 'approve', 'post', 'reverse'])->name('cash-payments.action');
+        Route::get('cheques/received', [ChequeController::class, 'received'])->name('cheques.received');
+        Route::get('cheques/issued', [ChequeController::class, 'issued'])->name('cheques.issued');
+        Route::post('cheques', [ChequeController::class, 'store'])->name('cheques.store');
+        Route::post('cheques/{cheque}/bounce', [ChequeController::class, 'bounce'])->name('cheques.bounce');
+        Route::post('cheques/{cheque}/endorse', [ChequeController::class, 'endorse'])->name('cheques.endorse');
+        Route::post('cheque-endorsements/{chequeEndorsement}/approve', [ChequeController::class, 'approveEndorsement'])
+            ->name('cheque-endorsements.approve');
+        Route::post('cheques/{cheque}/{action}', [ChequeController::class, 'action'])
+            ->whereIn('action', ['submit', 'approve', 'deposit', 'present', 'clear', 'return', 'cancel', 'replace'])
+            ->name('cheques.action');
+        Route::get('merchant-settlements', [MerchantSettlementController::class, 'index'])
+            ->name('merchant-settlements.index');
+        Route::post('merchant-settlements', [MerchantSettlementController::class, 'store'])
+            ->name('merchant-settlements.store');
+        Route::post('merchant-settlements/{merchantSettlement}/{action}', [MerchantSettlementController::class, 'action'])
+            ->whereIn('action', ['submit', 'approve', 'post', 'reverse'])->name('merchant-settlements.action');
+        Route::get('approval-limits', [TreasuryApprovalLimitController::class, 'index'])->name('approval-limits.index');
+        Route::post('approval-limits', [TreasuryApprovalLimitController::class, 'store'])->name('approval-limits.store');
+        Route::put('approval-limits/{treasuryApprovalLimit}', [TreasuryApprovalLimitController::class, 'update'])
+            ->name('approval-limits.update');
+        Route::get('operation-reports', TreasuryReportController::class)->name('operation-reports');
+        Route::get('bank-statements', [BankStatementImportController::class, 'index'])->name('bank-statements.index');
+        Route::post('bank-statements', [BankStatementImportController::class, 'store'])->name('bank-statements.store');
+        Route::get('bank-statements/{bankStatementImport}', [BankStatementImportController::class, 'show'])
+            ->name('bank-statements.show');
+        Route::get('bank-statements/{bankStatementImport}/download', [BankStatementImportController::class, 'download'])
+            ->name('bank-statements.download');
+        Route::post('bank-statements/{bankStatementImport}/cancel', BankStatementImportActionController::class)
+            ->name('bank-statements.cancel');
+        Route::post('bank-statement-lines/{bankStatementLine}/{action}', [BankStatementLineController::class, 'action'])
+            ->whereIn('action', ['ignore', 'duplicate'])->name('bank-statement-lines.action');
+        Route::get('bank-statement-profiles', [BankStatementImportProfileController::class, 'index'])
+            ->name('bank-statement-profiles.index');
+        Route::post('bank-statement-profiles', [BankStatementImportProfileController::class, 'store'])
+            ->name('bank-statement-profiles.store');
+        Route::put('bank-statement-profiles/{bankStatementImportProfile}', [BankStatementImportProfileController::class, 'update'])
+            ->name('bank-statement-profiles.update');
+        Route::get('reconciliations', [BankReconciliationController::class, 'index'])->name('reconciliations.index');
+        Route::post('reconciliations', [BankReconciliationController::class, 'store'])->name('reconciliations.store');
+        Route::get('reconciliations/reports', [BankReconciliationController::class, 'reports'])->name('reconciliations.reports');
+        Route::get('reconciliations/{bankReconciliationSession}', [BankReconciliationController::class, 'show'])
+            ->name('reconciliations.show');
+        Route::get('reconciliations/{bankReconciliationSession}/export', [BankReconciliationController::class, 'export'])
+            ->name('reconciliations.export');
+        Route::post('reconciliations/{bankReconciliationSession}/matches', [BankReconciliationMatchController::class, 'store'])
+            ->name('reconciliations.matches.store');
+        Route::post('reconciliation-matches/{bankReconciliationMatch}/{action}', [BankReconciliationMatchController::class, 'action'])
+            ->whereIn('action', ['accept', 'reject', 'unmatch'])->name('reconciliation-matches.action');
+        Route::post('reconciliations/{bankReconciliationSession}/suggest', [BankReconciliationActionController::class, 'suggest'])
+            ->name('reconciliations.suggest');
+        Route::post('reconciliations/{bankReconciliationSession}/reopen', [BankReconciliationActionController::class, 'reopen'])
+            ->name('reconciliations.reopen');
+        Route::post('reconciliations/{bankReconciliationSession}/{action}', [BankReconciliationActionController::class, 'action'])
+            ->whereIn('action', ['review', 'approve', 'complete', 'cancel'])->name('reconciliations.action');
+        Route::get('matching-rules', [BankMatchingRuleController::class, 'index'])->name('matching-rules.index');
+        Route::post('matching-rules', [BankMatchingRuleController::class, 'store'])->name('matching-rules.store');
+        Route::put('matching-rules/{bankMatchingRule}', [BankMatchingRuleController::class, 'update'])
+            ->name('matching-rules.update');
+        Route::post('matching-rules/{bankMatchingRule}/disable', [BankMatchingRuleController::class, 'disable'])
+            ->name('matching-rules.disable');
+        Route::get('bank-adjustments', [BankAdjustmentController::class, 'index'])->name('bank-adjustments.index');
+        Route::post('bank-adjustments', [BankAdjustmentController::class, 'store'])->name('bank-adjustments.store');
+        Route::put('bank-adjustments/{bankAdjustment}', [BankAdjustmentController::class, 'update'])
+            ->name('bank-adjustments.update');
+        Route::post('bank-adjustments/{bankAdjustment}/{action}', BankAdjustmentActionController::class)
+            ->whereIn('action', ['submit', 'approve', 'post', 'reverse', 'cancel'])->name('bank-adjustments.action');
+    });
+
     Route::get('dashboard', DashboardController::class)->middleware('permission:dashboard.view')->name('dashboard');
 
     Route::prefix('accounting')->name('accounting.')->group(function () {
@@ -156,11 +308,38 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
         Route::get('fiscal-years', [FiscalYearController::class, 'index'])->middleware('permission:accounting.fiscal_years.view')->name('fiscal-years.index');
         Route::post('fiscal-years', [FiscalYearController::class, 'store'])->middleware('permission:accounting.fiscal_years.create')->name('fiscal-years.store');
         Route::post('fiscal-years/{fiscalYear}/generate', [FiscalYearController::class, 'generate'])->middleware('permission:accounting.periods.create')->name('fiscal-years.generate');
-        Route::post('fiscal-years/{fiscalYear}/{action}', [FiscalYearController::class, 'action'])->whereIn('action', ['open', 'soft_close', 'reopen'])->name('fiscal-years.action');
+        Route::post('fiscal-years/{fiscalYear}/{action}', [FiscalYearController::class, 'action'])->whereIn('action', ['open', 'soft_close'])->name('fiscal-years.action');
 
         Route::get('periods', [AccountingPeriodController::class, 'index'])->middleware('permission:accounting.periods.view')->name('periods.index');
         Route::post('periods', [AccountingPeriodController::class, 'store'])->middleware('permission:accounting.periods.create')->name('periods.store');
-        Route::post('periods/{accountingPeriod}/{action}', [AccountingPeriodController::class, 'action'])->whereIn('action', ['open', 'soft_close', 'reopen', 'lock'])->name('periods.action');
+        Route::post('periods/{accountingPeriod}/{action}', [AccountingPeriodController::class, 'action'])->whereIn('action', ['open'])->name('periods.action');
+
+        Route::prefix('closing')->name('closing.')->group(function () {
+            Route::get('/', AccountingClosingController::class)->name('index');
+            Route::post('periods/{accountingPeriod}/start', [AccountingClosingActionController::class, 'start'])->name('periods.start');
+            Route::post('periods/{accountingPeriod}/lock', [AccountingClosingActionController::class, 'lock'])->name('periods.lock');
+            Route::post('periods/{accountingPeriod}/reopen', [AccountingClosingActionController::class, 'reopen'])->name('periods.reopen');
+            Route::put('periods/{accountingPeriod}/modules', AccountingModuleLockController::class)->name('periods.modules');
+            Route::post('runs/{closingRun}/{action}', [AccountingClosingActionController::class, 'run'])
+                ->whereIn('action', ['review', 'approve'])->name('runs.action');
+            Route::get('adjustments', [AccountingAdjustmentController::class, 'index'])->name('adjustments.index');
+            Route::post('adjustments', [AccountingAdjustmentController::class, 'store'])->name('adjustments.store');
+            Route::post('adjustments/{accountingAdjustment}/{action}', AccountingAdjustmentActionController::class)
+                ->whereIn('action', ['submit', 'approve', 'post', 'cancel'])->name('adjustments.action');
+            Route::post('adjustments/{accountingAdjustment}/schedule-reversal', [ScheduledJournalReversalController::class, 'store'])->name('reversals.store');
+            Route::post('scheduled-reversals/{scheduledJournalReversal}/process', [ScheduledJournalReversalController::class, 'process'])->name('reversals.process');
+            Route::post('exceptions/{closingException}/{action}', AccountingClosingExceptionController::class)
+                ->whereIn('action', ['resolve', 'waive'])->name('exceptions.action');
+            Route::get('year-end', [YearEndClosingController::class, 'index'])->name('year-end.index');
+            Route::post('year-end/{fiscalYear}/start', [YearEndClosingController::class, 'start'])->name('year-end.start');
+            Route::post('year-end/runs/{closingRun}/{action}', [YearEndClosingController::class, 'action'])
+                ->whereIn('action', ['review', 'approve', 'execute'])->name('year-end.action');
+            Route::post('year-end/{fiscalYear}/reopen', [YearEndClosingController::class, 'startReopen'])->name('year-end.reopen');
+            Route::post('year-end/reopen-runs/{closingRun}/approve', [YearEndClosingController::class, 'approveReopen'])
+                ->name('year-end.reopen.approve');
+            Route::put('settings', [AccountingClosingSettingsController::class, 'update'])->name('settings.update');
+            Route::get('reports', AccountingClosingReportController::class)->name('reports');
+        });
 
         Route::get('cost-centers', [CostCenterController::class, 'index'])->middleware('permission:accounting.cost_centers.view')->name('cost-centers.index');
         Route::post('cost-centers', [CostCenterController::class, 'store'])->middleware('permission:accounting.cost_centers.create')->name('cost-centers.store');

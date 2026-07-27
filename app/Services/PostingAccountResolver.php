@@ -4,11 +4,14 @@ namespace App\Services;
 
 use App\Core\Exceptions\BusinessRuleException;
 use App\Models\BranchAccountingSetting;
-use App\Models\PaymentMethodAccountMapping;
 use App\Models\ProductAccountingMapping;
 
 class PostingAccountResolver
 {
+    public function __construct(private TreasuryAccountResolver $treasury)
+    {
+    }
+
     public function branch(int $companyId, int $branchId, string $column): int
     {
         $id = BranchAccountingSetting::query()->where('company_id', $companyId)
@@ -20,16 +23,24 @@ class PostingAccountResolver
         return (int) $id;
     }
 
-    public function paymentMethod(int $companyId, int $branchId, int $paymentMethodId): int
-    {
-        $id = PaymentMethodAccountMapping::query()->where('company_id', $companyId)
-            ->where('branch_id', $branchId)->where('payment_method_id', $paymentMethodId)
-            ->where('is_active', true)->value('account_id');
-        if (! $id) {
-            throw new BusinessRuleException('Payment method has no active accounting mapping.');
-        }
+    public function paymentMethod(
+        int $companyId,
+        int $branchId,
+        int $paymentMethodId,
+        string $operationType = 'receipt',
+        ?int $currencyId = null,
+        ?string $amount = null
+    ): int {
+        $resolved = $this->treasury->resolve(
+            $paymentMethodId,
+            $branchId,
+            $operationType,
+            $currencyId ?: (int) \App\Models\Company::query()->findOrFail($companyId)->currency_id,
+            $amount
+        );
 
-        return (int) $id;
+        return (int) ($operationType === 'receipt' && $resolved['clearing_account_id']
+            ? $resolved['clearing_account_id'] : $resolved['account_id']);
     }
 
     public function product(int $companyId, int $productId, string $column, int $branchId, string $fallback): int

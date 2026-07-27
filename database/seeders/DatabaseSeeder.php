@@ -30,6 +30,10 @@ class DatabaseSeeder extends Seeder
             AccountingFoundationSeeder::class,
             AccountingPostingSeeder::class,
             FinancialReportingSeeder::class,
+            AccountingClosingSeeder::class,
+            TreasuryFoundationSeeder::class,
+            BankReconciliationSeeder::class,
+            TreasuryOperationsSeeder::class,
         ]);
     }
 }
