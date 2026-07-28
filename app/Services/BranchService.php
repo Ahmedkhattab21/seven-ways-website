@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Branch;
 use App\Models\Company;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -14,8 +15,8 @@ class BranchService
         return DB::transaction(function () use ($companyId, $data) {
             abort_unless(Company::query()->whereKey($companyId)->where('is_active', true)->exists(), 422, 'الشركة غير نشطة.');
             Branch::query()->where('company_id', $companyId)->lockForUpdate()->get();
-            $isMain = (bool) ($data['is_main'] ?? false)
-                || ! Branch::query()->where('company_id', $companyId)->where('is_active', true)->exists();
+            $hasActiveBranch = Branch::query()->where('company_id', $companyId)->where('is_active', true)->exists();
+            $isMain = (bool) ($data['is_main'] ?? false) || ! $hasActiveBranch;
 
             if ($isMain) {
                 Branch::query()->where('company_id', $companyId)->update(['is_main' => false]);
@@ -23,6 +24,25 @@ class BranchService
 
             $branch = Branch::query()->create([...$data, 'company_id' => $companyId, 'is_main' => $isMain]);
             $branch->settings()->create([]);
+
+            if (! $hasActiveBranch) {
+                User::query()->where('company_id', $companyId)
+                    ->whereNull('branch_id')
+                    ->whereHas('roles', fn ($query) => $query->where('name', 'company_owner'))
+                    ->get()
+                    ->each(function (User $owner) use ($branch): void {
+                        $owner->forceFill(['branch_id' => $branch->id])->save();
+                        $owner->accessibleBranches()->syncWithoutDetaching([
+                            $branch->id => [
+                                'is_default' => true,
+                                'can_view' => true,
+                                'can_create' => true,
+                                'can_update' => true,
+                                'can_approve' => true,
+                            ],
+                        ]);
+                    });
+            }
 
             return $branch;
         });

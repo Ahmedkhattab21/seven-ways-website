@@ -25,6 +25,11 @@ class AuthenticatedSessionController extends Controller
             'last_login_ip' => $request->ip(),
         ])->save();
 
+        if ($request->user()->hasRole('company_owner')
+            && $request->user()->company?->branches()->where('is_active', true)->doesntExist()) {
+            return redirect()->route('branches.create');
+        }
+
         return redirect()->intended(route('dashboard'));
     }
 

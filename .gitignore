@@ -16,6 +16,7 @@
 !/storage/framework/views/.gitignore
 /vendor
 .env
+.env.*.local
 .env.backup
 .env.production
 .phpunit.result.cache

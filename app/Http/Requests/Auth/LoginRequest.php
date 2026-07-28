@@ -59,7 +59,9 @@ class LoginRequest extends FormRequest
     private function hasAccessibleBranch(User $user): bool
     {
         if ($user->isCompanyAdministrator()) {
-            return $user->company->branches()->where('is_active', true)->exists();
+            return $user->company->branches()->where('is_active', true)->exists()
+                || ($user->hasRole('company_owner')
+                    && ! $user->company->branches()->where('is_active', true)->exists());
         }
 
         return $user->company->branches()->where('is_active', true)

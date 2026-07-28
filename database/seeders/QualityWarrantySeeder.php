@@ -82,14 +82,26 @@ class QualityWarrantySeeder extends Seeder
                 ['type:ppf', 'ppf', 'PPF-QC', 'فحص جودة أفلام الحماية'],
                 ['type:thermal_insulation', 'thermal_insulation', 'TINT-QC', 'فحص جودة العازل الحراري'],
             ] as [$scope, $type, $code, $name]) {
-                $template = QualityChecklistTemplate::query()->firstOrCreate(
-                    ['company_id' => $company->id, 'scope_key' => $scope, 'version' => 1],
-                    [
-                        'uuid' => (string) Str::uuid(), 'service_type' => $type, 'code' => $code,
-                        'name' => $name, 'is_default' => true, 'is_active' => true,
+                $template = QualityChecklistTemplate::query()
+                    ->where('company_id', $company->id)
+                    ->where('scope_key', $scope)
+                    ->where('version', 1)
+                    ->first();
+                if (! $template) {
+                    $template = new QualityChecklistTemplate;
+                    $template->forceFill([
+                        'uuid' => (string) Str::uuid(),
+                        'company_id' => $company->id,
+                        'service_type' => $type,
+                        'scope_key' => $scope,
+                        'code' => $code,
+                        'name' => $name,
+                        'version' => 1,
+                        'is_default' => true,
+                        'is_active' => true,
                         'created_by' => $userId,
-                    ]
-                );
+                    ])->save();
+                }
                 foreach ($this->items() as $position => $item) {
                     $template->items()->firstOrCreate(
                         ['code' => $item[0]],
