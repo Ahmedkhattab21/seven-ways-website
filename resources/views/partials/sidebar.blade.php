@@ -4,7 +4,6 @@
         ['label' => 'المشتريات', 'icon' => 'cart'],
         ['label' => 'الحسابات', 'icon' => 'wallet'],
         ['label' => 'الموظفون', 'icon' => 'users'],
-        ['label' => 'التقارير', 'icon' => 'chart'],
     ];
     $futureNavigation = array_values(array_filter($futureNavigation, fn ($item) => $item['icon'] !== 'cart'));
     $futureNavigation = array_values(array_filter($futureNavigation, fn ($item) => $item['icon'] !== 'wallet'));
@@ -14,6 +13,11 @@
     <nav class="sw-sidebar__nav">
         <p class="sw-sidebar__label">مساحة العمل</p>
         <a class="sw-nav-item @if(request()->routeIs('dashboard')) sw-nav-item--active @endif" href="{{ route('dashboard') }}"><x-icon name="dashboard" /><span>الرئيسية</span></a>
+        @if(auth()->user()->hasPermission('dashboards.executive.view'))<a class="sw-nav-item @if(request()->routeIs('dashboards.executive')) sw-nav-item--active @endif" href="{{ route('dashboards.executive') }}"><x-icon name="chart" /><span>المؤشرات التنفيذية</span></a>@endif
+        @if(auth()->user()->hasPermission('dashboards.branch.view'))<a class="sw-nav-item @if(request()->routeIs('dashboards.branches')) sw-nav-item--active @endif" href="{{ route('dashboards.branches') }}"><x-icon name="building" /><span>مؤشرات الفروع</span></a>@endif
+        @if(collect(['financial','sales','purchases','inventory','receivables','payables','treasury','employee_finance','approvals','audit'])->contains(fn($module) => auth()->user()->hasPermission('reports.'.$module.'.view')))
+            <a class="sw-nav-item @if(request()->routeIs('analytics.reports.*')) sw-nav-item--active @endif" href="{{ route('analytics.reports.show', collect(['financial','sales','purchases','inventory','receivables','payables','treasury','employee-finance','approvals','audit'])->first(fn($module) => auth()->user()->hasPermission('reports.'.str_replace('-','_',$module).'.view'))) }}"><x-icon name="chart" /><span>مركز التقارير</span></a>
+        @endif
         @if(auth()->user()->hasPermission('approvals.view'))<a class="sw-nav-item @if(request()->routeIs('approvals.*')) sw-nav-item--active @endif" href="{{ route('approvals.index') }}"><x-icon name="clipboard" /><span>صندوق الاعتمادات</span></a>@endif
         @if(auth()->user()->hasPermission('approvals.view'))<a class="sw-nav-item @if(request()->routeIs('approvals.reports')) sw-nav-item--active @endif" href="{{ route('approvals.reports') }}"><x-icon name="chart" /><span>تقارير الاعتمادات</span></a>@endif
         @if(auth()->user()->hasPermission('delegations.view'))<a class="sw-nav-item @if(request()->routeIs('delegations.*')) sw-nav-item--active @endif" href="{{ route('delegations.index') }}"><x-icon name="users" /><span>تفويضات الاعتماد</span></a>@endif

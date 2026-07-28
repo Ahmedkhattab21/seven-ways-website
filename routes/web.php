@@ -17,6 +17,8 @@ use App\Http\Controllers\AccountingPostingController;
 use App\Http\Controllers\AccountingReconciliationController;
 use App\Http\Controllers\AccountingSettingsController;
 use App\Http\Controllers\AccountTypeController;
+use App\Http\Controllers\AnalyticsReportController;
+use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\AppointmentActionController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\ApprovalController;
@@ -38,6 +40,7 @@ use App\Http\Controllers\BankStatementImportProfileController;
 use App\Http\Controllers\BankStatementLineController;
 use App\Http\Controllers\BranchContextController;
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\BranchDashboardController;
 use App\Http\Controllers\BranchFinancialReportController;
 use App\Http\Controllers\BranchSettingsController;
 use App\Http\Controllers\CashBoxController;
@@ -56,6 +59,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\EmployeeFinanceController;
 use App\Http\Controllers\EmployeeFinanceReportController;
+use App\Http\Controllers\ExecutiveDashboardController;
 use App\Http\Controllers\FinancialReportDefinitionController;
 use App\Http\Controllers\FiscalYearController;
 use App\Http\Controllers\GeneralJournalInquiryController;
@@ -84,6 +88,7 @@ use App\Http\Controllers\QualityChecklistController;
 use App\Http\Controllers\QuotationActionController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\ReferenceDataController;
+use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\ReworkOrderController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalesCreditNoteController;
@@ -140,6 +145,11 @@ use Illuminate\Support\Facades\Route;
 | Public Website Routes
 |--------------------------------------------------------------------------
 */
+
+Route::get('health', [HealthController::class, 'live'])
+    ->middleware('throttle:health')->name('health.live');
+Route::get('health/ready', [HealthController::class, 'ready'])
+    ->middleware('throttle:health')->name('health.ready');
 
 Route::middleware(SetWebsiteLocale::class)->name('website.')->group(function () {
     Route::get('/', [WebsiteController::class, 'home'])->name('home');
@@ -314,6 +324,18 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
     });
 
     Route::get('dashboard', DashboardController::class)->middleware('permission:dashboard.view')->name('dashboard');
+    Route::get('dashboard/executive', ExecutiveDashboardController::class)->name('dashboards.executive');
+    Route::get('dashboard/branches', BranchDashboardController::class)->name('dashboards.branches');
+    Route::get('reports/{report}', AnalyticsReportController::class)
+        ->whereIn('report', [
+            'financial', 'sales', 'receivables', 'purchases', 'payables',
+            'inventory', 'treasury', 'employee-finance', 'approvals', 'audit',
+        ])->name('analytics.reports.show');
+    Route::get('reports/{report}/export', ReportExportController::class)
+        ->whereIn('report', [
+            'financial', 'sales', 'receivables', 'purchases', 'payables',
+            'inventory', 'treasury', 'employee-finance', 'approvals', 'audit',
+        ])->name('analytics.reports.export');
 
     Route::prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/', AccountingDashboardController::class)->middleware('permission:accounting.accounts.view')->name('dashboard');

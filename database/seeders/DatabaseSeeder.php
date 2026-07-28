@@ -14,6 +14,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
+        if (app()->environment('production')) {
+            $this->call(ProductionReferenceSeeder::class);
+
+            return;
+        }
+
         $this->call([
             FoundationPermissionSeeder::class,
             ReferenceDataSeeder::class,
@@ -36,6 +42,7 @@ class DatabaseSeeder extends Seeder
             TreasuryOperationsSeeder::class,
             EmployeeFinanceSeeder::class,
             CentralWorkflowSeeder::class,
+            AnalyticsReportingSeeder::class,
         ]);
     }
 }

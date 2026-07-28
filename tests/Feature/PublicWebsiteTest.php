@@ -111,12 +111,14 @@ class PublicWebsiteTest extends TestCase
             ->assertSee('sw-about__media', false)
             ->assertSee(config('website.assets.about_video'), false);
 
-        $this->get(route('website.about', ['lang' => 'en']))
+        $about = $this->get(route('website.about', ['lang' => 'en']))
             ->assertOk()
             ->assertSee('Who We Are')
             ->assertSee('Our History')
             ->assertSee('sw-about__copy', false)
             ->assertSee('sw-about__heading', false);
+
+        $this->assertVideosRequireUserPlayback($about->getContent());
     }
 
     public function test_services_page_keeps_the_reference_composition_in_both_locales(): void
@@ -129,13 +131,28 @@ class PublicWebsiteTest extends TestCase
             ->assertSee('sw-product__packages', false)
             ->assertSee(config('website.assets.products_background'), false);
 
-        $this->get(route('website.services', ['lang' => 'en']))
+        $services = $this->get(route('website.services', ['lang' => 'en']))
             ->assertOk()
             ->assertSee('Our Services &amp; Products', false)
             ->assertSee('Our Services')
             ->assertSee('Our Products')
             ->assertSee('id="xpel"', false)
             ->assertSee('id="project3"', false);
+
+        $this->assertVideosRequireUserPlayback(
+            $services->getContent(),
+            count(config('website.service_media', []))
+        );
+    }
+
+    public function test_service_carousel_never_starts_video_or_sound_programmatically(): void
+    {
+        $script = file_get_contents(resource_path('js/website/website.js'));
+
+        $this->assertIsString($script);
+        $this->assertStringNotContainsString('enableActiveSound', $script);
+        $this->assertStringNotContainsString('playVideo(video', $script);
+        $this->assertStringNotContainsString('.play()', $script);
     }
 
     public function test_contact_page_keeps_the_reference_composition_in_both_locales(): void
@@ -354,6 +371,24 @@ class PublicWebsiteTest extends TestCase
             'assets/website/videos/paint-protection-films-BFI-I27J.mp4',
         ] as $asset) {
             $this->assertFileExists(public_path($asset));
+        }
+
+        $this->assertFileExists(public_path(config('website.assets.about_video')));
+        foreach (config('website.service_media', []) as $service) {
+            $this->assertFileExists(public_path($service['video']));
+        }
+    }
+
+    private function assertVideosRequireUserPlayback(string $html, int $expectedCount = 1): void
+    {
+        preg_match_all('/<video\b([^>]*)>/i', $html, $matches);
+
+        $this->assertCount($expectedCount, $matches[1]);
+        foreach ($matches[1] as $attributes) {
+            $this->assertMatchesRegularExpression('/\bcontrols\b/i', $attributes);
+            $this->assertMatchesRegularExpression('/\bplaysinline\b/i', $attributes);
+            $this->assertDoesNotMatchRegularExpression('/\bautoplay\b/i', $attributes);
+            $this->assertDoesNotMatchRegularExpression('/\bmuted\b/i', $attributes);
         }
     }
 }

@@ -9,6 +9,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttachmentService
 {
@@ -48,5 +49,32 @@ class AttachmentService
         });
 
         Storage::disk($attachment->disk)->delete($attachment->path);
+    }
+
+    public function download(Attachment $attachment): StreamedResponse
+    {
+        $this->assertPrivatePath($attachment);
+        $this->audit->record('attachment.downloaded', $attachment->attachable, [
+            'attachment_id' => $attachment->id,
+        ]);
+        $downloadName = basename((string) preg_replace('/[\x00-\x1F\x7F]/u', '', $attachment->original_name));
+
+        return Storage::disk('local')->download($attachment->path, $downloadName, [
+            'Content-Type' => $attachment->mime_type,
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; sandbox",
+        ]);
+    }
+
+    private function assertPrivatePath(Attachment $attachment): void
+    {
+        $prefix = 'private/attachments/'.$this->tenant->companyId().'/';
+
+        abort_unless(
+            $attachment->disk === 'local'
+            && str_starts_with($attachment->path, $prefix)
+            && $attachment->path === $prefix.basename($attachment->path),
+            404
+        );
     }
 }

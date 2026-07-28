@@ -64,7 +64,7 @@ class ReworkOrderController extends Controller
     {
         $this->authorize('complete', $reworkOrder);
         $request->validate([
-            'file' => ['required', 'file', 'image', 'max:8192'],
+            'file' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:8192'],
             'category' => ['required', 'in:rework_before,rework_during,rework_after'],
         ]);
         $attachments->store($reworkOrder, $request->file('file'), $request->input('category'));

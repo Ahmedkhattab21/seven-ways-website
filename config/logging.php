@@ -53,7 +53,7 @@ return [
     'channels' => [
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['single'],
+            'channels' => array_filter(explode(',', env('LOG_STACK_CHANNELS', 'daily'))),
             'ignore_exceptions' => false,
         ],
 
@@ -67,7 +67,7 @@ return [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'days' => 14,
+            'days' => (int) env('LOG_DAILY_DAYS', 14),
         ],
 
         'slack' => [

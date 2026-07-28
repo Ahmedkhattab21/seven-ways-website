@@ -1407,7 +1407,7 @@ html[dir="ltr"] .sw-website .sw-home-services .sw-home-brand.sw-reveal.is-visibl
     max-width: 100%;
     height: 100%;
     aspect-ratio: 9 / 16;
-    object-fit: cover;
+    object-fit: contain;
     background: var(--sw-black);
     border-block: 10px solid var(--sw-primary);
     border-radius: 16px;
@@ -1613,7 +1613,7 @@ html[dir="ltr"] .sw-website .sw-home-services .sw-home-brand.sw-reveal.is-visibl
 .sw-website .sw-service-slide__media video {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: 12px;
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
 }

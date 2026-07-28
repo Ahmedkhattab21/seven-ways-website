@@ -96,7 +96,7 @@ class WarrantyClaimController extends Controller
     public function photo(Request $request, WarrantyClaim $warrantyClaim, AttachmentService $attachments): RedirectResponse
     {
         $this->authorize('inspect', $warrantyClaim);
-        $request->validate(['file' => ['required', 'file', 'image', 'max:8192']]);
+        $request->validate(['file' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:8192']]);
         $attachments->store($warrantyClaim, $request->file('file'), 'warranty_claim_photo');
 
         return back()->with('success', 'Private claim photo uploaded.');

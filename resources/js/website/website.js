@@ -94,8 +94,8 @@ if (websiteRoot) {
 
                 if (!(video instanceof HTMLVideoElement)) return;
 
-                if (active && !reducedMotion) {
-                    video.play().catch(() => {});
+                if (active) {
+                    video.currentTime = 0;
                 } else {
                     video.pause();
                 }
@@ -121,28 +121,10 @@ if (websiteRoot) {
     });
 
     const websiteVideos = Array.from(websiteRoot.querySelectorAll('video'));
-    const serviceVideos = Array.from(websiteRoot.querySelectorAll('.sw-video-card video, .sw-service-slide.is-active video'));
-
     if (reducedMotion) {
         websiteVideos.forEach((video) => {
             video.autoplay = false;
             video.pause();
         });
-    }
-
-    if ('IntersectionObserver' in window) {
-        const videoObserver = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                if (!(entry.target instanceof HTMLVideoElement)) return;
-
-                if (entry.isIntersecting && !reducedMotion) {
-                    entry.target.play().catch(() => {});
-                } else {
-                    entry.target.pause();
-                }
-            });
-        }, { threshold: 0.45 });
-
-        serviceVideos.forEach((video) => videoObserver.observe(video));
     }
 }

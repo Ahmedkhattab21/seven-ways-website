@@ -46,8 +46,7 @@
                                 </div>
                                 <div class="sw-service-slide__media">
                                     <video
-                                        muted
-                                        loop
+                                        controls
                                         playsinline
                                         preload="{{ $loop->first ? 'metadata' : 'none' }}"
                                         poster="{{ asset($service['image']) }}"

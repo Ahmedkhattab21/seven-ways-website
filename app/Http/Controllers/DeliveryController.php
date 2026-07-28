@@ -62,7 +62,7 @@ class DeliveryController extends Controller
         $this->authorize('update', $inspection);
         abort_unless($request->user()->hasPermission('vehicle_inspections.delivery_photos'), 403);
         $data = $request->validate([
-            'file' => ['required', 'file', 'image', 'max:8192'],
+            'file' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:8192'],
             'category' => ['required', 'in:delivery_overview,delivery_signature'],
         ]);
         $attachments->store($inspection, $request->file('file'), $data['category']);

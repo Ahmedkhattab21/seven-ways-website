@@ -47,12 +47,9 @@
 
                     <div class="sw-about__media sw-reveal">
                         <video
-                            autoplay
                             controls
-                            muted
-                            loop
                             playsinline
-                            preload="auto"
+                            preload="metadata"
                             aria-label="{{ __('website.about.video_label') }}"
                         >
                             <source src="{{ asset(config('website.assets.about_video')) }}" type="video/mp4">

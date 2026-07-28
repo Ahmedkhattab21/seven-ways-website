@@ -83,7 +83,7 @@ class QualityCheckController extends Controller
     {
         $this->authorize('perform', $qualityCheck);
         $request->validate([
-            'file' => ['required', 'file', 'image', 'max:8192'],
+            'file' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:8192'],
             'category' => ['required', 'in:quality_overview,quality_failure,quality_pass'],
         ]);
         $attachments->store($qualityCheck, $request->file('file'), $request->input('category'));
