@@ -72,7 +72,9 @@ class UserManagementController extends Controller
             ->where(fn ($query) => $query->whereNull('company_id')->orWhere('company_id', $tenant->companyId()))
             ->when(! request()->user()->isCompanyAdministrator() && ! request()->user()->hasRole('system_admin'),
                 fn ($query) => $query->whereNotIn('name', ['system_admin', 'company_owner', 'general_manager']))
-            ->orderBy('display_name')->get();
+            ->orderBy('display_name')->get()
+            ->sortBy(fn (Role $role) => $role->company_id === $tenant->companyId() ? 0 : 1)
+            ->unique('name')->values();
         $user->loadMissing(['roles', 'accessibleBranches']);
 
         return view('users.form', compact('user', 'branches', 'roles'));

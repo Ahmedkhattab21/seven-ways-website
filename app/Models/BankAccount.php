@@ -27,6 +27,11 @@ class BankAccount extends BaseModel
         'allows_transfers' => 'boolean', 'requires_reconciliation' => 'boolean',
     ];
 
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
     protected static function booted(): void
     {
         static::deleting(fn () => throw new BusinessRuleException('Bank accounts are disabled or closed, not deleted.'));

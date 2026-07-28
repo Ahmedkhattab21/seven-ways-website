@@ -71,7 +71,7 @@ class BootstrapAccessSeeder extends Seeder
                     'is_active' => true,
                 ]
             );
-            $ownerRole->permissions()->sync($ownerTemplate->permissions()->pluck('permissions.id'));
+            $ownerRole->permissions()->syncWithoutDetaching($ownerTemplate->permissions()->pluck('permissions.id'));
 
             $this->upsertUser(
                 $credentials['system_admin_email'],

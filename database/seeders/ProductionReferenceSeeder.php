@@ -29,6 +29,7 @@ class ProductionReferenceSeeder extends Seeder
             EmployeeFinanceSeeder::class,
             CentralWorkflowSeeder::class,
             AnalyticsReportingSeeder::class,
+            CashierPermissionReconciler::class,
         ]);
     }
 }

@@ -45,7 +45,13 @@ class TreasuryMappingService
                     throw new BusinessRuleException('Cash payment method cannot route to a bank account.');
                 }
                 if ($branch) {
-                    app(BankAccountAccessService::class)->assert($bank, $branch->id, 'can_view');
+                    $ability = match ($data['operation_type']) {
+                        'receipt', 'deposit', 'merchant_settlement' => 'can_receive',
+                        'payment', 'refund', 'withdrawal' => 'can_pay',
+                        'transfer' => 'can_transfer',
+                        default => throw new BusinessRuleException('Unsupported treasury mapping operation.'),
+                    };
+                    app(BankAccountAccessService::class)->assert($bank, $branch->id, $ability);
                 }
             }
             if (! empty($data['cash_box_id'])) {

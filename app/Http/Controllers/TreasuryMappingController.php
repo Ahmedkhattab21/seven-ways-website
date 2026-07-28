@@ -21,7 +21,8 @@ class TreasuryMappingController extends Controller
 
         return view('treasury.mappings', [
             'mappings' => PaymentMethodAccountMapping::query()->where('company_id', $tenant->companyId())
-                ->with(['account', 'bankAccount', 'cashBox'])->orderBy('payment_method_id')->get(),
+                ->with(['paymentMethod', 'branch', 'account', 'bankAccount', 'cashBox'])
+                ->orderBy('payment_method_id')->get(),
             'paymentMethods' => PaymentMethod::query()->where('company_id', $tenant->companyId())->where('is_active', true)->get(),
             'branches' => $tenant->accessibleBranches(),
             'accounts' => Account::query()->where('company_id', $tenant->companyId())

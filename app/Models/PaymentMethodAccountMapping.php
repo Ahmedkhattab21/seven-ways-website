@@ -27,6 +27,11 @@ class PaymentMethodAccountMapping extends BaseModel
         return $this->belongsTo(PaymentMethod::class);
     }
 
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
     public function bankAccount(): BelongsTo
     {
         return $this->belongsTo(BankAccount::class);

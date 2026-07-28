@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use Database\Seeders\FoundationPermissionSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -126,6 +127,29 @@ class TenantFoundationTest extends TestCase
         [$user] = $this->tenantUser(['users.update']);
 
         $this->actingAs($user)->get(route('users.edit', $user))->assertForbidden();
+    }
+
+    public function test_user_form_renders_accessible_branch_and_role_checkboxes_without_duplicate_role_names(): void
+    {
+        [$user, , $company] = $this->tenantUser(['users.create']);
+        app(FoundationPermissionSeeder::class)->run();
+        $systemRole = Role::query()->create([
+            'company_id' => null, 'name' => 'accountant', 'display_name' => 'Accountant',
+            'scope' => 'system', 'is_active' => true,
+        ]);
+        $companyRole = Role::query()->create([
+            'company_id' => $company->id, 'name' => 'accountant', 'display_name' => 'Accountant',
+            'scope' => 'company', 'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('users.create'));
+        $html = $response->getContent();
+        $response->assertOk()->assertSee('class="sw-check__box"', false)->assertSee('name="branch_ids[]"', false)
+            ->assertSee('name="role_ids[]"', false);
+        $cashier = Role::query()->whereNull('company_id')->where('name', 'cashier')->firstOrFail();
+        $this->assertSame(1, substr_count($html, 'value="'.$cashier->id.'"'));
+        $this->assertSame(1, substr_count($html, 'value="'.$companyRole->id.'"'));
+        $this->assertStringNotContainsString('value="'.$systemRole->id.'"', $html);
     }
 
     private function tenantUser(array $permissionNames): array

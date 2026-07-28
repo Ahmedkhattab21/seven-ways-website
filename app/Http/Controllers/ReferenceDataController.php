@@ -27,8 +27,12 @@ use Illuminate\View\View;
 
 class ReferenceDataController extends Controller
 {
-    public function index(Request $request, string $section, TenantContext $tenant): View
+    public function index(Request $request, string $section, TenantContext $tenant): View|RedirectResponse
     {
+        if ($section === 'fiscal-years') {
+            return redirect()->route('accounting.fiscal-years.index');
+        }
+
         $config = $this->config($section);
         $this->authorizeViewSection($section);
         $query = $this->query($section, $config['model'], $tenant);
@@ -48,8 +52,12 @@ class ReferenceDataController extends Controller
         return view('reference.index', compact('items', 'section', 'config'));
     }
 
-    public function create(string $section, TenantContext $tenant): View
+    public function create(string $section, TenantContext $tenant): View|RedirectResponse
     {
+        if ($section === 'fiscal-years') {
+            return redirect()->route('accounting.fiscal-years.index');
+        }
+
         $config = $this->config($section);
         $this->authorizeManageSection($section);
         $model = new $config['model'];
@@ -69,6 +77,10 @@ class ReferenceDataController extends Controller
         TaxService $taxes,
         FiscalYearService $fiscalYears
     ): RedirectResponse {
+        if ($section === 'fiscal-years') {
+            return redirect()->route('accounting.fiscal-years.index');
+        }
+
         $config = $this->config($section);
         $model = new $config['model'];
         $this->save($model, $section, $this->data($request, $section), $tenant, $taxes, $fiscalYears);
@@ -76,8 +88,12 @@ class ReferenceDataController extends Controller
         return redirect()->route('reference.index', $section)->with('status', 'تمت إضافة السجل.');
     }
 
-    public function edit(string $section, int $reference, TenantContext $tenant): View
+    public function edit(string $section, int $reference, TenantContext $tenant): View|RedirectResponse
     {
+        if ($section === 'fiscal-years') {
+            return redirect()->route('accounting.fiscal-years.index');
+        }
+
         $config = $this->config($section);
         $item = $config['model']::query()->findOrFail($reference);
         $this->authorize('update', $item);
@@ -98,6 +114,10 @@ class ReferenceDataController extends Controller
         TaxService $taxes,
         FiscalYearService $fiscalYears
     ): RedirectResponse {
+        if ($section === 'fiscal-years') {
+            return redirect()->route('accounting.fiscal-years.index');
+        }
+
         $config = $this->config($section);
         $model = $config['model']::query()->findOrFail($reference);
         $this->authorize('update', $model);

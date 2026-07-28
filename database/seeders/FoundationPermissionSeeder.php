@@ -72,6 +72,7 @@ class FoundationPermissionSeeder extends Seeder
             'general_manager' => ['المدير العام', 'company'],
             'branch_manager' => ['مدير فرع', 'branch'],
             'accountant' => ['محاسب', 'branch'],
+            'cashier' => ['أمين صندوق', 'branch'],
             'sales' => ['مبيعات', 'branch'],
             'warehouse_keeper' => ['أمين مخزن', 'branch'],
             'technician' => ['فني', 'branch'],
@@ -104,6 +105,7 @@ class FoundationPermissionSeeder extends Seeder
                     'fiscal_years.view', 'fiscal_years.manage', 'document_sequences.view',
                     'document_sequences.manage', 'branch_settings.view', 'customers.view',
                 ],
+                'cashier' => ['dashboard.view'],
                 'sales' => [
                     'dashboard.view', 'customers.view', 'customers.create', 'customers.update',
                     'customers.manage_contacts', 'customers.manage_addresses', 'customers.manage_notes',
@@ -119,7 +121,7 @@ class FoundationPermissionSeeder extends Seeder
                 default => ['dashboard.view'],
             };
 
-            $role->permissions()->sync(Permission::query()->whereIn('name', $allowed)->pluck('id'));
+            $role->permissions()->syncWithoutDetaching(Permission::query()->whereIn('name', $allowed)->pluck('id'));
         }
     }
 }

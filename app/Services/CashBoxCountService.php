@@ -31,8 +31,12 @@ class CashBoxCountService
                 throw new BusinessRuleException('Cash count requires an open counting session.');
             }
             $lines = $data['lines'] ?? [];
-            if ($lines === [] && (blank($data['notes'] ?? null) || ! isset($data['counted_total']))) {
-                throw new BusinessRuleException('A documented manual total is required when denominations are unavailable.');
+            $zeroCount = (bool) ($data['zero_count'] ?? false);
+            if ($zeroCount && $lines !== []) {
+                throw new BusinessRuleException('Zero count cannot include denomination lines.');
+            }
+            if (! $zeroCount && $lines === []) {
+                throw new BusinessRuleException('Add denomination lines or select zero cash count.');
             }
             $total = '0.0000';
             foreach ($lines as $line) {
@@ -41,13 +45,15 @@ class CashBoxCountService
                 }
                 $total = bcadd($total, bcmul((string) $line['denomination'], (string) $line['quantity'], 4), 4);
             }
-            if ($lines === []) {
-                $total = number_format((float) $data['counted_total'], 4, '.', '');
+            if ($zeroCount) {
+                $total = '0.0000';
             }
             $book = $this->balances->cashBox($session->cashBox)['book_balance'];
             $count = new CashBoxCount([
                 'cash_box_session_id' => $session->id, 'count_type' => $data['count_type'],
-                'notes' => $data['notes'] ?? null,
+                'notes' => $zeroCount
+                    ? trim(($data['notes'] ?? '').' [Zero cash count confirmed by operator.]')
+                    : ($data['notes'] ?? null),
             ]);
             $count->forceFill([
                 'company_id' => $session->company_id, 'status' => 'draft',

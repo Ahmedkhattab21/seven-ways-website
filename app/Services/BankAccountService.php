@@ -9,6 +9,7 @@ use App\Events\BankAccountClosed;
 use App\Events\BankAccountCreated;
 use App\Events\BankAccountSuspended;
 use App\Models\BankAccount;
+use App\Models\BankAccountBranchAccess;
 use App\Models\BankAdjustment;
 use App\Models\BankReconciliationSession;
 use App\Models\BankStatementImport;
@@ -36,6 +37,7 @@ class BankAccountService
                 'company_id' => $this->tenant->companyId(), 'status' => 'draft',
                 'created_by' => $this->tenant->user()->id, 'iban_hash' => $prepared['iban_hash'],
             ])->save();
+            $this->syncBranchAccess($account, null, $account->branch_id);
             $this->audit->record('treasury.bank_account.created', $account);
             DB::afterCommit(fn () => event(new BankAccountCreated($account->id)));
 
@@ -54,6 +56,7 @@ class BankAccountService
             $hasMovements = JournalEntryLine::query()->where('account_id', $account->gl_account_id)->exists()
                 || BankStatementImport::query()->where('bank_account_id', $account->id)->exists()
                 || BankReconciliationSession::query()->where('bank_account_id', $account->id)->exists();
+            $previousBranchId = $account->branch_id;
             if ($hasMovements && ((int) $data['gl_account_id'] !== $account->gl_account_id
                 || (int) $data['currency_id'] !== $account->currency_id)) {
                 throw new BusinessRuleException('GL account and currency are locked after financial activity.');
@@ -69,6 +72,9 @@ class BankAccountService
             $account->forceFill([
                 'updated_by' => $this->tenant->user()->id, 'iban_hash' => $prepared['iban_hash'],
             ])->save();
+            if (! $hasMovements && $previousBranchId !== $account->branch_id) {
+                $this->syncBranchAccess($account, $previousBranchId, $account->branch_id);
+            }
             $this->audit->record('treasury.bank_account.updated', $account);
 
             return $account;
@@ -150,6 +156,25 @@ class BankAccountService
         if ($hash && BankAccount::query()->where('company_id', $this->tenant->companyId())
             ->where('iban_hash', $hash)->when($exceptId, fn ($query) => $query->whereKeyNot($exceptId))->exists()) {
             throw new BusinessRuleException('IBAN already exists in the current company.');
+        }
+    }
+
+    private function syncBranchAccess(BankAccount $account, ?int $previousBranchId, ?int $branchId): void
+    {
+        if ($previousBranchId && $previousBranchId !== $branchId) {
+            BankAccountBranchAccess::query()
+                ->where('bank_account_id', $account->id)->where('branch_id', $previousBranchId)
+                ->update(['is_active' => false]);
+        }
+        if ($branchId) {
+            $access = BankAccountBranchAccess::query()->firstOrNew([
+                'bank_account_id' => $account->id, 'branch_id' => $branchId,
+            ]);
+            $access->fill([
+                'is_active' => true, 'can_view' => true, 'can_receive' => true,
+                'can_pay' => false, 'can_transfer' => false,
+            ]);
+            $access->forceFill(['company_id' => $account->company_id])->save();
         }
     }
 

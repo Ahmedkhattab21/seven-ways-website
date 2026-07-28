@@ -60,6 +60,10 @@ class Handler extends ExceptionHandler
             if ($request->is('api/*')) {
                 return ApiResponse::error($e->getMessage(), $e->errors(), $e->status(), $e->meta());
             }
+
+            if ($request->expectsHtml() && $request->isMethod('POST')) {
+                return redirect()->back()->withInput()->withErrors(['mapping' => $e->getMessage()]);
+            }
         });
 
         $this->renderable(function (ValidationException $e, Request $request) {

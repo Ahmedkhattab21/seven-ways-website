@@ -39,6 +39,11 @@ class CashBoxSession extends BaseModel
         return $this->belongsTo(Branch::class);
     }
 
+    public function custodian(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'custodian_user_id');
+    }
+
     public function counts(): HasMany
     {
         return $this->hasMany(CashBoxCount::class);

@@ -60,11 +60,6 @@ class BankReconciliationSeeder extends Seeder
             ->syncWithoutDetaching(Permission::query()->whereIn('name', [
                 'treasury.bank_statements.view', 'treasury.reconciliation.view',
             ])->pluck('id')));
-        Role::query()->whereIn('name', ['cashier', 'receptionist'])->get()->each(fn (Role $role) => $role->permissions()
-            ->syncWithoutDetaching(Permission::query()->whereIn('name', [
-                'treasury.bank_statements.view', 'treasury.reconciliation.view',
-            ])->pluck('id')));
-
         Company::query()->with(['users', 'branches'])->get()->each(function (Company $company) {
             $actor = $company->users->sortBy('id')->first();
             if (! $actor) {

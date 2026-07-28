@@ -22,6 +22,29 @@ class PhaseFifteenCashSessionOperationsTest extends TestCase
     use BuildsTreasuryOperationsContext;
     use DatabaseTransactions;
 
+    public function test_zero_cash_count_creates_auditable_zero_without_fake_lines(): void
+    {
+        $context = $this->treasuryContext();
+        $box = CashBox::query()->where('company_id', $context['company']->id)->where('branch_id', $context['branch']->id)->firstOrFail();
+        app(CashBoxCustodianService::class)->assign($box, [
+            'user_id' => $context['cashier']->id, 'valid_from' => '2040-01-01',
+            'valid_to' => '2040-12-31', 'can_receive' => true, 'can_pay' => true,
+            'can_transfer' => true, 'is_primary' => true,
+        ]);
+        $session = app(CashBoxSessionService::class)->open([
+            'cash_box_id' => $box->id, 'custodian_user_id' => $context['cashier']->id,
+            'business_date' => '2040-01-10',
+        ]);
+        app(CashBoxSessionService::class)->action($session, 'start_counting');
+        $count = app(CashBoxCountService::class)->create($session->fresh(), [
+            'count_type' => 'opening', 'zero_count' => true, 'notes' => 'Empty cash box UAT',
+        ]);
+        $this->assertSame('0.0000', $count->counted_total);
+        $this->assertSame('0.0000', $count->difference);
+        $this->assertCount(0, $count->lines);
+        $this->assertStringContainsString('Zero cash count', $count->notes);
+    }
+
     public function test_one_session_backend_count_and_over_short_blocking_close(): void
     {
         $context = $this->treasuryContext();

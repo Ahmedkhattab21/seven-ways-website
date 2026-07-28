@@ -230,7 +230,7 @@ class PhaseFourSettingsTest extends TestCase
         ]);
     }
 
-    public function test_fiscal_year_service_keeps_only_one_current_year(): void
+    public function test_fiscal_year_service_creates_new_years_as_draft(): void
     {
         [$user, , $company] = $this->tenantUser([]);
         $service = app(FiscalYearService::class);
@@ -243,8 +243,10 @@ class PhaseFourSettingsTest extends TestCase
             'status' => 'open', 'is_current' => true,
         ]);
 
-        $this->assertFalse($first->fresh()->is_current);
-        $this->assertTrue($second->fresh()->is_current);
+        $this->assertSame('draft', $first->fresh()->status);
+        $this->assertFalse((bool) $first->fresh()->is_current);
+        $this->assertSame('draft', $second->fresh()->status);
+        $this->assertFalse((bool) $second->fresh()->is_current);
     }
 
     public function test_outer_transaction_rollback_does_not_consume_document_number(): void

@@ -42,7 +42,8 @@ class FiscalYearService
                 ...array_diff_key($data, ['status' => true]),
                 'company_id' => $companyId,
                 'code' => $data['code'] ?? 'FY-'.substr($data['start_date'], 0, 4),
-                'status' => $fiscalYear->exists ? $fiscalYear->status : ($data['status'] ?? 'draft'),
+                'status' => $fiscalYear->exists ? $fiscalYear->status : 'draft',
+                'is_current' => $fiscalYear->exists ? (bool) ($data['is_current'] ?? $fiscalYear->is_current) : false,
                 'created_by' => $fiscalYear->created_by ?: $actor->id,
             ])->save();
             $this->audit->recordAs(

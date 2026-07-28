@@ -7,6 +7,7 @@ use App\Core\Tenancy\TenantContext;
 use App\Models\Account;
 use App\Models\Bank;
 use App\Models\BankAccount;
+use App\Models\BankAccountBranchAccess;
 use App\Models\Branch;
 use App\Models\CashBox;
 use App\Models\Company;
@@ -14,6 +15,7 @@ use App\Models\Currency;
 use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\PaymentMethod;
+use App\Models\PaymentMethodAccountMapping;
 use App\Models\Role;
 use App\Models\TreasuryTransfer;
 use App\Models\User;
@@ -37,6 +39,74 @@ use Tests\TestCase;
 class PhaseFifteenTreasuryFoundationTest extends TestCase
 {
     use DatabaseTransactions;
+
+    public function test_treasury_mapping_page_uses_readable_labels_and_eager_loaded_relations(): void
+    {
+        $context = $this->context();
+        $method = PaymentMethod::query()->where('company_id', $context['company']->id)->where('code', 'CASH')->firstOrFail();
+        app(TreasuryMappingService::class)->save([
+            'payment_method_id' => $method->id, 'branch_id' => $context['branch']->id,
+            'operation_type' => 'receipt', 'account_id' => $this->account($context, '112000')->id,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($context['user'])->get(route('treasury.mappings.index'));
+
+        $response->assertOk()
+            ->assertSee('Cash')
+            ->assertSee('Main')
+            ->assertSee('قبض')
+            ->assertSee('112000')
+            ->assertSee('نشط')
+            ->assertDontSee('>1<')
+            ->assertDontSee('>2<');
+        $loaded = PaymentMethodAccountMapping::query()->with([
+            'paymentMethod', 'branch', 'account', 'bankAccount', 'cashBox',
+        ])->findOrFail(
+            PaymentMethodAccountMapping::query()->where('company_id', $context['company']->id)->value('id')
+        );
+        $this->assertTrue($loaded->relationLoaded('paymentMethod'));
+        $this->assertTrue($loaded->relationLoaded('branch'));
+    }
+
+    public function test_branch_bank_account_gets_receipt_access_without_payment_or_transfer_rights(): void
+    {
+        $context = $this->context();
+        $account = app(BankAccountService::class)->create($this->bankData($context, [
+            'branch_id' => $context['branch']->id, 'account_code' => 'BANK-CAI-001',
+        ]));
+        $access = BankAccountBranchAccess::query()->where('bank_account_id', $account->id)
+            ->where('branch_id', $context['branch']->id)->firstOrFail();
+        $this->assertTrue($access->is_active);
+        $this->assertTrue($access->can_view);
+        $this->assertTrue($access->can_receive);
+        $this->assertFalse($access->can_pay);
+        $this->assertFalse($access->can_transfer);
+    }
+
+    public function test_bank_receipt_mapping_uses_receive_access_and_payment_is_rejected_without_pay_access(): void
+    {
+        $context = $this->context();
+        $account = app(BankAccountService::class)->create($this->bankData($context, [
+            'branch_id' => $context['branch']->id, 'account_code' => 'BANK-CAI-002',
+        ]));
+        app(BankAccountService::class)->action($account, 'activate', 'Activate for mapping test');
+        $method = new PaymentMethod;
+        $method->forceFill([
+            'company_id' => $context['company']->id, 'code' => 'BANK_TRANSFER', 'name' => 'Bank transfer',
+            'type' => 'bank', 'is_active' => true,
+        ])->save();
+        $mapping = app(TreasuryMappingService::class)->save([
+            'payment_method_id' => $method->id, 'branch_id' => $context['branch']->id,
+            'operation_type' => 'receipt', 'bank_account_id' => $account->id, 'is_active' => true,
+        ]);
+        $this->assertSame($account->id, $mapping->bank_account_id);
+        $this->expectException(BusinessRuleException::class);
+        app(TreasuryMappingService::class)->save([
+            'payment_method_id' => $method->id, 'branch_id' => $context['branch']->id,
+            'operation_type' => 'payment', 'bank_account_id' => $account->id, 'is_active' => true,
+        ]);
+    }
 
     public function test_schema_has_treasury_foundation_without_stored_balances(): void
     {

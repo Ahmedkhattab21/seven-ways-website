@@ -426,6 +426,19 @@ svg {
     opacity: 0;
 }
 
+.sw-check {
+    position: relative;
+    min-height: 2.75rem;
+    padding: var(--sw-space-2) var(--sw-space-3);
+    border: 1px solid transparent;
+    border-radius: var(--sw-radius-md);
+}
+
+.sw-check:hover {
+    background: var(--sw-surface);
+    border-color: var(--sw-border);
+}
+
 .sw-check__box {
     position: relative;
     width: 1.15rem;
@@ -2002,6 +2015,13 @@ svg {
 .sw-option-group legend {
     padding-inline: var(--sw-space-2);
     font-weight: 700;
+}
+
+.sw-option-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: var(--sw-space-2);
+    width: 100%;
 }
 
 .sw-branch-selector {
