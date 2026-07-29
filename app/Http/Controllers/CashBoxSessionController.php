@@ -26,7 +26,10 @@ class CashBoxSessionController extends Controller
         return view('treasury.cash-sessions', [
             'sessions' => CashBoxSession::query()->where('company_id', $tenant->companyId())
                 ->whereIn('branch_id', $tenant->accessibleBranches()->pluck('id'))
-                ->with(['cashBox', 'custodian', 'counts.lines', 'counts.adjustment'])->latest('id')->paginate(30),
+                ->with([
+                    'cashBox', 'custodian', 'counts.lines',
+                    'counts.adjustment.journalEntry', 'counts.adjustment.reversalJournalEntry',
+                ])->latest('id')->paginate(30),
             'cashBoxes' => CashBox::query()->where('company_id', $tenant->companyId())
                 ->whereIn('branch_id', $tenant->accessibleBranches()->pluck('id'))
                 ->where('status', 'active')->get(),
@@ -105,9 +108,14 @@ class CashBoxSessionController extends Controller
         CashOverShortService $service
     ): RedirectResponse {
         abort_unless($request->user()->hasPermission('treasury.cash_over_short.view'), 403);
+        abort_unless(
+            (int) $cashBoxCount->company_id === (int) $request->user()->company_id
+            && $request->user()->canAccessBranch($cashBoxCount->session->cashBox->branch),
+            403
+        );
         $service->create($cashBoxCount, $request->validated('description'));
 
-        return back()->with('success', 'تم إنشاء فرق الخزينة للمراجعة.');
+        return back()->with('success', 'تم إنشاء تسوية فرق الخزينة.');
     }
 
     public function adjustmentAction(
@@ -118,8 +126,16 @@ class CashBoxSessionController extends Controller
     ): RedirectResponse {
         $permission = $action === 'submit' ? 'view' : ($action === 'reverse' ? 'post' : $action);
         abort_unless($request->user()->hasPermission('treasury.cash_over_short.'.$permission), 403);
-        $service->action($cashOverShortAdjustment, $action, $request->validated('reason'));
+        $this->authorize('view', $cashOverShortAdjustment);
+        $adjustment = $service->action($cashOverShortAdjustment, $action, $request->validated('reason'));
+        $messages = [
+            'submit' => 'تم إرسال التسوية للاعتماد.',
+            'approve' => 'تم اعتماد التسوية.',
+            'post' => 'تم ترحيل التسوية بنجاح. تم تحديث رصيد الخزينة.',
+            'reverse' => 'تم عكس تسوية فرق الخزينة.',
+        ];
 
-        return back()->with('success', 'تم تحديث فرق الخزينة.');
+        return back()->with('success', $messages[$action] ?? 'تم تحديث تسوية فرق الخزينة.')
+            ->with('cash_over_short_adjustment_id', $adjustment->id);
     }
 }

@@ -23,16 +23,17 @@ class CashOverShortService
             $count = CashBoxCount::query()->where('company_id', $this->tenant->companyId())
                 ->where('status', 'approved')->whereKey($count->id)->lockForUpdate()->firstOrFail();
             if (! $this->tenant->user()->canAccessBranch($count->session->cashBox->branch)) {
-                throw new BusinessRuleException('Cash difference branch is outside the actor scope.');
+                throw new BusinessRuleException('لا يمكن الوصول إلى فرق خزينة خارج الفروع المسموحة.', status: 403);
             }
             if (bccomp((string) $count->difference, '0', 4) === 0) {
-                throw new BusinessRuleException('Cash over/short requires a non-zero approved difference.');
+                throw new BusinessRuleException('لا يمكن إنشاء تسوية لعد مطابق بدون فرق.');
             }
             $adjustment = CashOverShortAdjustment::query()->where('cash_box_count_id', $count->id)
-                ->lockForUpdate()->first() ?? new CashOverShortAdjustment;
-            if ($adjustment->exists) {
-                return $adjustment;
+                ->lockForUpdate()->first();
+            if ($adjustment) {
+                throw new BusinessRuleException('توجد بالفعل تسوية مرتبطة بهذا العد.');
             }
+            $adjustment = new CashOverShortAdjustment;
             $adjustment->forceFill([
                 'company_id' => $count->company_id, 'cash_box_session_id' => $count->cash_box_session_id,
                 'cash_box_count_id' => $count->id,
@@ -52,11 +53,11 @@ class CashOverShortService
             $adjustment = CashOverShortAdjustment::query()->where('company_id', $this->tenant->companyId())
                 ->whereKey($adjustment->id)->lockForUpdate()->firstOrFail();
             if (! $this->tenant->user()->canAccessBranch($adjustment->session->cashBox->branch)) {
-                throw new BusinessRuleException('Cash difference branch is outside the actor scope.');
+                throw new BusinessRuleException('لا يمكن الوصول إلى فرق خزينة خارج الفروع المسموحة.', status: 403);
             }
             if ($action === 'reverse') {
                 if ($adjustment->status !== 'posted') {
-                    throw new BusinessRuleException('Only a posted cash difference can be reversed.');
+                    throw new BusinessRuleException('لا يمكن عكس التسوية قبل ترحيلها.');
                 }
                 $entry = $this->posting->reverse($adjustment, (string) $reason);
                 $adjustment->forceFill([
@@ -70,11 +71,11 @@ class CashOverShortService
                     'post' => ['approved', 'posted', 'posted_by'],
                 ];
                 if (! isset($transitions[$action])) {
-                    throw new BusinessRuleException('Unsupported cash over/short action.');
+                    throw new BusinessRuleException('إجراء تسوية فرق الخزينة غير مدعوم.');
                 }
                 [$from, $to, $actor] = $transitions[$action];
                 if ($adjustment->status !== $from) {
-                    throw new BusinessRuleException('Invalid cash over/short transition.');
+                    throw new BusinessRuleException('حالة التسوية الحالية لا تسمح بهذا الإجراء.');
                 }
                 $changes = ['status' => $to, $actor => $this->tenant->user()->id];
                 if ($action === 'post') {

@@ -27,4 +27,14 @@ class CashOverShortAdjustment extends BaseModel
     {
         return $this->belongsTo(CashBoxCount::class, 'cash_box_count_id');
     }
+
+    public function journalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class);
+    }
+
+    public function reversalJournalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class, 'reversal_journal_entry_id');
+    }
 }

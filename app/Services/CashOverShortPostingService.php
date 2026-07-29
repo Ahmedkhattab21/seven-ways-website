@@ -17,7 +17,7 @@ class CashOverShortPostingService
         $session = $adjustment->session()->with('cashBox')->firstOrFail();
         $box = $session->cashBox;
         if (! $box->over_short_account_id) {
-            throw new BusinessRuleException('Cash box over/short account is not configured.');
+            throw new BusinessRuleException('حساب فروق العجز والزيادة غير مربوط بالخزينة. يرجى ضبطه من إعدادات الخزائن قبل الترحيل.');
         }
         $lines = $adjustment->adjustment_type === 'cash_over'
             ? [

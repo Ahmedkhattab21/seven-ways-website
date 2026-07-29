@@ -2329,6 +2329,44 @@ svg {
     margin-bottom: 0;
 }
 
+.cash-over-short-create-form,
+.cash-over-short-card {
+    display: grid;
+    gap: var(--sw-space-4);
+    padding: var(--sw-space-4);
+    background: color-mix(in srgb, var(--sw-warning) 7%, var(--sw-white-faint));
+    border: 1px solid color-mix(in srgb, var(--sw-warning) 40%, var(--sw-border));
+    border-radius: var(--sw-radius-md);
+}
+
+.cash-over-short-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--sw-space-3);
+    flex-wrap: wrap;
+}
+
+.cash-over-short-card__header h4 {
+    margin: var(--sw-space-1) 0 0;
+}
+
+.cash-over-short-card__eyebrow {
+    color: var(--sw-text-muted);
+    font-size: var(--sw-font-xs);
+}
+
+.cash-over-short-reverse-form {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--sw-space-3);
+    flex-wrap: wrap;
+}
+
+.cash-over-short-reverse-form .sw-field {
+    flex: 1 1 18rem;
+}
+
 .cash-operations-page {
     display: grid;
     gap: var(--sw-space-6);

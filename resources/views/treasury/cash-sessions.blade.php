@@ -19,6 +19,13 @@
         'approved' => 'معتمد',
         'cancelled' => 'ملغي',
     ];
+    $adjustmentStatuses = [
+        'draft' => 'مسودة',
+        'pending_approval' => 'في انتظار الاعتماد',
+        'approved' => 'معتمدة',
+        'posted' => 'مُرحّلة',
+        'reversed' => 'معكوسة',
+    ];
 @endphp
 @if($errors->has('business'))<div class="sw-alert sw-alert--error">{{ $errors->first('business') }}</div>@endif
 <div class="cash-sessions-page">
@@ -77,6 +84,9 @@
         $differenceLabel = $difference === 0.0 ? 'مطابق' : ($difference < 0 ? 'عجز بقيمة '.number_format(abs($difference), 4) : 'زيادة بقيمة '.number_format($difference, 4));
         $countActions = ['submitted' => ['review', 'review', 'مراجعة العد'], 'reviewed' => ['approve', 'approve', 'اعتماد العد']];
         $countAction = $countActions[$count->status] ?? null;
+        $adjustment = $count->adjustment;
+        $canViewAdjustment = auth()->user()->hasPermission('treasury.cash_over_short.view');
+        $adjustmentTypeLabel = $adjustment?->adjustment_type === 'cash_over' ? 'زيادة خزينة' : 'عجز خزينة';
     @endphp
     <div class="cash-session-count-card">
         <div class="cash-session-count-card__header">
@@ -94,6 +104,71 @@
         @endif
         @if($countAction && auth()->user()->hasPermission('treasury.cash_sessions.'.$countAction[1]))
         <form method="POST" action="{{ route('treasury.cash-counts.action', [$count, $countAction[0]]) }}">@csrf<button class="sw-button sw-button--primary">{{ $countAction[2] }}</button></form>
+        @endif
+
+        @if($count->status === 'approved' && $difference !== 0.0 && ! $adjustment && $canViewAdjustment)
+        <form method="POST" action="{{ route('treasury.cash-counts.adjustment', $count) }}" class="cash-over-short-create-form">@csrf
+            <label class="sw-field">
+                <span class="sw-field__label">سبب العجز أو الزيادة</span>
+                <input class="sw-input" name="description" value="{{ old('description') }}" placeholder="مثال: عجز افتتاحي عند استلام الوردية" required minlength="5" maxlength="2000">
+            </label>
+            <div class="cash-session-actions">
+                <button class="sw-button sw-button--primary">{{ $difference < 0 ? 'إنشاء تسوية العجز' : 'إنشاء تسوية الزيادة' }}</button>
+            </div>
+        </form>
+        @endif
+
+        @if($adjustment && $canViewAdjustment)
+        <section class="cash-over-short-card">
+            <header class="cash-over-short-card__header">
+                <div>
+                    <span class="cash-over-short-card__eyebrow">تسوية فرق الخزينة</span>
+                    <h4>{{ $adjustmentTypeLabel }}</h4>
+                </div>
+                <span class="cash-session-status">{{ $adjustmentStatuses[$adjustment->status] ?? 'حالة غير معروفة' }}</span>
+            </header>
+            <div class="cash-session-summary cash-session-summary--adjustment">
+                <div class="cash-session-stat"><span>نوع الفرق</span><strong>{{ $adjustmentTypeLabel }}</strong></div>
+                <div class="cash-session-stat"><span>المبلغ</span><strong>{{ $adjustment->amount }}</strong></div>
+                <div class="cash-session-stat"><span>الحالة</span><strong>{{ $adjustmentStatuses[$adjustment->status] ?? 'حالة غير معروفة' }}</strong></div>
+                <div class="cash-session-stat"><span>السبب</span><strong>{{ $adjustment->description }}</strong></div>
+            </div>
+
+            @if($adjustment->journalEntry)
+            <p class="cash-session-reference">
+                رقم القيد:
+                @if(auth()->user()->hasPermission('accounting.journals.view'))
+                <a href="{{ route('accounting.journals.show', $adjustment->journalEntry) }}">{{ $adjustment->journalEntry->journal_number }}</a>
+                @else
+                <strong>{{ $adjustment->journalEntry->journal_number }}</strong>
+                @endif
+            </p>
+            @endif
+
+            <div class="cash-session-actions">
+                @if($adjustment->status === 'draft')
+                <form method="POST" action="{{ route('treasury.cash-over-short.action', [$adjustment, 'submit']) }}">@csrf
+                    <button class="sw-button sw-button--primary">إرسال التسوية للاعتماد</button>
+                </form>
+                @elseif($adjustment->status === 'pending_approval' && auth()->user()->hasPermission('treasury.cash_over_short.approve'))
+                <form method="POST" action="{{ route('treasury.cash-over-short.action', [$adjustment, 'approve']) }}">@csrf
+                    <button class="sw-button sw-button--primary">اعتماد التسوية</button>
+                </form>
+                @elseif($adjustment->status === 'approved' && auth()->user()->hasPermission('treasury.cash_over_short.post'))
+                <form method="POST" action="{{ route('treasury.cash-over-short.action', [$adjustment, 'post']) }}">@csrf
+                    <button class="sw-button sw-button--primary">ترحيل التسوية</button>
+                </form>
+                @elseif($adjustment->status === 'posted' && auth()->user()->hasPermission('treasury.cash_over_short.post'))
+                <form method="POST" action="{{ route('treasury.cash-over-short.action', [$adjustment, 'reverse']) }}" class="cash-over-short-reverse-form">@csrf
+                    <label class="sw-field">
+                        <span class="sw-field__label">سبب عكس التسوية</span>
+                        <input class="sw-input" name="reason" required minlength="5" maxlength="2000">
+                    </label>
+                    <button class="sw-button sw-button--danger">عكس التسوية</button>
+                </form>
+                @endif
+            </div>
+        </section>
         @endif
     </div>
     @endforeach
