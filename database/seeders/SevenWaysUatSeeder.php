@@ -35,6 +35,7 @@ use App\Models\VehicleModel;
 use App\Models\VehicleSize;
 use App\Models\VehicleType;
 use App\Models\Warehouse;
+use App\Services\AccountantCashSessionPermissionReconciler;
 use App\Services\DocumentNumberService;
 use App\Services\UatEnvironmentGuard;
 use Illuminate\Database\Seeder;
@@ -84,6 +85,7 @@ class SevenWaysUatSeeder extends Seeder
 
         DB::transaction(function () use ($company, $branches, $users, $egp): void {
             $this->syncRestrictedRoles($company);
+            app(AccountantCashSessionPermissionReconciler::class)->reconcile();
             $this->seedFiscalPeriod($company, $users['owner']);
             $this->seedWarehouses($company, $branches);
             $this->seedInventorySequences($company, $branches);

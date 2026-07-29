@@ -113,6 +113,10 @@ class CashBoxSessionService
             if ($session->status !== $from) {
                 throw new BusinessRuleException('Invalid cash session status transition.');
             }
+            if (in_array($action, ['submit', 'approve', 'close'], true)
+                && ! $this->approvedClosingCount($session)) {
+                throw new BusinessRuleException('لا يمكن إرسال الجلسة أو اعتمادها أو إغلاقها قبل تسجيل ومراجعة واعتماد العد الختامي.');
+            }
             if ($action === 'approve') {
                 $settings = AccountingSetting::query()->where('company_id', $session->company_id)->first();
                 if ($settings?->separation_of_duties && $session->custodian_user_id === $this->tenant->user()->id) {
@@ -121,11 +125,7 @@ class CashBoxSessionService
             }
             $changes = ['status' => $to, $actor => $this->tenant->user()->id, $time => now()];
             if ($action === 'close') {
-                $closing = $session->counts()->where('count_type', 'closing')
-                    ->where('status', 'approved')->latest('id')->first();
-                if (! $closing) {
-                    throw new BusinessRuleException('An approved closing count is required.');
-                }
+                $closing = $this->approvedClosingCount($session);
                 if (bccomp((string) $closing->difference, '0', 4) !== 0
                     && ! CashOverShortAdjustment::query()->where('cash_box_count_id', $closing->id)
                         ->where('status', 'posted')->exists()) {
@@ -154,5 +154,11 @@ class CashBoxSessionService
 
             return $session;
         });
+    }
+
+    private function approvedClosingCount(CashBoxSession $session): ?\App\Models\CashBoxCount
+    {
+        return $session->counts()->where('count_type', 'closing')
+            ->where('status', 'approved')->latest('id')->first();
     }
 }

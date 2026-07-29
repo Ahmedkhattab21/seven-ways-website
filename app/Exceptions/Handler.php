@@ -61,8 +61,8 @@ class Handler extends ExceptionHandler
                 return ApiResponse::error($e->getMessage(), $e->errors(), $e->status(), $e->meta());
             }
 
-            if ($request->expectsHtml() && $request->isMethod('POST')) {
-                return redirect()->back()->withInput()->withErrors(['mapping' => $e->getMessage()]);
+            if (! $request->expectsJson() && $request->isMethod('POST')) {
+                return redirect()->back()->withInput()->withErrors(['business' => $e->getMessage()]);
             }
         });
 

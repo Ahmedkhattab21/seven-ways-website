@@ -112,6 +112,9 @@ class CashBoxCountService
                     throw new BusinessRuleException('Cash counter cannot approve the same count.');
                 }
             }
+            if ($action === 'review' && $count->counted_by === $this->tenant->user()->id) {
+                throw new BusinessRuleException('The count creator cannot review the same count.');
+            }
             $changes = ['status' => $to];
             if ($actor) {
                 $changes += [$actor => $this->tenant->user()->id, $time => now()];

@@ -45,6 +45,58 @@ class PhaseFifteenCashSessionOperationsTest extends TestCase
         $this->assertStringContainsString('Zero cash count', $count->notes);
     }
 
+    public function test_session_submit_approve_and_close_require_approved_closing_count(): void
+    {
+        $context = $this->treasuryContext();
+        $box = CashBox::query()->where('company_id', $context['company']->id)
+            ->where('branch_id', $context['branch']->id)->firstOrFail();
+        app(CashBoxCustodianService::class)->assign($box, [
+            'user_id' => $context['cashier']->id, 'valid_from' => '2040-01-01',
+            'valid_to' => '2040-12-31', 'can_receive' => true, 'can_pay' => true,
+            'can_transfer' => true, 'is_primary' => true,
+        ]);
+        $service = app(CashBoxSessionService::class);
+        $session = $service->open([
+            'cash_box_id' => $box->id, 'custodian_user_id' => $context['cashier']->id,
+            'business_date' => '2040-01-10',
+        ]);
+        $service->action($session, 'start_counting');
+
+        foreach (['submit', 'approve', 'close'] as $action) {
+            $session->forceFill(['status' => $action === 'submit' ? 'counting' : ($action === 'approve' ? 'pending_approval' : 'approved')])->saveQuietly();
+            try {
+                $service->action($session->fresh(), $action);
+                $this->fail("{$action} should require an approved closing count.");
+            } catch (BusinessRuleException $exception) {
+                $this->assertStringContainsString('العد الختامي', $exception->getMessage());
+            }
+        }
+    }
+
+    public function test_web_submit_without_closing_count_redirects_with_business_message(): void
+    {
+        $context = $this->treasuryContext();
+        $box = CashBox::query()->where('company_id', $context['company']->id)
+            ->where('branch_id', $context['branch']->id)->firstOrFail();
+        app(CashBoxCustodianService::class)->assign($box, [
+            'user_id' => $context['cashier']->id, 'valid_from' => '2040-01-01',
+            'valid_to' => '2040-12-31', 'can_receive' => true, 'can_pay' => true,
+            'can_transfer' => true, 'is_primary' => true,
+        ]);
+        $session = app(CashBoxSessionService::class)->open([
+            'cash_box_id' => $box->id, 'custodian_user_id' => $context['cashier']->id,
+            'business_date' => '2040-01-10',
+        ]);
+        app(CashBoxSessionService::class)->action($session, 'start_counting');
+
+        $response = $this->actingAs($context['user'])
+            ->from('/treasury/cash-sessions')
+            ->post(route('treasury.cash-sessions.action', [$session, 'submit']));
+
+        $response->assertRedirect('/treasury/cash-sessions')->assertSessionHas('errors');
+        $this->assertSame('counting', $session->fresh()->status);
+    }
+
     public function test_one_session_backend_count_and_over_short_blocking_close(): void
     {
         $context = $this->treasuryContext();

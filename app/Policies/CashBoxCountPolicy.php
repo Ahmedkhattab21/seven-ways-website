@@ -20,4 +20,11 @@ class CashBoxCountPolicy
         return $this->operationScope($user, $count, 'treasury.cash_sessions.approve')
             && $count->counted_by !== $user->id;
     }
+
+    public function review(User $user, CashBoxCount $count): bool
+    {
+        return $this->operationScope($user, $count, 'treasury.cash_sessions.review')
+            && $count->status === 'submitted'
+            && $count->counted_by !== $user->id;
+    }
 }

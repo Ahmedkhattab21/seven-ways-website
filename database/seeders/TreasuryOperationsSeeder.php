@@ -11,6 +11,7 @@ use App\Models\PaymentMethodAccountMapping;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\TreasuryApprovalLimit;
+use App\Services\AccountantCashSessionPermissionReconciler;
 use App\Services\DocumentNumberService;
 use Illuminate\Database\Seeder;
 
@@ -21,6 +22,7 @@ class TreasuryOperationsSeeder extends Seeder
         $permissions = [
             'treasury.transfers.process', 'treasury.transfers.reverse',
             'treasury.cash_sessions.view', 'treasury.cash_sessions.open', 'treasury.cash_sessions.count',
+            'treasury.cash_sessions.review',
             'treasury.cash_sessions.submit', 'treasury.cash_sessions.approve', 'treasury.cash_sessions.close',
             'treasury.cash_sessions.reopen', 'treasury.cash_sessions.override_custodian',
             'treasury.cash_receipts.view', 'treasury.cash_receipts.create', 'treasury.cash_receipts.submit',
@@ -54,6 +56,7 @@ class TreasuryOperationsSeeder extends Seeder
         ])->pluck('id');
         Role::query()->whereIn('name', ['cashier', 'receptionist'])->get()
             ->each(fn (Role $role) => $role->permissions()->syncWithoutDetaching($cashierPermissions));
+        app(AccountantCashSessionPermissionReconciler::class)->reconcile();
 
         Company::query()->with(['branches', 'users'])->get()->each(fn (Company $company) => $this->company($company));
     }

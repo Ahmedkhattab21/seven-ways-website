@@ -73,6 +73,8 @@ class CashBoxSessionController extends Controller
     ): RedirectResponse {
         if ($action === 'approve') {
             $this->authorize('approve', $cashBoxCount);
+        } elseif ($action === 'review') {
+            $this->authorize('review', $cashBoxCount);
         } else {
             abort_unless($request->user()->hasPermission('treasury.cash_sessions.count'), 403);
         }
