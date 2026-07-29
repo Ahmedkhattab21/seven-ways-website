@@ -214,6 +214,7 @@ class ReferenceDataController extends Controller
         return [
             'brands' => $section === 'vehicle-models' ? VehicleBrand::query()->where('is_active', true)->orderBy('name_ar')->get() : collect(),
             'branches' => $section === 'document-sequences' ? $tenant->accessibleBranches() : collect(),
+            'documentTypes' => $section === 'document-sequences' ? config('document_sequences.types', []) : [],
         ];
     }
 

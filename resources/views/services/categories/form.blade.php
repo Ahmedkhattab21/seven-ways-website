@@ -3,6 +3,7 @@
 @section('page-title', $serviceCategory->exists ? 'تعديل تصنيف خدمة' : 'إضافة تصنيف خدمة')
 @section('breadcrumb', 'الخدمات / التصنيفات')
 @section('content')
+<x-catalog-navigation active="service-categories" />
 <x-card title="بيانات التصنيف">
 <form class="sw-form" method="POST" action="{{ $serviceCategory->exists ? route('service-categories.update', $serviceCategory) : route('service-categories.store') }}">
 @csrf @if($serviceCategory->exists) @method('PUT') @endif

@@ -2,6 +2,7 @@
 @section('title', 'توجيه وسائل الدفع')
 @section('page-title', 'توجيه وسائل الدفع')
 @section('content')
+<div class="configuration-page">
 @php
     $operationLabels = [
         'receipt' => 'قبض', 'payment' => 'صرف', 'refund' => 'استرداد',
@@ -69,4 +70,5 @@
     <tr><td colspan="5">لا توجد توجيهات دفع.</td></tr>
 @endforelse
 </tbody></table></div>
+</div>
 @endsection

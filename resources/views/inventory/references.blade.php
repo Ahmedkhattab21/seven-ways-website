@@ -4,6 +4,7 @@
 @section('page-title', $title)
 @section('breadcrumb', 'المخزون / '.$title)
 @section('content')
+<x-catalog-navigation :active="$section === 'categories' ? 'product-categories' : 'product-brands'" />
 <x-card title="إضافة">
 <form class="sw-form" method="POST" action="{{ route('product-references.store', $section) }}">@csrf
 <div class="sw-form-grid"><x-form.input name="code" label="الكود" required /><x-form.input name="name" label="الاسم" required />

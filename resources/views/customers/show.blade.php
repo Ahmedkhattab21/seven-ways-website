@@ -7,8 +7,9 @@
 @can('disable', $customer)@if($customer->status === 'active')<form method="POST" action="{{ route('customers.disable', $customer) }}">@csrf @method('PATCH')<x-button type="submit" variant="outline">تعطيل</x-button></form>@endif @endcan
 @endsection
 @section('content')
+<div class="customer-profile-layout">
 @if(auth()->user()->hasPermission('customer_statements.view'))<x-card title="المبيعات التشغيلية"><a class="sw-button sw-button--primary" href="{{ route('customer-statements.show',['customer'=>$customer,'currency_id'=>auth()->user()->company->currency_id]) }}">كشف الحساب والرصيد</a></x-card>@endif
-<x-card title="بيانات العميل"><dl class="sw-details-grid">
+<x-card title="بيانات العميل"><dl class="sw-details-grid customer-profile-details">
     <div><dt>الكود</dt><dd>{{ $customer->customer_code }}</dd></div><div><dt>النوع</dt><dd>{{ $customer->customer_type }}</dd></div>
     <div><dt>الهاتف</dt><dd>{{ $customer->phone ?? '—' }}</dd></div><div><dt>البريد</dt><dd>{{ $customer->email ?? '—' }}</dd></div>
     <div><dt>الفرع المسؤول</dt><dd>{{ $customer->assignedBranch?->name ?? '—' }}</dd></div><div><dt>المصدر</dt><dd>{{ $customer->source?->name ?? '—' }}</dd></div>
@@ -29,4 +30,5 @@
 <x-card title="المرفقات"><ul>@forelse($customer->attachments as $attachment)<li><a href="{{ route('attachments.download',$attachment) }}">{{ $attachment->original_name }}</a>@can('delete',$attachment)<form method="POST" action="{{ route('attachments.destroy',$attachment) }}">@csrf @method('DELETE')<button type="submit">حذف</button></form>@endcan</li>@empty<li>لا توجد مرفقات.</li>@endforelse</ul>
     @if(auth()->user()->hasPermission('customers.manage_attachments'))<form method="POST" enctype="multipart/form-data" action="{{ route('customers.attachments.store',$customer) }}" class="sw-form">@csrf<x-form.input name="file" type="file" label="صورة أو PDF" required /><x-form.select name="category" label="التصنيف"><option value="customer_document">مستند عميل</option><option value="commercial_registration">سجل تجاري</option><option value="tax_certificate">شهادة ضريبية</option><option value="other">أخرى</option></x-form.select><x-button type="submit">رفع</x-button></form>@endif
 </x-card>
+</div>
 @endsection

@@ -2,15 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Core\Exceptions\BusinessRuleException;
 use App\Core\Tenancy\TenantContext;
 use App\Http\Requests\ServicePackageRequest;
-use App\Models\Branch;
-use App\Models\BranchServicePackage;
 use App\Models\Service;
 use App\Models\ServicePackage;
+use App\Models\ServicePrice;
 use App\Models\VehicleSize;
-use App\Services\AuditService;
 use App\Services\ServicePackageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,12 +15,33 @@ use Illuminate\View\View;
 
 class ServicePackageController extends Controller
 {
-    public function index(TenantContext $tenant): View
+    public function index(Request $request, TenantContext $tenant): View
     {
-        $packages = ServicePackage::where('company_id', $tenant->companyId())->withCount('items')
-            ->with('branchPrices.branch')->latest()->paginate(20);
+        $branchId = $request->integer('branch_id') ?: $tenant->branchId();
+        $today = now()->toDateString();
+        $packages = ServicePackage::where('company_id', $tenant->companyId())
+            ->when($request->filled('search'), fn ($query) => $query->where(fn ($query) => $query
+                ->where('name', 'like', '%'.$request->search.'%')
+                ->orWhere('code', 'like', '%'.$request->search.'%')))
+            ->when($request->status === 'active', fn ($query) => $query->where('is_active', true))
+            ->when($request->status === 'inactive', fn ($query) => $query->where('is_active', false))
+            ->withCount('items')
+            ->with([
+                'items.service:id,name,default_duration_minutes',
+                'branchPrices' => fn ($query) => $query->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+                    ->with(['branch:id,name', 'vehicleSize:id,name'])->where('is_available', true)
+                    ->whereDate('effective_from', '<=', $today)
+                    ->where(fn ($query) => $query->whereNull('effective_to')->orWhereDate('effective_to', '>=', $today))
+                    ->orderByDesc('effective_from'),
+            ])->latest()->paginate(20)->withQueryString();
 
-        return view('services.packages.index', compact('packages'));
+        $this->appendPackageMetrics($packages->getCollection(), $branchId, $today);
+
+        return view('services.packages.index', [
+            'packages' => $packages,
+            'branches' => $tenant->accessibleBranches(),
+            'currentBranchId' => $branchId,
+        ]);
     }
 
     public function create(TenantContext $tenant): View
@@ -33,12 +51,25 @@ class ServicePackageController extends Controller
 
     public function store(ServicePackageRequest $request, ServicePackageService $packages): RedirectResponse
     {
-        $items = collect($request->validated('service_ids'))->values()->map(
-            fn ($serviceId, $index) => ['service_id' => $serviceId, 'quantity' => 1, 'is_required' => true, 'sort_order' => $index]
+        $items = collect($request->validated('items'))->values()->map(
+            fn ($item, $index) => $item + ['is_required' => true, 'sort_order' => $index]
         )->all();
-        $package = $packages->save($request->safe()->except('service_ids'), $items);
+        $price = $request->filled('price') ? $request->safe()->only([
+            'branch_id', 'vehicle_size_id', 'price', 'minimum_price',
+            'effective_from', 'effective_to', 'is_available',
+        ]) : null;
+        if ($price !== null && ! $request->user()->hasPermission('service_packages.manage_prices')) {
+            abort(403);
+        }
+        $package = $packages->save(
+            $request->safe()->except('items', 'service_ids', 'branch_id', 'vehicle_size_id', 'price',
+                'minimum_price', 'effective_from', 'effective_to', 'is_available'),
+            $items,
+            null,
+            $price
+        );
 
-        return redirect()->route('service-packages.edit', $package)->with('success', 'تم إنشاء الباقة.');
+        return redirect()->route('service-packages.edit', $package)->with('success', 'تم إنشاء باقة الخدمات.');
     }
 
     public function edit(ServicePackage $servicePackage, TenantContext $tenant): View
@@ -55,10 +86,15 @@ class ServicePackageController extends Controller
         ServicePackageService $packages
     ): RedirectResponse {
         $this->authorize('update', $servicePackage);
-        $items = collect($request->validated('service_ids'))->values()->map(
-            fn ($serviceId, $index) => ['service_id' => $serviceId, 'quantity' => 1, 'is_required' => true, 'sort_order' => $index]
+        $items = collect($request->validated('items'))->values()->map(
+            fn ($item, $index) => $item + ['is_required' => true, 'sort_order' => $index]
         )->all();
-        $packages->save($request->safe()->except('service_ids'), $items, $servicePackage);
+        $packages->save(
+            $request->safe()->except('items', 'service_ids', 'branch_id', 'vehicle_size_id', 'price',
+                'minimum_price', 'effective_from', 'effective_to', 'is_available'),
+            $items,
+            $servicePackage
+        );
 
         return back()->with('success', 'تم تحديث الباقة.');
     }
@@ -74,8 +110,7 @@ class ServicePackageController extends Controller
     public function saveBranchPrice(
         Request $request,
         ServicePackage $servicePackage,
-        TenantContext $tenant,
-        AuditService $audit
+        ServicePackageService $packages
     ): RedirectResponse {
         $data = $request->validate([
             'branch_id' => ['required', 'integer'], 'vehicle_size_id' => ['nullable', 'integer'],
@@ -83,29 +118,7 @@ class ServicePackageController extends Controller
             'is_available' => ['sometimes', 'boolean'], 'effective_from' => ['required', 'date'],
             'effective_to' => ['nullable', 'date', 'after_or_equal:effective_from'],
         ]);
-        $branch = Branch::query()->whereKey($data['branch_id'])->where('company_id', $tenant->companyId())->firstOrFail();
-        if (! $branch->is_active || ! $tenant->user()?->canAccessBranch($branch)
-            || $servicePackage->company_id !== $tenant->companyId()) {
-            throw new BusinessRuleException('Package price is outside your branch scope.', status: 403);
-        }
-        if (! empty($data['vehicle_size_id'])) {
-            VehicleSize::query()->whereKey($data['vehicle_size_id'])
-                ->where(fn ($query) => $query->whereNull('company_id')->orWhere('company_id', $tenant->companyId()))
-                ->where('is_active', true)->firstOrFail();
-        }
-        $overlap = BranchServicePackage::query()
-            ->where('branch_id', $branch->id)->where('service_package_id', $servicePackage->id)
-            ->where('vehicle_size_id', $data['vehicle_size_id'] ?? null)->where('is_available', true)
-            ->whereDate('effective_from', '<=', $data['effective_to'] ?? '9999-12-31')
-            ->where(fn ($query) => $query->whereNull('effective_to')
-                ->orWhereDate('effective_to', '>=', $data['effective_from']))
-            ->exists();
-        if ($overlap) {
-            throw new BusinessRuleException('An overlapping available package price already exists.');
-        }
-        $price = new BranchServicePackage(collect($data)->except('branch_id')->all());
-        $price->forceFill(['branch_id' => $branch->id, 'service_package_id' => $servicePackage->id])->save();
-        $audit->record('service_package_price.saved', $price, ['package_id' => $servicePackage->id]);
+        $packages->savePrice($servicePackage, $data);
 
         return back()->with('success', 'تم حفظ سعر الباقة للفرع.');
     }
@@ -113,10 +126,48 @@ class ServicePackageController extends Controller
     private function references(TenantContext $tenant): array
     {
         return [
-            'services' => Service::where('company_id', $tenant->companyId())->where('is_active', true)->orderBy('name')->get(),
+            'services' => Service::where('company_id', $tenant->companyId())->where('is_active', true)
+                ->with(['branchServices:id,branch_id,service_id,default_price', 'prices' => fn ($query) => $query
+                    ->where('is_active', true)->whereNull('vehicle_size_id')->whereNull('vehicle_type_id')
+                    ->whereDate('effective_from', '<=', now()->toDateString())
+                    ->where(fn ($query) => $query->whereNull('effective_to')
+                        ->orWhereDate('effective_to', '>=', now()->toDateString()))])
+                ->orderBy('name')->get(),
             'branches' => $tenant->accessibleBranches(),
             'vehicleSizes' => VehicleSize::where(fn ($q) => $q->whereNull('company_id')->orWhere('company_id', $tenant->companyId()))
                 ->where('is_active', true)->orderBy('sort_order')->get(),
         ];
+    }
+
+    private function appendPackageMetrics($packages, ?int $branchId, string $today): void
+    {
+        if (! $branchId || $packages->isEmpty()) {
+            return;
+        }
+        $serviceIds = $packages->flatMap->items->pluck('service_id')->unique();
+        $prices = ServicePrice::query()->whereIn('service_id', $serviceIds)->where('branch_id', $branchId)
+            ->where('is_active', true)->whereNull('vehicle_size_id')->whereNull('vehicle_type_id')
+            ->whereDate('effective_from', '<=', $today)
+            ->where(fn ($query) => $query->whereNull('effective_to')->orWhereDate('effective_to', '>=', $today))
+            ->orderByDesc('priority')->orderByDesc('effective_from')->get()->unique('service_id')->keyBy('service_id');
+        $defaults = Service::query()->whereIn('id', $serviceIds)->with(['branchServices' => fn ($query) => $query
+            ->where('branch_id', $branchId)])->get()->keyBy('id');
+
+        $packages->each(function (ServicePackage $package) use ($prices, $defaults) {
+            $missingPrice = false;
+            $total = $package->items->reduce(function ($sum, $item) use ($prices, $defaults, &$missingPrice) {
+                $price = $prices->get($item->service_id)?->price
+                    ?? $defaults->get($item->service_id)?->branchServices->first()?->default_price;
+                if ($price === null) {
+                    $missingPrice = true;
+                }
+
+                return $price === null ? $sum : $sum + ((float) $price * (float) $item->quantity);
+            }, 0.0);
+            $package->setAttribute('standalone_total', $missingPrice ? null : $total);
+            $package->setAttribute('total_duration_minutes', $package->items->sum(
+                fn ($item) => (int) ($item->service?->default_duration_minutes ?? 0) * (float) $item->quantity
+            ));
+        });
     }
 }

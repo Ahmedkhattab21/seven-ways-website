@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\Service;
 use App\Models\ServicePackage;
 use App\Models\Vehicle;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class QuotationPricingService
@@ -83,6 +84,8 @@ class QuotationPricingService
         $service = null;
         $package = null;
         $product = null;
+        $packageServices = [];
+        $standaloneServicesTotal = null;
 
         if ($type === 'service') {
             $service = Service::query()->whereKey($item['service_id'])->where('company_id', $branch->company_id)
@@ -99,22 +102,58 @@ class QuotationPricingService
             $priceSource = $resolved['price_source'];
             $cost = $this->costEstimator->estimate($service, $branch, $vehicle->size, $vehicle->type, $quantity);
         } elseif ($type === 'package') {
+            $priceDate = Carbon::parse($item['price_date'] ?? now())->toDateString();
             $package = ServicePackage::query()->whereKey($item['service_package_id'])
-                ->where('company_id', $branch->company_id)->where('is_active', true)->firstOrFail();
+                ->where('company_id', $branch->company_id)->where('is_active', true)
+                ->with('items.service.defaultTax')->firstOrFail();
             $packagePrice = BranchServicePackage::query()->where('branch_id', $branch->id)
                 ->where('service_package_id', $package->id)->where('is_available', true)
                 ->where(fn ($query) => $vehicle->vehicle_size_id
                     ? $query->whereNull('vehicle_size_id')->orWhere('vehicle_size_id', $vehicle->vehicle_size_id)
                     : $query->whereNull('vehicle_size_id'))
-                ->whereDate('effective_from', '<=', now())->where(fn ($query) => $query->whereNull('effective_to')
-                    ->orWhereDate('effective_to', '>=', now()))
+                ->whereDate('effective_from', '<=', $priceDate)->where(fn ($query) => $query->whereNull('effective_to')
+                    ->orWhereDate('effective_to', '>=', $priceDate))
                 ->orderByRaw('vehicle_size_id IS NOT NULL DESC')->latest('effective_from')->first();
             if (! $packagePrice) {
                 throw new BusinessRuleException('Package is not available for this branch and vehicle.');
             }
             $unitPrice = $packagePrice->price;
             $minimumPrice = $packagePrice->minimum_price;
-            $duration = $package->items()->with('service')->get()->sum(fn ($row) => $row->service->default_duration_minutes * $row->quantity);
+            $duration = $package->items->sum(fn ($row) => $row->service->default_duration_minutes * $row->quantity);
+            $packageServices = $package->items->map(fn ($row) => [
+                'name' => $row->service->name,
+                'quantity' => (string) $row->quantity,
+            ])->all();
+            $individualTotal = '0';
+            $packageTaxRates = collect();
+            try {
+                foreach ($package->items as $packageItem) {
+                    $resolvedService = $this->servicePricing->resolvePrice(
+                        $packageItem->service,
+                        $branch,
+                        $vehicle->size,
+                        $vehicle->type,
+                        (string) $packageItem->quantity,
+                        $priceDate
+                    );
+                    $individualTotal = bcadd(
+                        $individualTotal,
+                        bcmul((string) $resolvedService['unit_price'], (string) $packageItem->quantity, 8),
+                        8
+                    );
+                    $packageTaxRates->push([
+                        'id' => $packageItem->service->default_tax_id,
+                        'rate' => (string) ($resolvedService['tax_rate'] ?? 0),
+                    ]);
+                }
+                $standaloneServicesTotal = $this->rounding->round($individualTotal, $decimals);
+                if ($packageTaxRates->unique(fn ($row) => $row['id'].'|'.$row['rate'])->count() === 1) {
+                    $taxId = $packageTaxRates->first()['id'];
+                    $taxRate = $packageTaxRates->first()['rate'];
+                }
+            } catch (BusinessRuleException) {
+                $standaloneServicesTotal = null;
+            }
             $description = $description ?: $package->name;
             $priceSource = 'package_price';
         } elseif ($type === 'product') {
@@ -124,11 +163,12 @@ class QuotationPricingService
             $taxId = $product->default_tax_id;
             $taxRate = (string) ($product->defaultTax?->rate ?? 0);
             $description = $description ?: $product->name;
-            $priceSource = 'branch_default';
+            $priceSource = 'product_price';
         } elseif ($type !== 'custom') {
             throw new BusinessRuleException('Unsupported quotation item type.');
         }
 
+        $baseUnitPrice = $unitPrice;
         if (array_key_exists('manual_unit_price', $item) && $item['manual_unit_price'] !== null) {
             if (! $this->tenant->user()?->hasPermission('quotations.manual_price')) {
                 throw new BusinessRuleException('Manual pricing requires permission.', status: 403);
@@ -150,6 +190,7 @@ class QuotationPricingService
         if ($unitPrice === null || bccomp((string) $unitPrice, '0', 4) === -1) {
             throw new BusinessRuleException('A valid price is required for this item.');
         }
+        $baseUnitPrice = (string) ($baseUnitPrice ?? $unitPrice);
         if ($type === 'custom' && $description === '') {
             throw new BusinessRuleException('Custom item description is required.');
         }
@@ -179,7 +220,16 @@ class QuotationPricingService
             'estimated_total_cost' => $cost['estimated_total_cost'] ?? null,
             'estimated_margin' => $cost['estimated_margin'] ?? null, 'price_source' => $priceSource,
             'promotion_id' => $promotionId, 'sort_order' => $index,
-            'metadata' => ['requires_approval' => $requiresApproval, 'header_discount_allocation' => '0.00'],
+            'metadata' => [
+                'requires_approval' => $requiresApproval,
+                'header_discount_allocation' => '0.00',
+                'base_unit_price' => $this->rounding->round($baseUnitPrice, $decimals),
+                'package_services' => $packageServices,
+                'standalone_services_total' => $standaloneServicesTotal,
+                'package_savings' => $standaloneServicesTotal === null
+                    ? null
+                    : $this->rounding->round(max(0, (float) $standaloneServicesTotal - (float) $baseUnitPrice), $decimals),
+            ],
             'materials' => $type === 'service' ? $this->materialSnapshots($cost) : [],
         ];
     }

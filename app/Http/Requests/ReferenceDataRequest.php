@@ -115,13 +115,6 @@ class ReferenceDataRequest extends FormRequest
 
     private function documentTypes(): array
     {
-        return [
-            'customer', 'lead', 'quotation', 'appointment', 'work_order', 'sales_invoice', 'purchase_request',
-            'purchase_order', 'goods_receipt', 'purchase_invoice', 'stock_transfer',
-            'receipt_voucher', 'payment_voucher', 'warranty', 'warranty_claim',
-            'journal_entry', 'expense',
-            'product', 'stock_movement', 'stock_opening', 'stock_adjustment',
-            'inventory_count', 'roll', 'roll_scrap',
-        ];
+        return array_keys(config('document_sequences.types', []));
     }
 }

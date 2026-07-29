@@ -19,6 +19,7 @@ class CompanySetupProgressService
     public function for(Company $company): array
     {
         $companyId = $company->getKey();
+        $sequenceStatus = $this->documentSequenceStatus($companyId);
         $steps = [
             $this->step('بيانات الشركة', 'company.edit', 'companies.view',
                 filled($company->name) && filled($company->country_code) && filled($company->timezone)),
@@ -32,11 +33,17 @@ class CompanySetupProgressService
                 PaymentMethod::query()->where('company_id', $companyId)->where('is_active', true)->exists(), ['payment-methods']),
             $this->step('السنة المالية', 'accounting.fiscal-years.index', 'accounting.fiscal_years.view',
                 FiscalYear::query()->where('company_id', $companyId)->where('is_current', true)->exists()),
-            $this->step('تسلسل المستندات', 'reference.index', 'document_sequences.view',
-                DocumentSequence::query()->where('company_id', $companyId)->where('is_active', true)->exists(), ['document-sequences']),
+            $this->step(
+                'تسلسل المستندات',
+                'reference.index',
+                'document_sequences.view',
+                $sequenceStatus['complete'],
+                ['document-sequences'],
+                $sequenceStatus
+            ),
             $this->step('المستودعات', 'warehouses.index', 'warehouses.view',
                 Warehouse::query()->where('company_id', $companyId)->where('is_active', true)->exists()),
-            $this->step('المنتجات والخدمات', 'products.index', 'products.view',
+            $this->step('المنتجات والخدمات', 'catalog.index', 'products.view',
                 Product::query()->where('company_id', $companyId)->where('is_active', true)->exists()
                 || Service::query()->where('company_id', $companyId)->where('is_active', true)->exists()),
             $this->step('المستخدمون والأدوار', 'users.index', 'users.view',
@@ -56,13 +63,61 @@ class CompanySetupProgressService
         ];
     }
 
+    private function documentSequenceStatus(int $companyId): array
+    {
+        $types = collect(config('document_sequences.types', []))
+            ->filter(fn (array $definition) => $definition['setup_required'] ?? false);
+        $branches = Branch::query()->where('company_id', $companyId)->where('is_active', true)
+            ->orderBy('id')->get(['id', 'code', 'name']);
+        $branchTypes = $types->filter(fn (array $definition) => $definition['scope'] === 'branch');
+        $companyTypes = $types->filter(fn (array $definition) => $definition['scope'] === 'company');
+        $existing = DocumentSequence::query()->where('company_id', $companyId)->where('is_active', true)
+            ->whereIn('document_type', $types->keys())->get(['branch_id', 'document_type'])
+            ->mapWithKeys(fn (DocumentSequence $sequence) => [
+                ($sequence->branch_id ?: 0).':'.$sequence->document_type => true,
+            ]);
+        $items = collect();
+
+        foreach ($branches as $branch) {
+            foreach ($branchTypes as $type => $definition) {
+                $items->push([
+                    'type' => $type,
+                    'type_label' => $definition['label'],
+                    'branch_id' => $branch->id,
+                    'branch_code' => $branch->code,
+                    'branch_name' => $branch->name,
+                    'complete' => $existing->has($branch->id.':'.$type),
+                ]);
+            }
+        }
+        foreach ($companyTypes as $type => $definition) {
+            $items->push([
+                'type' => $type,
+                'type_label' => $definition['label'],
+                'branch_id' => null,
+                'branch_code' => null,
+                'branch_name' => 'كل الشركة',
+                'complete' => $existing->has('0:'.$type),
+            ]);
+        }
+
+        return [
+            'complete' => $items->isNotEmpty() && $items->every('complete'),
+            'completed_items' => $items->where('complete', true)->values()->all(),
+            'missing_items' => $items->where('complete', false)->values()->all(),
+            'completed_count' => $items->where('complete', true)->count(),
+            'required_count' => $items->count(),
+        ];
+    }
+
     private function step(
         string $label,
         string $route,
         string $permission,
         bool $complete,
-        array $params = []
+        array $params = [],
+        array $details = []
     ): array {
-        return compact('label', 'route', 'permission', 'complete', 'params');
+        return compact('label', 'route', 'permission', 'complete', 'params', 'details');
     }
 }

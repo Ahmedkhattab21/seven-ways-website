@@ -6,6 +6,7 @@
 @if(auth()->user()->hasPermission('service_categories.manage'))<a class="sw-button sw-button--primary" href="{{ route('service-categories.create') }}">إضافة تصنيف</a>@endif
 @endsection
 @section('content')
+<x-catalog-navigation active="service-categories" />
 <x-table-shell>
     <thead><tr><th>الكود</th><th>الاسم</th><th>التصنيف الأب</th><th>الأبناء</th><th>الخدمات</th><th>الحالة</th><th></th></tr></thead>
     <tbody>

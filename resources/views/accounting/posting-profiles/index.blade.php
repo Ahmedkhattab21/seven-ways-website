@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('title','قوالب الترحيل') @section('page-title','قوالب الترحيل')
 @section('content')
+<div class="configuration-page">
 <div class="sw-alert">القالب النشط يحدد سياسة الترحيل، والتنفيذ يتم صراحة من المستند التشغيلي.</div>
 @if(auth()->user()->hasPermission('accounting.posting_profiles.create'))<form class="sw-card sw-form" method="POST" action="{{ route('accounting.posting-profiles.store') }}">@csrf<div class="sw-form-grid">
 <label>الكود<input name="code" required></label><label>الاسم<input name="name" required></label>
@@ -16,4 +17,5 @@
 @if($profile->status==='active')<form method="POST" action="{{ route('accounting.posting-profiles.action',[$profile,'supersede']) }}">@csrf<button class="sw-btn">Supersede</button></form>@endif
 </td></tr>@endforeach
 </tbody></table></div>
+</div>
 @endsection

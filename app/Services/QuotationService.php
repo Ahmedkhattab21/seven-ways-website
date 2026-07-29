@@ -46,6 +46,9 @@ class QuotationService
                 throw new BusinessRuleException('Convert the lead to the selected customer before creating its quotation.');
             }
         }
+        $items = collect($items)->map(fn (array $item) => $item + [
+            'price_date' => $data['quotation_date'],
+        ])->all();
         $calculated = $this->pricing->calculate($branch, $customer, $vehicle, $items, [
             'discount_type' => $data['discount_type'] ?? null,
             'discount_value' => $data['discount_value'] ?? 0,

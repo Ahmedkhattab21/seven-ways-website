@@ -18,12 +18,21 @@ class ProductController extends Controller
 {
     public function index(Request $request, TenantContext $tenant): View
     {
-        $products = Product::query()->where('company_id', $tenant->companyId())->with(['category', 'brand', 'stockUnit'])
+        $products = Product::query()->where('company_id', $tenant->companyId())->with(['category', 'brand', 'stockUnit', 'saleUnit', 'defaultTax'])
             ->when($request->filled('search'), fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$request->search.'%')->orWhere('sku', 'like', '%'.$request->search.'%')))
             ->when($request->filled('tracking_type'), fn ($q) => $q->where('tracking_type', $request->tracking_type))
+            ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->integer('category_id')))
+            ->when($request->filled('brand_id'), fn ($q) => $q->where('brand_id', $request->integer('brand_id')))
+            ->when($request->status === 'active', fn ($q) => $q->where('is_active', true))
+            ->when($request->status === 'inactive', fn ($q) => $q->where('is_active', false))
+            ->when($request->filled('is_sellable'), fn ($q) => $q->where('is_sellable', $request->boolean('is_sellable')))
             ->latest()->paginate(20)->withQueryString();
 
-        return view('inventory.products.index', compact('products'));
+        return view('inventory.products.index', [
+            'products' => $products,
+            'categories' => ProductCategory::where('company_id', $tenant->companyId())->orderBy('name')->get(),
+            'brands' => ProductBrand::where('company_id', $tenant->companyId())->orderBy('name')->get(),
+        ]);
     }
 
     public function create(TenantContext $tenant): View

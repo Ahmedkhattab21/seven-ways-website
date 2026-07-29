@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('title','إعدادات المحاسبة') @section('page-title','إعدادات المحاسبة')
 @section('content')
+<div class="configuration-page">
 <div class="sw-alert">الترحيل يظل يدويًا عبر Post to Accounting؛ مفاتيح Auto Post غير مفعلة افتراضيًا.</div>
 <form class="sw-card sw-form" method="POST" action="{{ route('accounting.settings.update') }}">@csrf @method('PUT')<h3>الإعدادات العامة وسياسة الفترات والموافقات</h3><div class="sw-form-grid">
 <label>العملة الأساسية<select name="base_currency_id">@foreach($currencies as $currency)<option value="{{ $currency->id }}" @selected($settings->base_currency_id===$currency->id)>{{ $currency->code }}</option>@endforeach</select></label>
@@ -16,5 +17,6 @@
 <label>{{ $label }}<select name="{{ $field }}"><option value="">بدون</option>@foreach($accounts as $account)<option value="{{ $account->id }}" @selected(optional($mappings->get($branch->id))->$field===$account->id)>{{ $account->account_code }} — {{ $account->name_ar }}</option>@endforeach</select></label>
 @endforeach
 </div><button class="sw-btn">حفظ ربط الفرع</button></form>@endforeach
+</div>
 </div>
 @endsection

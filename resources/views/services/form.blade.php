@@ -3,6 +3,7 @@
 @section('page-title', $service->exists ? 'تعديل خدمة' : 'إضافة خدمة')
 @section('breadcrumb', 'الخدمات / البيانات الأساسية')
 @section('content')
+<x-catalog-navigation active="services" />
 <x-card title="تعريف الخدمة على مستوى الشركة"><form class="sw-form" method="POST" action="{{ $service->exists ? route('services.update', $service) : route('services.store') }}">
 @csrf @if($service->exists) @method('PUT') @endif
 <div class="sw-form-grid">

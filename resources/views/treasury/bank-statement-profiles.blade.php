@@ -2,6 +2,7 @@
 @section('title', 'ملفات تعريف CSV')
 @section('page-title', 'ملفات تعريف استيراد كشف الحساب')
 @section('content')
+<div class="configuration-page">
 <div class="sw-card"><p>Column Mapping بيانات محكومة فقط؛ لا يتم قبول PHP أو SQL أو Regex.</p></div>
 <form class="sw-card" method="POST" action="{{ route('treasury.bank-statement-profiles.store') }}">@csrf
 <div class="sw-form-grid">
@@ -21,4 +22,5 @@
 <div class="sw-card"><table class="sw-table"><thead><tr><th>الاسم</th><th>الحساب</th><th>الفاصل</th><th>التاريخ</th><th>الاتجاه</th><th>افتراضي</th><th>نشط</th></tr></thead><tbody>
 @foreach($profiles as $profile)<tr><td>{{ $profile->name }}</td><td>{{ $profile->bankAccount?->account_name ?? 'الشركة' }}</td><td>{{ $profile->delimiter }}</td><td>{{ $profile->date_format }}</td><td>{{ $profile->direction_policy }}</td><td>{{ $profile->is_default ? 'نعم':'لا' }}</td><td>{{ $profile->is_active ? 'نعم':'لا' }}</td></tr>@endforeach
 </tbody></table></div>
+</div>
 @endsection

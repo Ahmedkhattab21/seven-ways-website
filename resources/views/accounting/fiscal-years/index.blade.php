@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('title','السنوات المالية') @section('page-title','السنوات المالية')
 @section('content')
+<div class="configuration-page">
 @foreach($years as $year)
     @if($year->status === 'open' && $year->periods->where('is_adjustment_period', false)->isEmpty())
         <div class="sw-alert">السنة مفتوحة لكن فتراتها المحاسبية غير مكتملة. استخدم توليد الفترات ثم افتحها من جديد.</div>
@@ -18,4 +19,5 @@
 @if(in_array($year->status,['soft_closed','closed']))<form method="POST" action="{{ route('accounting.fiscal-years.action',[$year,'reopen']) }}">@csrf<input name="reason" required placeholder="سبب إعادة الفتح"><button class="sw-btn">إعادة فتح</button></form>@endif
 </td></tr>@endforeach
 </tbody></table></div>
+</div>
 @endsection

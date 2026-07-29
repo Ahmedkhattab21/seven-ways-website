@@ -23,8 +23,19 @@
                 <div class="sw-setup-progress__steps">
                     @foreach($setup['steps'] as $step)
                         <a class="sw-setup-step @if($step['complete']) sw-setup-step--complete @endif" href="{{ $step['url'] }}">
-                            <span aria-hidden="true">{{ $step['complete'] ? '✓' : $loop->iteration }}</span>
-                            <strong>{{ $step['label'] }}</strong>
+                            <span class="sw-setup-step__marker" aria-hidden="true">{{ $step['complete'] ? '✓' : $loop->iteration }}</span>
+                            <span class="sw-setup-step__content">
+                                <strong>{{ $step['label'] }}</strong>
+                                @if(($step['details']['required_count'] ?? 0) > 0)
+                                    <small>{{ $step['details']['completed_count'] }} من {{ $step['details']['required_count'] }} أنواع مكتملة</small>
+                                    @foreach(array_slice($step['details']['missing_items'] ?? [], 0, 3) as $missing)
+                                        <small class="sw-setup-step__missing">
+                                            ناقص: {{ $missing['type'] }} — {{ $missing['type_label'] }}
+                                            / {{ $missing['branch_code'] }} — {{ $missing['branch_name'] }}
+                                        </small>
+                                    @endforeach
+                                @endif
+                            </span>
                         </a>
                     @endforeach
                 </div>

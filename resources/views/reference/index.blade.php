@@ -26,7 +26,9 @@
     <tbody>
     @forelse($items as $item)
         @php
-            $primary = $item->code ?? $item->name ?? $item->name_ar ?? $item->document_type;
+            $documentTypeLabel = config("document_sequences.types.{$item->document_type}.label");
+            $primary = $item->code ?? $item->name ?? $item->name_ar
+                ?? ($documentTypeLabel ? $item->document_type.' — '.$documentTypeLabel : $item->document_type);
             $details = match($section) {
                 'currencies' => $item->name_ar.' — '.$item->symbol,
                 'taxes' => $item->name.' — '.rtrim(rtrim($item->rate, '0'), '.').'%',

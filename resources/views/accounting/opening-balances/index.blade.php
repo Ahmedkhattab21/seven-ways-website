@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('title','الأرصدة الافتتاحية') @section('page-title','الأرصدة الافتتاحية')
 @section('content')
+<div class="configuration-page">
 <div class="sw-alert">Ready for Posting يعني أن المستند اجتاز الاعتماد ويمكن ترحيله إلى قيد افتتاحي.</div>
 @if(auth()->user()->hasPermission('accounting.opening_balances.create'))<form class="sw-card sw-form" method="POST" action="{{ route('accounting.opening-balances.store') }}">@csrf<div class="sw-form-grid">
 <label>السنة<select name="fiscal_year_id">@foreach($years as $year)<option value="{{ $year->id }}">{{ $year->name }}</option>@endforeach</select></label>
@@ -23,4 +24,5 @@
 @if($document->status==='posted' && auth()->user()->hasPermission('accounting.opening_balances.reverse'))<form method="POST" action="{{ route('accounting.opening-balances.reverse',$document) }}">@csrf<label>سبب العكس<input name="reason" required></label><button class="sw-btn">Reverse</button></form>@endif
 <table class="sw-table"><thead><tr><th>الحساب</th><th>مدين</th><th>دائن</th></tr></thead><tbody>@foreach($document->lines as $line)<tr><td>{{ $line->account->account_code }} — {{ $line->account->name_ar }}</td><td>{{ $line->debit_amount }}</td><td>{{ $line->credit_amount }}</td></tr>@endforeach</tbody></table>
 </div>@endforeach
+</div>
 @endsection

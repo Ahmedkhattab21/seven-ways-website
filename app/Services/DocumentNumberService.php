@@ -38,7 +38,14 @@ class DocumentNumberService
 
             $template = $sequences->sortByDesc('id')->first();
             if (! $template) {
-                throw ValidationException::withMessages(['document_type' => 'لا يوجد تسلسل نشط لهذا النوع من المستندات.']);
+                $typeLabel = config("document_sequences.types.{$documentType}.label", $documentType);
+                $branchLabel = $branchId
+                    ? Branch::query()->where('company_id', $companyId)->find($branchId)?->name
+                    : 'كل الشركة';
+
+                throw ValidationException::withMessages([
+                    'document_type' => "لا يوجد تسلسل نشط لمستند «{$typeLabel}» في الفرع «{$branchLabel}». أضف التسلسل من الإعدادات ثم أعد المحاولة.",
+                ]);
             }
 
             $periodKey = $this->periodKey($template->reset_period, $date);

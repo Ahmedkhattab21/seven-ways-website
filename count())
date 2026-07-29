@@ -1,0 +1,63 @@
+
+Deprecated: Symfony\Component\Translation\t(): Implicitly marking parameter $domain as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\translation\Resources\functions.php on line 18
+
+Deprecated: Termwind\style(): Implicitly marking parameter $callback as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\nunomaduro\termwind\src\Functions.php on line 29
+
+Deprecated: Termwind\ask(): Implicitly marking parameter $autocomplete as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\nunomaduro\termwind\src\Functions.php on line 61
+
+Deprecated: Symfony\Component\Console\Input\ArgvInput::__construct(): Implicitly marking parameter $argv as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\console\Input\ArgvInput.php on line 46
+
+Deprecated: Symfony\Component\Console\Input\ArgvInput::__construct(): Implicitly marking parameter $definition as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\console\Input\ArgvInput.php on line 46
+
+Deprecated: Symfony\Component\Console\Input\Input::__construct(): Implicitly marking parameter $definition as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\console\Input\Input.php on line 36
+
+Deprecated: Symfony\Component\Console\Output\ConsoleOutput::__construct(): Implicitly marking parameter $decorated as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\console\Output\ConsoleOutput.php on line 40
+
+Deprecated: Symfony\Component\Console\Output\ConsoleOutput::__construct(): Implicitly marking parameter $formatter as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\console\Output\ConsoleOutput.php on line 40
+
+Deprecated: Symfony\Component\Console\Output\StreamOutput::__construct(): Implicitly marking parameter $decorated as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\console\Output\StreamOutput.php on line 42
+
+Deprecated: Symfony\Component\Console\Output\StreamOutput::__construct(): Implicitly marking parameter $formatter as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\console\Output\StreamOutput.php on line 42
+
+Deprecated: Symfony\Component\Console\Output\Output::__construct(): Implicitly marking parameter $formatter as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\console\Output\Output.php on line 40
+
+Deprecated: Symfony\Component\Console\Formatter\OutputFormatterStyle::__construct(): Implicitly marking parameter $foreground as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\console\Formatter\OutputFormatterStyle.php on line 36
+
+Deprecated: Symfony\Component\Console\Formatter\OutputFormatterStyle::__construct(): Implicitly marking parameter $background as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\console\Formatter\OutputFormatterStyle.php on line 36
+
+Deprecated: Symfony\Component\Console\Formatter\OutputFormatterStyle::setForeground(): Implicitly marking parameter $color as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\console\Formatter\OutputFormatterStyle.php on line 44
+
+Deprecated: Symfony\Component\Console\Formatter\OutputFormatterStyle::setBackground(): Implicitly marking parameter $color as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\console\Formatter\OutputFormatterStyle.php on line 52
+
+Deprecated: Symfony\Component\Console\Formatter\OutputFormatterStyleInterface::setForeground(): Implicitly marking parameter $color as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\console\Formatter\OutputFormatterStyleInterface.php on line 24
+
+Deprecated: Symfony\Component\Console\Formatter\OutputFormatterStyleInterface::setBackground(): Implicitly marking parameter $color as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\console\Formatter\OutputFormatterStyleInterface.php on line 29
+
+Deprecated: Symfony\Component\Console\Formatter\OutputFormatterStyleStack::__construct(): Implicitly marking parameter $emptyStyle as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\console\Formatter\OutputFormatterStyleStack.php on line 29
+
+Deprecated: Symfony\Component\Console\Formatter\OutputFormatterStyleStack::pop(): Implicitly marking parameter $style as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\console\Formatter\OutputFormatterStyleStack.php on line 56
+
+Deprecated: Symfony\Contracts\Translation\TranslatorInterface::trans(): Implicitly marking parameter $domain as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\translation-contracts\TranslatorInterface.php on line 62
+
+Deprecated: Symfony\Contracts\Translation\TranslatorInterface::trans(): Implicitly marking parameter $locale as nullable is deprecated, the explicit nullable type must be used instead in D:\xxamp\htdocs\seven ways website\vendor\symfony\translation-contracts\TranslatorInterface.php on line 62
+
+   Psy\Exception\ParseErrorException 
+
+  PHP Parse error: Syntax error, unexpected ',' on line 1
+
+  at D:\xxamp\htdocs\seven ways website\vendor\psy\psysh\src\Exception\ParseErrorException.php:44
+     40▕      * @param \PhpParser\Error $e
+     41▕      */
+     42▕     public static function fromParseError(\PhpParser\Error $e): self
+     43▕     {
+  ➜  44▕         return new self($e->getRawMessage(), $e->getAttributes());
+     45▕     }
+     46▕ }
+     47▕
+
+  1   D:\xxamp\htdocs\seven ways website\vendor\psy\psysh\src\CodeCleaner.php:657
+      Psy\Exception\ParseErrorException::fromParseError(Object(PhpParser\Error))
+
+  2   D:\xxamp\htdocs\seven ways website\vendor\psy\psysh\src\CodeCleaner.php:273
+      Psy\CodeCleaner::parse("<?php dump(App\Models\DocumentSequence::query()-,4)-,'customer')-,true)-;
+")

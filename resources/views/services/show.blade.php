@@ -6,6 +6,7 @@
 @if(auth()->user()->hasPermission('services.update'))<a class="sw-button" href="{{ route('services.edit', $service) }}">تعديل البيانات الأساسية</a>@endif
 @endsection
 @section('content')
+<x-catalog-navigation active="services" />
 <x-card title="البيانات الأساسية">
 <div class="sw-form-grid"><div><small>الكود</small><strong>{{ $service->code }}</strong></div><div><small>التصنيف</small><strong>{{ $service->category?->name }}</strong></div><div><small>التسعير</small><strong>{{ $service->pricing_type }}</strong></div><div><small>المدة</small><strong>{{ $service->default_duration_minutes }} دقيقة</strong></div></div>
 <p>{{ $service->description }}</p>

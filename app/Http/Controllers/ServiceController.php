@@ -39,7 +39,17 @@ class ServiceController extends Controller
 {
     public function index(Request $request, TenantContext $tenant): View
     {
-        $services = Service::query()->where('company_id', $tenant->companyId())->with(['category', 'branchServices.branch'])
+        $branchId = $request->integer('branch_id') ?: $tenant->branchId();
+        $today = now()->toDateString();
+        $services = Service::query()->where('company_id', $tenant->companyId())->with([
+            'category',
+            'branchServices' => fn ($query) => $query->when($branchId, fn ($query) => $query->where('branch_id', $branchId)),
+            'prices' => fn ($query) => $query->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+                ->whereNull('vehicle_size_id')->whereNull('vehicle_type_id')->where('is_active', true)
+                ->whereDate('effective_from', '<=', $today)
+                ->where(fn ($query) => $query->whereNull('effective_to')->orWhereDate('effective_to', '>=', $today))
+                ->orderByDesc('priority')->orderByDesc('effective_from'),
+        ])->withCount('materialRequirements')
             ->when($request->filled('search'), fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$request->search.'%')
                 ->orWhere('code', 'like', '%'.$request->search.'%')))
             ->when($request->filled('service_category_id'), fn ($q) => $q->where('service_category_id', $request->service_category_id))
@@ -57,6 +67,7 @@ class ServiceController extends Controller
             'services' => $services,
             'categories' => ServiceCategory::where('company_id', $tenant->companyId())->orderBy('name')->get(),
             'branches' => $tenant->accessibleBranches(),
+            'currentBranchId' => $branchId,
         ]);
     }
 

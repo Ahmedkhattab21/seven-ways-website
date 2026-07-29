@@ -6,8 +6,9 @@
 @if(auth()->user()->hasPermission('customers.create'))<a class="sw-button sw-button--primary" href="{{ route('customers.create') }}">إضافة عميل</a>@endif
 @endsection
 @section('content')
-<x-card title="البحث والفلاتر">
-    <form method="GET" class="sw-form"><div class="sw-form-grid">
+<div class="customers-index-layout">
+<x-card title="البحث والفلاتر" class="customers-filter-card">
+    <form method="GET" class="sw-form customers-filter-form"><div class="sw-form-grid customers-filter-grid">
         <x-form.input name="search" label="بحث" :value="request('search')" placeholder="الاسم أو الهاتف أو الكود أو الرقم الضريبي" />
         <x-form.select name="type" label="النوع"><option value="">الكل</option>@foreach(['individual'=>'فرد','company'=>'شركة','car_showroom'=>'معرض سيارات','rental_company'=>'شركة تأجير','fleet'=>'أسطول'] as $value=>$label)<option value="{{ $value }}" @selected(request('type')===$value)>{{ $label }}</option>@endforeach</x-form.select>
         <x-form.select name="status" label="الحالة"><option value="">الكل</option>@foreach(['active'=>'نشط','inactive'=>'غير نشط','blocked'=>'محظور'] as $value=>$label)<option value="{{ $value }}" @selected(request('status')===$value)>{{ $label }}</option>@endforeach</x-form.select>
@@ -15,7 +16,7 @@
         <x-form.select name="source_id" label="المصدر"><option value="">الكل</option>@foreach($sources as $source)<option value="{{ $source->id }}" @selected((string)request('source_id')===(string)$source->id)>{{ $source->name }}</option>@endforeach</x-form.select>
     </div><div class="sw-form-actions"><x-button type="submit">تطبيق</x-button><a class="sw-button sw-button--outline" href="{{ route('customers.index') }}">مسح</a></div></form>
 </x-card>
-<x-table-shell>
+<x-table-shell class="customers-table-card">
     <thead><tr><th>الكود</th><th>الاسم</th><th>النوع</th><th>الهاتف</th><th>الفرع المسؤول</th><th>السيارات</th><th>آخر تواصل</th><th>الحالة</th></tr></thead>
     <tbody>@forelse($customers as $customer)<tr>
         <td><a href="{{ route('customers.show', $customer) }}">{{ $customer->customer_code }}</a></td>
@@ -25,4 +26,5 @@
     </tr>@empty<tr><td colspan="8">لا يوجد عملاء.</td></tr>@endforelse</tbody>
     <x-slot:footer>{{ $customers->links() }}</x-slot:footer>
 </x-table-shell>
+</div>
 @endsection
