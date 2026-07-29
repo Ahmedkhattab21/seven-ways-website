@@ -22,6 +22,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleBrand;
 use App\Models\VehicleModel;
+use App\Services\AppointmentSchedulingService;
 use App\Services\DocumentNumberService;
 use App\Services\ServicePackageService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -115,6 +116,30 @@ class ServicePackagesCoreModuleTest extends TestCase
         $this->assertStringContainsString('data-package-empty', $view);
         $this->assertStringContainsString('السيارة المحددة لا تحتوي على حجم', $javascript);
         $this->assertStringContainsString('availableCount > 0', $javascript);
+    }
+
+    public function test_package_service_can_be_scheduled_through_its_active_branch_package(): void
+    {
+        $package = $this->package();
+        BranchServicePackage::query()->forceCreate([
+            'branch_id' => $this->branch->id, 'service_package_id' => $package->id,
+            'price' => 120, 'minimum_price' => 100, 'is_available' => true,
+            'effective_from' => today()->subDay(),
+        ]);
+        BranchService::query()->where('branch_id', $this->branch->id)
+            ->where('service_id', $this->firstService->id)->delete();
+
+        app(AppointmentSchedulingService::class)->validate(
+            $this->branch,
+            now()->addDay()->setTime(10, 0),
+            now()->addDay()->setTime(11, 0),
+            null,
+            [$this->firstService->id],
+            null,
+            [$this->firstService->id => [$package->id]]
+        );
+
+        $this->assertTrue(true);
     }
 
     public function test_create_action_is_hidden_without_create_permission(): void

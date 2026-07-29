@@ -15,6 +15,13 @@ class ServiceRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'branch_id' => [
+                'required',
+                'integer',
+                Rule::exists('branches', 'id')
+                    ->where('company_id', auth()->user()->company_id)
+                    ->where('is_active', true),
+            ],
             'service_category_id' => ['required', 'integer'],
             'code' => ['nullable', 'alpha_dash', 'max:50', Rule::unique('services')
                 ->where('company_id', auth()->user()->company_id)->ignore($this->route('service'))],

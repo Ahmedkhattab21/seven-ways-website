@@ -7,6 +7,7 @@
 <x-card title="تعريف الخدمة على مستوى الشركة"><form class="sw-form" method="POST" action="{{ $service->exists ? route('services.update', $service) : route('services.store') }}">
 @csrf @if($service->exists) @method('PUT') @endif
 <div class="sw-form-grid">
+<x-form.select name="branch_id" label="الفرع" required>@foreach($branches as $branch)<option value="{{ $branch->id }}" @selected((string) old('branch_id', $currentBranchId) === (string) $branch->id)>{{ $branch->name }}</option>@endforeach</x-form.select>
 <x-form.input name="code" label="الكود (يُولد تلقائيًا عند تركه فارغًا)" :value="old('code', $service->code)" />
 <x-form.input name="name" label="اسم الخدمة" :value="old('name', $service->name)" required />
 <x-form.select name="service_category_id" label="التصنيف" required>@foreach($categories as $category)<option value="{{ $category->id }}" @selected(old('service_category_id', $service->service_category_id)==$category->id)>{{ $category->name }}</option>@endforeach</x-form.select>

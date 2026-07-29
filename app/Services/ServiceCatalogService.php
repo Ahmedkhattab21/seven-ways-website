@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Core\Exceptions\BusinessRuleException;
 use App\Core\Tenancy\TenantContext;
+use App\Models\Branch;
+use App\Models\BranchService;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\Tax;
@@ -56,6 +58,18 @@ class ServiceCatalogService
         return DB::transaction(function () use ($data, $service) {
             $service ??= new Service;
             $this->assertOwned($service);
+            $branch = null;
+            if (! empty($data['branch_id'])) {
+                $branch = Branch::query()
+                    ->whereKey($data['branch_id'])
+                    ->where('company_id', $this->tenant->companyId())
+                    ->where('is_active', true)
+                    ->firstOrFail();
+                if (! $this->tenant->user()?->canAccessBranch($branch)) {
+                    throw new BusinessRuleException('Branch is outside your access scope.', status: 403);
+                }
+            }
+            unset($data['branch_id']);
             $category = ServiceCategory::query()->whereKey($data['service_category_id'])
                 ->where('company_id', $this->tenant->companyId())->where('is_active', true)->firstOrFail();
             if (! empty($data['default_tax_id'])) {
@@ -80,6 +94,30 @@ class ServiceCatalogService
                 'company_id' => $category->company_id,
                 $service->exists ? 'updated_by' : 'created_by' => $this->tenant->user()?->id,
             ])->save();
+            if ($branch) {
+                $availability = BranchService::query()->firstOrNew([
+                    'branch_id' => $branch->id,
+                    'service_id' => $service->id,
+                ]);
+                if (! $availability->exists) {
+                    $availability->forceFill([
+                        'company_id' => $service->company_id,
+                        'branch_id' => $branch->id,
+                        'service_id' => $service->id,
+                        'is_available' => true,
+                        'booking_enabled' => true,
+                        'requires_approval' => false,
+                        'default_duration_minutes' => $service->default_duration_minutes,
+                        'is_active' => true,
+                    ])->save();
+                }
+                if ($availability->wasRecentlyCreated) {
+                    $this->audit->record('branch_service.created', $availability, [
+                        'branch_id' => $branch->id,
+                        'service_id' => $service->id,
+                    ]);
+                }
+            }
             $this->audit->record($service->wasRecentlyCreated ? 'service.created' : 'service.updated', $service);
 
             return $service;

@@ -94,6 +94,13 @@ class QuotationActionController extends Controller
             'scheduled_end' => ['required', 'date', 'after:scheduled_start'],
             'assigned_employee_id' => ['nullable', 'integer'], 'priority' => ['required', 'in:low,normal,high,urgent'],
             'deposit_required' => ['sometimes', 'boolean'], 'deposit_amount' => ['nullable', 'numeric', 'min:0'],
+        ], [
+            'scheduled_start.required' => 'حدد بداية الموعد.',
+            'scheduled_start.date' => 'بداية الموعد غير صحيحة.',
+            'scheduled_start.after' => 'يجب أن تكون بداية الموعد بعد الوقت الحالي.',
+            'scheduled_end.required' => 'حدد نهاية الموعد.',
+            'scheduled_end.date' => 'نهاية الموعد غير صحيحة.',
+            'scheduled_end.after' => 'يجب أن تكون نهاية الموعد بعد بداية الموعد.',
         ]);
         $appointment = $service->convert($quotation, $data);
 

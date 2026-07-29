@@ -1,9 +1,163 @@
 @extends('layouts.app')
-@section('title',$appointment->appointment_number)
+
+@section('title', $appointment->appointment_number)
+
 @section('content')
-<div class="sw-page-header"><div><h1>{{ $appointment->appointment_number }}</h1><p>{{ $appointment->customer->name }} | {{ $appointment->branch->name }} | {{ $appointment->status }}</p></div>@can('update',$appointment)<a class="sw-btn" href="{{ route('appointments.edit',$appointment) }}">تعديل</a>@endcan</div>
-<div class="sw-card"><p>الموعد: {{ $appointment->scheduled_start->format('Y-m-d H:i') }} — {{ $appointment->scheduled_end->format('H:i') }}</p><p>الفني: {{ $appointment->assignedEmployee?->name??'غير مسند' }}</p><p>السيارة: {{ $appointment->vehicle->plate_number ?: $appointment->vehicle->vin }}</p></div>
-<div class="sw-card sw-table-wrap"><table class="sw-table"><thead><tr><th>الخدمة</th><th>الكمية</th><th>المدة</th><th>الحالة</th></tr></thead><tbody>@foreach($appointment->services as $item)<tr><td>{{ $item->description }}</td><td>{{ $item->quantity }}</td><td>{{ $item->estimated_duration_minutes }}</td><td>{{ $item->status }}</td></tr>@endforeach</tbody></table></div>
-<div class="sw-card"><h2>الإجراءات</h2>@can('confirm',$appointment)<form method="POST" action="{{ route('appointments.confirm',$appointment) }}">@csrf<button class="sw-btn">تأكيد</button></form>@endcan @can('checkIn',$appointment)<form method="POST" action="{{ route('appointments.check-in',$appointment) }}">@csrf<input name="arrival_notes" placeholder="ملاحظات الوصول"><input type="number" name="odometer_snapshot" placeholder="العداد"><button class="sw-btn sw-btn--primary">Check-in</button></form>@endcan @can('cancel',$appointment)<form method="POST" action="{{ route('appointments.cancel',$appointment) }}">@csrf<input name="reason" required placeholder="سبب الإلغاء"><select name="deposit_decision"><option value="pending_decision">قرار العربون لاحقًا</option><option value="refunded">مردود تشغيليًا</option><option value="forfeited">مصادر</option></select><button class="sw-btn">إلغاء</button></form>@endcan</div>
-@if(auth()->user()->hasPermission('appointment_deposits.view'))<div class="sw-card"><h2>العربون التشغيلي</h2><p><strong>تنبيه:</strong> هذه السجلات تشغيلية فقط ولا تنشئ صندوقًا أو قيدًا محاسبيًا أو Refund ماليًا.</p>@foreach($appointment->deposits as $deposit)<p>{{ $deposit->receipt_number }} — {{ $deposit->amount }} — {{ $deposit->status }}</p>@endforeach @if(auth()->user()->hasPermission('appointment_deposits.record'))<form method="POST" action="{{ route('appointments.deposits.store',$appointment) }}">@csrf<input type="number" step="0.0001" min="0.0001" name="amount" required><select name="payment_method_id">@foreach($paymentMethods as $method)<option value="{{ $method->id }}">{{ $method->name }}</option>@endforeach</select><input name="reference_number" placeholder="المرجع"><input type="datetime-local" name="received_at" value="{{ now()->format('Y-m-d\\TH:i') }}" required><button class="sw-btn">تسجيل تشغيلي</button></form>@endif</div>@endif
+<div class="appointment-show-page">
+    <div class="sw-page-header appointment-show-header">
+        <div>
+            <p class="appointment-show-header__eyebrow">تفاصيل الحجز</p>
+            <h1>{{ $appointment->appointment_number }}</h1>
+            <p class="appointment-show-header__meta">
+                <span>{{ $appointment->customer->name }}</span>
+                <span>{{ $appointment->branch->name }}</span>
+                <x-status-badge :status="$appointment->status" />
+            </p>
+        </div>
+
+        @can('update', $appointment)
+            <a class="sw-button sw-button--outline" href="{{ route('appointments.edit', $appointment) }}">تعديل الحجز</a>
+        @endcan
+    </div>
+
+    <x-card title="بيانات الحجز">
+        <dl class="sw-details-grid appointment-details-grid">
+            <div>
+                <dt>بداية الموعد</dt>
+                <dd>{{ $appointment->scheduled_start->format('Y-m-d H:i') }}</dd>
+            </div>
+            <div>
+                <dt>نهاية الموعد</dt>
+                <dd>{{ $appointment->scheduled_end->format('Y-m-d H:i') }}</dd>
+            </div>
+            <div>
+                <dt>الفني المسؤول</dt>
+                <dd>{{ $appointment->assignedEmployee?->name ?? 'غير مسند' }}</dd>
+            </div>
+            <div>
+                <dt>السيارة</dt>
+                <dd>{{ $appointment->vehicle->plate_number ?: ($appointment->vehicle->vin ?: 'غير محددة') }}</dd>
+            </div>
+        </dl>
+    </x-card>
+
+    <x-card title="الخدمات" subtitle="الخدمات المخطط تنفيذها خلال الموعد.">
+        <div class="sw-table-wrap">
+            <table class="sw-table">
+                <thead>
+                    <tr>
+                        <th>الخدمة</th>
+                        <th>الكمية</th>
+                        <th>المدة</th>
+                        <th>الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($appointment->services as $item)
+                        <tr>
+                            <td>{{ $item->description }}</td>
+                            <td>{{ $item->quantity }}</td>
+                            <td>{{ $item->estimated_duration_minutes }} دقيقة</td>
+                            <td><x-status-badge :status="$item->status" /></td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4">لا توجد خدمات مرتبطة بهذا الحجز.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </x-card>
+
+    <x-card title="الإجراءات" subtitle="الإجراءات المتاحة حسب حالة الحجز وصلاحياتك.">
+        <div class="appointment-actions">
+            @can('confirm', $appointment)
+                <form method="POST" action="{{ route('appointments.confirm', $appointment) }}" class="appointment-action-panel">
+                    @csrf
+                    <div>
+                        <h3>تأكيد الحجز</h3>
+                        <p>تأكيد الموعد قبل وصول العميل.</p>
+                    </div>
+                    <div class="sw-form-actions">
+                        <x-button type="submit">تأكيد الحجز</x-button>
+                    </div>
+                </form>
+            @endcan
+
+            @can('checkIn', $appointment)
+                <form method="POST" action="{{ route('appointments.check-in', $appointment) }}" class="appointment-action-panel sw-form">
+                    @csrf
+                    <div>
+                        <h3>تسجيل الوصول</h3>
+                        <p>سجّل بيانات وصول السيارة لبدء دورة التشغيل.</p>
+                    </div>
+                    <div class="sw-form-grid">
+                        <x-form.input name="arrival_notes" label="ملاحظات الوصول" :value="old('arrival_notes')" />
+                        <x-form.input name="odometer_snapshot" type="number" label="قراءة العداد" :value="old('odometer_snapshot')" min="0" />
+                    </div>
+                    <div class="sw-form-actions">
+                        <x-button type="submit">تسجيل الوصول</x-button>
+                    </div>
+                </form>
+            @endcan
+
+            @can('cancel', $appointment)
+                <form method="POST" action="{{ route('appointments.cancel', $appointment) }}" class="appointment-action-panel appointment-action-panel--danger sw-form">
+                    @csrf
+                    <div>
+                        <h3>إلغاء الحجز</h3>
+                        <p>أدخل سبب الإلغاء وحدد قرار العربون التشغيلي.</p>
+                    </div>
+                    <div class="sw-form-grid">
+                        <x-form.input name="reason" label="سبب الإلغاء" :value="old('reason')" required />
+                        <x-form.select name="deposit_decision" label="قرار العربون">
+                            <option value="pending_decision" @selected(old('deposit_decision') === 'pending_decision')>القرار لاحقًا</option>
+                            <option value="refunded" @selected(old('deposit_decision') === 'refunded')>مردود تشغيليًا</option>
+                            <option value="forfeited" @selected(old('deposit_decision') === 'forfeited')>مصادر</option>
+                        </x-form.select>
+                    </div>
+                    <div class="sw-form-actions">
+                        <x-button type="submit" variant="danger">إلغاء الحجز</x-button>
+                    </div>
+                </form>
+            @endcan
+        </div>
+    </x-card>
+
+    @if(auth()->user()->hasPermission('appointment_deposits.view'))
+        <x-card title="العربون التشغيلي" subtitle="سجل تشغيلي فقط ولا ينشئ صندوقًا أو قيدًا محاسبيًا أو استردادًا ماليًا.">
+            <div class="appointment-deposits">
+                @forelse($appointment->deposits as $deposit)
+                    <div class="appointment-deposit-item">
+                        <strong>{{ $deposit->receipt_number }}</strong>
+                        <span>{{ $deposit->amount }}</span>
+                        <x-status-badge :status="$deposit->status" />
+                    </div>
+                @empty
+                    <p class="appointment-empty-state">لا توجد عربونات مسجلة لهذا الحجز.</p>
+                @endforelse
+            </div>
+
+            @if(auth()->user()->hasPermission('appointment_deposits.record'))
+                <form method="POST" action="{{ route('appointments.deposits.store', $appointment) }}" class="appointment-deposit-form sw-form">
+                    @csrf
+                    <div class="sw-form-grid">
+                        <x-form.input name="amount" type="number" label="قيمة العربون" :value="old('amount')" step="0.0001" min="0.0001" required />
+                        <x-form.select name="payment_method_id" label="طريقة الدفع" required>
+                            @foreach($paymentMethods as $method)
+                                <option value="{{ $method->id }}" @selected((string) old('payment_method_id') === (string) $method->id)>{{ $method->name }}</option>
+                            @endforeach
+                        </x-form.select>
+                        <x-form.input name="reference_number" label="المرجع" :value="old('reference_number')" />
+                        <x-form.input name="received_at" type="datetime-local" label="تاريخ الاستلام" :value="old('received_at', now()->format('Y-m-d\TH:i'))" required />
+                    </div>
+                    <div class="sw-form-actions">
+                        <x-button type="submit">تسجيل العربون</x-button>
+                    </div>
+                </form>
+            @endif
+        </x-card>
+    @endif
+</div>
 @endsection

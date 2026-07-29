@@ -64,6 +64,23 @@ class PhaseEightServiceCatalogTest extends TestCase
         app(ServiceCatalogService::class)->saveService($this->serviceData($category));
     }
 
+    public function test_new_service_is_assigned_to_the_selected_accessible_branch(): void
+    {
+        $context = $this->context();
+        $service = app(ServiceCatalogService::class)->saveService(
+            $this->serviceData($context['category']) + ['branch_id' => $context['branch']->id]
+        );
+
+        $this->assertDatabaseHas('branch_services', [
+            'company_id' => $context['company']->id,
+            'branch_id' => $context['branch']->id,
+            'service_id' => $service->id,
+            'is_available' => true,
+            'booking_enabled' => true,
+            'is_active' => true,
+        ]);
+    }
+
     public function test_branch_availability_is_scoped_and_inactive_branch_cannot_enable_service(): void
     {
         $context = $this->context();
@@ -233,6 +250,13 @@ class PhaseEightServiceCatalogTest extends TestCase
             ])->count());
         $this->assertSame(3, DocumentSequence::where('company_id', $context['company']->id)
             ->whereIn('document_type', ['service', 'service_package', 'promotion'])->count());
+        $this->assertSame(
+            Service::where('company_id', $context['company']->id)->where('is_active', true)->count(),
+            BranchService::where('company_id', $context['company']->id)
+                ->where('branch_id', $context['branch']->id)
+                ->distinct('service_id')
+                ->count('service_id')
+        );
         $this->assertSame(0, \App\Models\ServicePrice::where('company_id', $context['company']->id)->count());
         $this->assertSame(0, Promotion::where('company_id', $context['company']->id)->count());
     }

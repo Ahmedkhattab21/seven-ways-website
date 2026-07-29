@@ -49,13 +49,22 @@ class AppointmentService
         $employee = ! empty($data['assigned_employee_id'])
             ? Employee::query()->findOrFail($data['assigned_employee_id']) : null;
         $serviceIds = collect($services)->pluck('service_id')->filter()->all();
+        $packageServiceIds = $this->packageServiceIds($services);
         $start = Carbon::parse($data['scheduled_start']);
         $end = Carbon::parse($data['scheduled_end']);
-        $this->scheduling->validate($branch, $start, $end, $employee, $serviceIds, $appointment);
+        $this->scheduling->validate($branch, $start, $end, $employee, $serviceIds, $appointment, $packageServiceIds);
         collect($services)->filter(fn ($row) => ! empty($row['assigned_employee_id']))
             ->groupBy('assigned_employee_id')->each(function ($rows, $employeeId) use ($branch, $start, $end, $appointment) {
                 $assigned = Employee::query()->findOrFail($employeeId);
-                $this->scheduling->validate($branch, $start, $end, $assigned, $rows->pluck('service_id')->all(), $appointment);
+                $this->scheduling->validate(
+                    $branch,
+                    $start,
+                    $end,
+                    $assigned,
+                    $rows->pluck('service_id')->all(),
+                    $appointment,
+                    $this->packageServiceIds($rows->all())
+                );
             });
         if ($appointment?->exists && ! in_array($appointment->status, ['pending', 'confirmed'], true)) {
             throw new BusinessRuleException('This appointment can no longer be edited.');
@@ -72,7 +81,7 @@ class AppointmentService
                 ),
                 'status' => $appointment->status ?: 'pending',
                 'estimated_duration_minutes' => $start->diffInMinutes($end),
-                'deposit_status' => $data['deposit_required'] ? 'pending' : 'not_required',
+                'deposit_status' => (bool) ($data['deposit_required'] ?? false) ? 'pending' : 'not_required',
                 'created_by' => $appointment->created_by ?: $this->tenant->user()?->id,
                 'updated_by' => $appointment->exists ? $this->tenant->user()?->id : null,
             ])->save();
@@ -87,5 +96,14 @@ class AppointmentService
 
             return $appointment->fresh(['services']);
         });
+    }
+
+    private function packageServiceIds(array $services): array
+    {
+        return collect($services)
+            ->filter(fn ($row) => ! empty($row['service_id']) && ! empty($row['service_package_id']))
+            ->groupBy('service_id')
+            ->map(fn ($rows) => $rows->pluck('service_package_id')->unique()->values()->all())
+            ->all();
     }
 }

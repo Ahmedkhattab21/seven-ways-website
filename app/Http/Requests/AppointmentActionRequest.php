@@ -24,4 +24,14 @@ class AppointmentActionRequest extends FormRequest
             'deposit_amount' => ['nullable', 'numeric', 'min:0'], 'priority' => ['nullable', Rule::in(['low', 'normal', 'high', 'urgent'])],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'scheduled_start.date' => 'بداية الموعد غير صحيحة.',
+            'scheduled_start.after' => 'يجب أن تكون بداية الموعد بعد الوقت الحالي.',
+            'scheduled_end.date' => 'نهاية الموعد غير صحيحة.',
+            'scheduled_end.after' => 'يجب أن تكون نهاية الموعد بعد بداية الموعد.',
+        ];
+    }
 }

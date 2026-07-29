@@ -4,6 +4,7 @@
 @section('breadcrumb', 'المنتجات والخدمات')
 @section('page-description', 'إدارة المنتجات والخدمات والباقات والتصنيفات والأسعار من مكان واحد.')
 @section('content')
+<div class="catalog-page">
 <x-catalog-navigation active="overview" :permission-names="$permissionNames" />
 
 <div class="catalog-quick-actions">
@@ -179,5 +180,6 @@
             </tbody>
         </x-table-shell>
     @endif
+</div>
 </div>
 @endsection

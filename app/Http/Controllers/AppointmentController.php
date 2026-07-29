@@ -26,8 +26,15 @@ class AppointmentController extends Controller
 
     public function calendar(Request $request, TenantContext $tenant): View
     {
+        $from = $request->filled('from')
+            ? $request->date('from')->startOfDay()
+            : today()->startOfMonth();
+        $to = $request->filled('to')
+            ? $request->date('to')->endOfDay()
+            : today()->endOfMonth();
+
         $appointments = $this->query($request, $tenant)
-            ->whereBetween('scheduled_start', [$request->date('from', today()->startOfMonth()), $request->date('to', today()->endOfMonth())])
+            ->whereBetween('scheduled_start', [$from, $to])
             ->get();
 
         return view('appointments.calendar', ['appointments' => $appointments, 'branches' => $tenant->accessibleBranches()]);
@@ -83,12 +90,24 @@ class AppointmentController extends Controller
 
     private function references(TenantContext $tenant): array
     {
+        $branches = $tenant->accessibleBranches();
+        $branchIds = $branches->pluck('id');
+        $availableAtBranch = fn ($query) => $query
+            ->whereIn('branch_id', $branchIds)
+            ->where('is_available', true)
+            ->where('is_active', true);
+
         return [
-            'branches' => $tenant->accessibleBranches(),
+            'branches' => $branches,
             'customers' => Customer::where('company_id', $tenant->companyId())->where('status', 'active')->orderBy('name')->get(),
             'vehicles' => Vehicle::where('company_id', $tenant->companyId())->where('status', 'active')->latest()->get(),
             'employees' => Employee::where('company_id', $tenant->companyId())->where('status', 'active')->orderBy('name')->get(),
-            'services' => Service::where('company_id', $tenant->companyId())->where('is_active', true)->orderBy('name')->get(),
+            'services' => Service::where('company_id', $tenant->companyId())
+                ->where('is_active', true)
+                ->whereHas('branchServices', $availableAtBranch)
+                ->with(['branchServices' => $availableAtBranch])
+                ->orderBy('name')
+                ->get(),
             'paymentMethods' => PaymentMethod::where('company_id', $tenant->companyId())->where('is_active', true)->orderBy('sort_order')->get(),
         ];
     }

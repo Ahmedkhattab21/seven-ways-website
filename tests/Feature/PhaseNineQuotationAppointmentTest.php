@@ -126,6 +126,70 @@ class PhaseNineQuotationAppointmentTest extends TestCase
         ]);
     }
 
+    public function test_quotation_conversion_defaults_missing_deposit_requirement_to_not_required(): void
+    {
+        $context = $this->context(true);
+        $quotation = $this->acceptedQuotation($context);
+
+        $appointment = app(QuotationToAppointmentService::class)->convert($quotation, [
+            'scheduled_start' => now()->addDay()->startOfHour(),
+            'scheduled_end' => now()->addDay()->startOfHour()->addHour(),
+            'priority' => 'normal',
+        ]);
+
+        $this->assertFalse((bool) $appointment->deposit_required);
+        $this->assertSame('not_required', $appointment->deposit_status);
+    }
+
+    public function test_calendar_uses_current_month_when_date_filters_are_missing(): void
+    {
+        $context = $this->context();
+        $permission = Permission::query()->firstOrCreate(
+            ['name' => 'appointments.calendar'],
+            ['display_name' => 'appointments.calendar']
+        );
+        $context['role']->permissions()->syncWithoutDetaching($permission);
+        $appointment = app(AppointmentService::class)->save(
+            $this->appointmentData($context),
+            $this->appointmentServices($context)
+        );
+
+        $this->actingAs($context['user'])
+            ->get(route('appointments.calendar'))
+            ->assertOk()
+            ->assertSee($appointment->appointment_number);
+    }
+
+    public function test_appointment_create_only_offers_services_available_in_accessible_branches(): void
+    {
+        $context = $this->context();
+        $unavailableService = Service::query()->forceCreate([
+            'company_id' => $context['company']->id,
+            'service_category_id' => $context['service']->service_category_id,
+            'code' => 'UNAVAILABLE'.uniqid(),
+            'name' => 'Unavailable appointment service',
+            'service_type' => 'ppf',
+            'pricing_type' => 'fixed',
+            'default_duration_minutes' => 60,
+            'default_tax_id' => $context['tax']->id,
+            'requires_vehicle' => true,
+            'is_active' => true,
+        ]);
+        BranchService::query()->forceCreate([
+            'company_id' => $context['company']->id,
+            'branch_id' => $context['branch']->id,
+            'service_id' => $unavailableService->id,
+            'is_available' => false,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($context['user'])
+            ->get(route('appointments.create'))
+            ->assertOk()
+            ->assertSee($context['service']->name)
+            ->assertDontSee($unavailableService->name);
+    }
+
     public function test_scheduling_blocks_technician_overlap(): void
     {
         $context = $this->context();

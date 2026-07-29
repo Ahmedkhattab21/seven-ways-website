@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\BranchService;
 use App\Models\Company;
 use App\Models\DocumentSequence;
 use App\Models\Permission;
@@ -85,6 +86,31 @@ class ServiceCatalogSeeder extends Seeder
                     'is_package_only' => false, 'is_active' => true, 'deleted_at' => null,
                 ])->save();
             }
+
+            $branches = $company->branches()->where('is_active', true)->get();
+            Service::query()
+                ->where('company_id', $company->id)
+                ->where('is_active', true)
+                ->each(function (Service $service) use ($branches) {
+                    foreach ($branches as $branch) {
+                        $availability = BranchService::query()->firstOrNew([
+                            'branch_id' => $branch->id,
+                            'service_id' => $service->id,
+                        ]);
+                        if (! $availability->exists) {
+                            $availability->forceFill([
+                                'company_id' => $service->company_id,
+                                'branch_id' => $branch->id,
+                                'service_id' => $service->id,
+                                'is_available' => true,
+                                'booking_enabled' => true,
+                                'requires_approval' => false,
+                                'default_duration_minutes' => $service->default_duration_minutes,
+                                'is_active' => true,
+                            ])->save();
+                        }
+                    }
+                });
 
             foreach (['service' => 'SRV-', 'service_package' => 'PKG-', 'promotion' => 'PRM-'] as $type => $prefix) {
                 $scopeKey = DocumentNumberService::scopeKey($company->id, null, $type, null);

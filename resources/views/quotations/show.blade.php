@@ -179,12 +179,25 @@
                     @csrf
                     <label>
                         بداية الموعد
-                        <input type="datetime-local" name="scheduled_start" required>
+                        <input
+                            type="datetime-local"
+                            name="scheduled_start"
+                            value="{{ old('scheduled_start') }}"
+                            min="{{ now()->addMinute()->format('Y-m-d\TH:i') }}"
+                            required
+                        >
                     </label>
                     <label>
                         نهاية الموعد
-                        <input type="datetime-local" name="scheduled_end" required>
+                        <input
+                            type="datetime-local"
+                            name="scheduled_end"
+                            value="{{ old('scheduled_end') }}"
+                            min="{{ now()->addMinutes(2)->format('Y-m-d\TH:i') }}"
+                            required
+                        >
                     </label>
+                    <small class="sw-field__help">الموعد لازم يكون بعد الوقت الحالي، ونهاية الموعد بعد بدايته.</small>
                     <input type="hidden" name="priority" value="normal">
                     <button class="sw-btn sw-btn--primary">تحويل إلى حجز</button>
                 </form>

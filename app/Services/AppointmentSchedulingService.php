@@ -6,6 +6,7 @@ use App\Core\Exceptions\BusinessRuleException;
 use App\Core\Tenancy\TenantContext;
 use App\Models\Appointment;
 use App\Models\Branch;
+use App\Models\BranchServicePackage;
 use App\Models\Employee;
 use App\Models\EmployeeServiceSkill;
 use App\Models\Service;
@@ -17,7 +18,15 @@ class AppointmentSchedulingService
     {
     }
 
-    public function validate(Branch $branch, Carbon $start, Carbon $end, ?Employee $employee, array $serviceIds, ?Appointment $ignore = null): void
+    public function validate(
+        Branch $branch,
+        Carbon $start,
+        Carbon $end,
+        ?Employee $employee,
+        array $serviceIds,
+        ?Appointment $ignore = null,
+        array $packageServiceIds = []
+    ): void
     {
         if ($branch->company_id !== $this->tenant->companyId() || ! $branch->is_active
             || ! $this->tenant->user()?->canAccessBranch($branch) || $end->lte($start)) {
@@ -56,15 +65,22 @@ class AppointmentSchedulingService
             }
         }
         foreach (array_unique($serviceIds) as $serviceId) {
+            $service = Service::query()->whereKey($serviceId)
+                ->where('company_id', $branch->company_id)->where('is_active', true)->firstOrFail();
             $availability = \App\Models\BranchService::query()->where('branch_id', $branch->id)
                 ->where('service_id', $serviceId)->where('is_available', true)->where('is_active', true)->first();
-            if (! $availability) {
-                throw new BusinessRuleException('A selected service is unavailable at this branch.');
+            $availableThroughPackage = ! $availability && $this->availableThroughPackage(
+                $branch,
+                $serviceId,
+                $packageServiceIds[$serviceId] ?? []
+            );
+            if (! $availability && ! $availableThroughPackage) {
+                throw new BusinessRuleException("الخدمة «{$service->name}» غير متاحة في الفرع «{$branch->name}».");
             }
-            if ($availability->minimum_notice_minutes && now()->addMinutes($availability->minimum_notice_minutes)->gt($start)) {
+            if ($availability?->minimum_notice_minutes && now()->addMinutes($availability->minimum_notice_minutes)->gt($start)) {
                 throw new BusinessRuleException('The service minimum notice period is not satisfied.');
             }
-            if ($availability->maximum_daily_capacity) {
+            if ($availability?->maximum_daily_capacity) {
                 $count = \App\Models\AppointmentService::query()->where('service_id', $serviceId)
                     ->whereHas('appointment', fn ($query) => $query->where('branch_id', $branch->id)
                         ->whereDate('scheduled_start', $start->toDateString())
@@ -74,7 +90,23 @@ class AppointmentSchedulingService
                     throw new BusinessRuleException('The service daily capacity has been reached.');
                 }
             }
-            Service::query()->whereKey($serviceId)->where('company_id', $branch->company_id)->where('is_active', true)->firstOrFail();
         }
+    }
+
+    private function availableThroughPackage(Branch $branch, int $serviceId, array $packageIds): bool
+    {
+        if ($packageIds === []) {
+            return false;
+        }
+
+        return BranchServicePackage::query()
+            ->where('branch_id', $branch->id)
+            ->whereIn('service_package_id', $packageIds)
+            ->where('is_available', true)
+            ->whereHas('package', fn ($query) => $query
+                ->where('company_id', $branch->company_id)
+                ->where('is_active', true)
+                ->whereHas('items', fn ($query) => $query->where('service_id', $serviceId)))
+            ->exists();
     }
 }

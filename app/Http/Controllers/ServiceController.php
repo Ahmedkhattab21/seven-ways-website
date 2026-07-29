@@ -294,6 +294,8 @@ class ServiceController extends Controller
     private function references(TenantContext $tenant): array
     {
         return [
+            'branches' => $tenant->accessibleBranches(),
+            'currentBranchId' => $tenant->branchId(),
             'categories' => ServiceCategory::where('company_id', $tenant->companyId())->where('is_active', true)->orderBy('name')->get(),
             'taxes' => Tax::where('company_id', $tenant->companyId())->where('is_active', true)->orderBy('name')->get(),
             'units' => Unit::where(fn ($q) => $q->whereNull('company_id')->orWhere('company_id', $tenant->companyId()))
