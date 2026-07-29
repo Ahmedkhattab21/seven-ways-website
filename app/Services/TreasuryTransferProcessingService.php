@@ -21,6 +21,7 @@ class TreasuryTransferProcessingService
         private TenantContext $tenant,
         private BankAccountAccessService $bankAccess,
         private CashBoxCustodianService $custodians,
+        private CashSessionOperationalGuard $sessionGuard,
         private TreasuryOperationAuthorizationService $authorization,
         private TreasuryTransferPostingService $posting,
         private AuditService $audit
@@ -117,6 +118,7 @@ class TreasuryTransferProcessingService
             } else {
                 $cash = CashBox::query()->where('company_id', $transfer->company_id)
                     ->where('status', 'active')->findOrFail($transfer->{$side.'_cash_box_id'});
+                $this->sessionGuard->assertReady($cash);
                 $this->custodians->assert($cash, 'can_transfer', (string) $transfer->amount);
             }
         }

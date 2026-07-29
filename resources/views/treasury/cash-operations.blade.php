@@ -4,6 +4,7 @@
 @section('title', $direction === 'receipt' ? 'المقبوضات النقدية' : 'المدفوعات النقدية')
 @section('page-title', $direction === 'receipt' ? 'المقبوضات النقدية العامة' : 'المدفوعات النقدية العامة')
 @section('content')
+@if($openSessions->isEmpty())<div class="sw-card"><p>لا توجد جلسة خزينة جاهزة للتشغيل. أكمل العد الافتتاحي واعتماده أولًا.</p></div>@endif
 <div class="sw-card"><p>لا تستخدم هذه الشاشة بدل تحصيلات العملاء أو مدفوعات الموردين المرتبطة بالفواتير.</p></div>
 @if(auth()->user()->hasPermission('treasury.'.$permissionBase.'.create'))
 <form class="sw-card" method="POST" action="{{ route('treasury.'.$plural.'.store') }}">@csrf

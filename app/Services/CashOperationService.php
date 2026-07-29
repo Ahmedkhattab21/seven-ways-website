@@ -6,7 +6,6 @@ use App\Core\Exceptions\BusinessRuleException;
 use App\Core\Tenancy\TenantContext;
 use App\Models\Account;
 use App\Models\CashBox;
-use App\Models\CashBoxSession;
 use App\Models\CashPayment;
 use App\Models\CashReceipt;
 use Illuminate\Database\Eloquent\Model;
@@ -19,6 +18,7 @@ class CashOperationService
         private TenantContext $tenant,
         private CashBoxCustodianService $custodians,
         private TreasuryOperationAuthorizationService $authorization,
+        private CashSessionOperationalGuard $sessionGuard,
         private DocumentNumberService $numbers,
         private CashOperationPostingService $posting,
         private AuditService $audit
@@ -39,6 +39,10 @@ class CashOperationService
                 || ($direction === 'payment' && ! $box->allows_payments)) {
                 throw new BusinessRuleException('Cash box does not allow this operation.');
             }
+            $sessionId = $data['cash_box_session_id'] ?? null;
+            if ($box->requires_shift_opening) {
+                $sessionId = $this->sessionGuard->assertReady($box, $sessionId)->id;
+            }
             $this->custodians->assert($box, $direction === 'receipt' ? 'can_receive' : 'can_pay', (string) $data['amount']);
             $this->authorization->assert(
                 'treasury.cash_'.$direction.'s.create', 'cash_'.$direction, 'create',
@@ -49,13 +53,6 @@ class CashOperationService
             if ($offset->is_control_account
                 && ! $this->tenant->user()->hasPermission('accounting.journals.post_control_accounts')) {
                 throw new BusinessRuleException('Control account cash operation requires explicit permission.');
-            }
-            $sessionId = $data['cash_box_session_id'] ?? null;
-            if ($box->requires_shift_opening) {
-                $session = CashBoxSession::query()->where('cash_box_id', $box->id)
-                    ->where('active_guard', 'active')->whereIn('status', ['opened', 'counting'])
-                    ->findOrFail($sessionId);
-                $sessionId = $session->id;
             }
             $operation = new $class($data);
             $operation->forceFill([
@@ -81,6 +78,11 @@ class CashOperationService
             $operation = $operation->newQuery()->where('company_id', $this->tenant->companyId())
                 ->whereKey($operation->id)->lockForUpdate()->firstOrFail();
             $direction = $operation instanceof CashReceipt ? 'receipt' : 'payment';
+            if ($action === 'post') {
+                $box = CashBox::query()->where('company_id', $operation->company_id)
+                    ->whereKey($operation->cash_box_id)->firstOrFail();
+                $this->sessionGuard->assertReady($box, $operation->cash_box_session_id);
+            }
             $ability = in_array($action, ['submit', 'approve', 'post'], true) ? $action : 'post';
             $this->authorization->assert(
                 'treasury.cash_'.$direction.'s.'.$action, 'cash_'.$direction, $ability,

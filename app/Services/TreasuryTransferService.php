@@ -21,6 +21,7 @@ class TreasuryTransferService
         private TreasuryScopeService $scope,
         private BankAccountAccessService $bankAccess,
         private CashBoxCustodianService $custodians,
+        private CashSessionOperationalGuard $sessionGuard,
         private DocumentNumberService $numbers,
         private AuditService $audit
     ) {
@@ -134,6 +135,7 @@ class TreasuryTransferService
                 ->where('branch_id', $branchId)->where('status', 'active')->findOrFail($data[$side.'_cash_box_id']);
             if ($side === 'from') {
                 $this->custodians->assert($box, 'can_transfer', $amount);
+                $this->sessionGuard->assertReady($box);
             }
 
             return ['type' => 'cash_box', 'id' => $box->id, 'currency_id' => $box->currency_id];

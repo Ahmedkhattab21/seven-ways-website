@@ -81,7 +81,8 @@ class CashOperationController extends Controller
                 ->whereIn('branch_id', $tenant->accessibleBranches()->pluck('id'))->where('status', 'active')->get(),
             'openSessions' => CashBoxSession::query()->where('company_id', $tenant->companyId())
                 ->whereIn('branch_id', $tenant->accessibleBranches()->pluck('id'))
-                ->where('active_guard', 'active')->whereIn('status', ['opened', 'counting'])
+                ->where('active_guard', 'active')->where('status', 'counting')
+                ->whereHas('counts', fn ($query) => $query->where('count_type', 'opening')->where('status', 'approved'))
                 ->with('cashBox')->get(),
             'accounts' => Account::query()->where('company_id', $tenant->companyId())
                 ->where('is_active', true)->where('is_posting', true)->get(),

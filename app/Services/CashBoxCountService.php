@@ -48,7 +48,9 @@ class CashBoxCountService
             if ($zeroCount) {
                 $total = '0.0000';
             }
-            $book = $this->balances->cashBox($session->cashBox)['book_balance'];
+            $book = $data['count_type'] === 'opening'
+                ? (string) $session->opening_book_balance
+                : $this->balances->cashBox($session->cashBox)['book_balance'];
             $count = new CashBoxCount([
                 'cash_box_session_id' => $session->id, 'count_type' => $data['count_type'],
                 'notes' => $zeroCount
@@ -120,6 +122,12 @@ class CashBoxCountService
                 $changes += [$actor => $this->tenant->user()->id, $time => now()];
             }
             $count->forceFill($changes)->save();
+            if ($action === 'approve' && $count->count_type === 'opening' && $count->session->status === 'opened') {
+                $count->session->forceFill([
+                    'status' => 'counting', 'counting_started_by' => $this->tenant->user()->id,
+                    'counting_started_at' => now(),
+                ])->save();
+            }
             $this->audit->record('treasury.cash_count.'.$action, $count);
 
             return $count;
