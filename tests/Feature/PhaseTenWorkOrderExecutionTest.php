@@ -12,6 +12,7 @@ use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\DocumentSequence;
 use App\Models\Employee;
+use App\Models\EmployeeServiceSkill;
 use App\Models\Permission;
 use App\Models\Product;
 use App\Models\ProductCategory;
@@ -52,6 +53,13 @@ use Tests\TestCase;
 class PhaseTenWorkOrderExecutionTest extends TestCase
 {
     use DatabaseTransactions;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->enableModules('work_orders', 'technicians', 'quality');
+    }
 
     public function test_checked_in_appointment_creates_one_active_order_with_snapshots_and_inspection(): void
     {
@@ -473,6 +481,14 @@ class PhaseTenWorkOrderExecutionTest extends TestCase
         $category = ServiceCategory::query()->forceCreate(['company_id' => $company->id, 'code' => 'C'.uniqid(), 'name' => 'Category', 'is_active' => true]);
         $service = Service::query()->forceCreate(['company_id' => $company->id, 'service_category_id' => $category->id, 'code' => 'S'.uniqid(), 'name' => 'Service', 'service_type' => 'ppf', 'pricing_type' => 'fixed', 'default_duration_minutes' => 60, 'requires_vehicle' => true, 'is_active' => true]);
         $employee = Employee::query()->forceCreate(['company_id' => $company->id, 'branch_id' => $branch->id, 'user_id' => $user->id, 'employee_code' => 'E'.uniqid(), 'name' => 'Technician', 'status' => 'active']);
+        EmployeeServiceSkill::query()->forceCreate([
+            'company_id' => $company->id,
+            'branch_id' => $branch->id,
+            'employee_id' => $employee->id,
+            'service_id' => $service->id,
+            'skill_level' => 'senior',
+            'is_active' => true,
+        ]);
         $appointment = Appointment::query()->forceCreate(['company_id' => $company->id, 'branch_id' => $branch->id, 'appointment_number' => 'APT'.uniqid(), 'customer_id' => $customer->id, 'vehicle_id' => $vehicle->id, 'status' => 'checked_in', 'scheduled_start' => now(), 'scheduled_end' => now()->addHour(), 'estimated_duration_minutes' => 60, 'booking_source' => 'walk_in', 'priority' => 'normal', 'deposit_required' => false, 'deposit_amount' => 0, 'deposit_status' => 'not_required', 'checked_in_at' => now(), 'created_by' => $user->id]);
         $appointment->services()->create(['service_id' => $service->id, 'description' => 'Service snapshot', 'quantity' => 1, 'estimated_duration_minutes' => 60, 'unit_price_snapshot' => 100, 'total_snapshot' => 100]);
         DocumentSequence::query()->forceCreate(['company_id' => $company->id, 'branch_id' => $branch->id, 'document_type' => 'work_order', 'prefix' => '{BRANCH}-WO-{YYYY}-', 'current_number' => 0, 'padding' => 6, 'reset_period' => 'yearly', 'period_key' => now()->format('Y'), 'scope_key' => DocumentNumberService::scopeKey($company->id, $branch->id, 'work_order', now()->format('Y')), 'is_active' => true]);

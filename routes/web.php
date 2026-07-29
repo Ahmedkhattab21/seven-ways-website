@@ -58,6 +58,7 @@ use App\Http\Controllers\CustomerPaymentController;
 use App\Http\Controllers\CustomerRefundController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeFinanceController;
 use App\Http\Controllers\EmployeeFinanceReportController;
 use App\Http\Controllers\ExecutiveDashboardController;
@@ -505,6 +506,8 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
     Route::put('branches/{branch}', [BranchController::class, 'update'])->middleware('permission:branches.update')->name('branches.update');
     Route::patch('branches/{branch}/disable', [BranchController::class, 'disable'])->middleware('permission:branches.disable')->name('branches.disable');
     Route::patch('branches/{branch}/main', [BranchController::class, 'makeMain'])->middleware('permission:branches.update')->name('branches.main');
+    Route::put('branches/{branch}/responsible-user', [BranchController::class, 'assignResponsible'])
+        ->middleware('permission:branches.assign_responsible')->name('branches.responsible-user.update');
 
     Route::get('users', [UserManagementController::class, 'index'])->middleware('permission:users.view')->name('users.index');
     Route::get('users/create', [UserManagementController::class, 'create'])->middleware('permission:users.create')->name('users.create');
@@ -512,6 +515,14 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
     Route::get('users/{user}/edit', [UserManagementController::class, 'edit'])->middleware('permission:users.update')->name('users.edit');
     Route::put('users/{user}', [UserManagementController::class, 'update'])->middleware('permission:users.update')->name('users.update');
     Route::patch('users/{user}/disable', [UserManagementController::class, 'disable'])->middleware('permission:users.disable')->name('users.disable');
+
+    Route::get('employees', [EmployeeController::class, 'index'])->middleware('permission:employees.view')->name('employees.index');
+    Route::get('employees/create', [EmployeeController::class, 'create'])->middleware('permission:employees.create')->name('employees.create');
+    Route::post('employees', [EmployeeController::class, 'store'])->middleware('permission:employees.create')->name('employees.store');
+    Route::get('employees/{employee}', [EmployeeController::class, 'show'])->middleware('permission:employees.view')->name('employees.show');
+    Route::get('employees/{employee}/edit', [EmployeeController::class, 'edit'])->middleware('permission:employees.update')->name('employees.edit');
+    Route::put('employees/{employee}', [EmployeeController::class, 'update'])->middleware('permission:employees.update')->name('employees.update');
+    Route::patch('employees/{employee}/disable', [EmployeeController::class, 'disable'])->middleware('permission:employees.disable')->name('employees.disable');
 
     Route::get('roles', [RoleController::class, 'index'])->middleware('permission:roles.view')->name('roles.index');
     Route::get('roles/create', [RoleController::class, 'create'])->middleware('permission:roles.manage')->name('roles.create');
@@ -620,6 +631,8 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
     Route::post('quotations/{quotation}/reject', [QuotationActionController::class, 'reject'])->middleware('permission:quotations.reject')->name('quotations.reject');
     Route::post('quotations/{quotation}/cancel', [QuotationActionController::class, 'cancel'])->middleware('permission:quotations.cancel')->name('quotations.cancel');
     Route::post('quotations/{quotation}/version', [QuotationActionController::class, 'version'])->middleware('permission:quotations.create_version')->name('quotations.version');
+    Route::post('quotations/{quotation}/invoice', [SalesInvoiceController::class, 'fromQuotation'])
+        ->middleware('permission:sales_invoices.create')->name('quotations.invoice');
     Route::post('quotations/{quotation}/appointment', [QuotationActionController::class, 'appointment'])->middleware('permission:appointments.create')->name('quotations.appointment');
 
     Route::get('appointments/calendar', [AppointmentController::class, 'calendar'])->middleware('permission:appointments.calendar')->name('appointments.calendar');

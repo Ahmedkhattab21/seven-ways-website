@@ -85,22 +85,67 @@
                 </form>
             @endcan
 
-            @can('checkIn', $appointment)
+            @if($activeWorkOrder)
+                <div class="appointment-action-panel">
+                    <div>
+                        <h3>أمر العمل جاهز</h3>
+                        <p>أمر العمل رقم {{ $activeWorkOrder->work_order_number }} مرتبط بهذا الحجز.</p>
+                    </div>
+                    <div class="sw-form-actions">
+                        <a class="sw-button sw-button--primary" href="{{ route('work-orders.show', $activeWorkOrder) }}">فتح أمر العمل</a>
+                    </div>
+                </div>
+            @elseif($appointment->status === 'checked_in')
+                @can('checkIn', $appointment)
+                    <form method="POST" action="{{ route('appointments.check-in', $appointment) }}" class="appointment-action-panel sw-form">
+                        @csrf
+                        <div>
+                            <h3>استكمال إنشاء أمر العمل</h3>
+                            <p>تم تسجيل وصول العميل، لكن لم يكتمل إنشاء أمر العمل. يمكنك استكمال العملية بعد معالجة سبب التعطل.</p>
+                        </div>
+                        <div class="sw-form-actions">
+                            <x-button type="submit" :disabled="! $defaultWorkOrderWarehouse">استكمال إنشاء أمر العمل</x-button>
+                        </div>
+                        @unless($defaultWorkOrderWarehouse)
+                            <x-alert type="warning">
+                                لا يوجد مستودع افتراضي صالح لصرف خامات أوامر العمل في هذا الفرع.
+                                @if(auth()->user()->hasRole('system_admin') || auth()->user()->hasPermission('branch_settings.manage'))
+                                    <a href="{{ route('branch-settings.edit') }}">تحديد مستودع أوامر العمل</a>
+                                @endif
+                            </x-alert>
+                        @endunless
+                    </form>
+                @endcan
+            @elseif(in_array($appointment->status, ['pending', 'confirmed'], true))
+                @can('checkIn', $appointment)
                 <form method="POST" action="{{ route('appointments.check-in', $appointment) }}" class="appointment-action-panel sw-form">
                     @csrf
                     <div>
-                        <h3>تسجيل الوصول</h3>
-                        <p>سجّل بيانات وصول السيارة لبدء دورة التشغيل.</p>
+                        <h3>تسجيل وصول العميل وبدء أمر العمل</h3>
+                        <p>سيتم إنشاء أمر العمل تلقائيًا باستخدام مستودع الفرع الافتراضي.</p>
                     </div>
                     <div class="sw-form-grid">
                         <x-form.input name="arrival_notes" label="ملاحظات الوصول" :value="old('arrival_notes')" />
                         <x-form.input name="odometer_snapshot" type="number" label="قراءة العداد" :value="old('odometer_snapshot')" min="0" />
                     </div>
                     <div class="sw-form-actions">
-                        <x-button type="submit">تسجيل الوصول</x-button>
+                        @if($defaultWorkOrderWarehouse)
+                            <x-button type="submit">تسجيل وصول العميل وبدء أمر العمل</x-button>
+                        @else
+                            <x-button type="submit" disabled>تسجيل وصول العميل وبدء أمر العمل</x-button>
+                        @endif
                     </div>
+                    @unless($defaultWorkOrderWarehouse)
+                        <x-alert type="warning">
+                            لا يوجد مستودع افتراضي صالح لصرف خامات أوامر العمل في هذا الفرع.
+                            @if(auth()->user()->hasRole('system_admin') || auth()->user()->hasPermission('branch_settings.manage'))
+                                <a href="{{ route('branch-settings.edit') }}">تحديد مستودع أوامر العمل</a>
+                            @endif
+                        </x-alert>
+                    @endunless
                 </form>
-            @endcan
+                @endcan
+            @endif
 
             @can('cancel', $appointment)
                 <form method="POST" action="{{ route('appointments.cancel', $appointment) }}" class="appointment-action-panel appointment-action-panel--danger sw-form">

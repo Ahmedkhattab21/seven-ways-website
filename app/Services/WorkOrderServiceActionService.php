@@ -31,6 +31,19 @@ class WorkOrderServiceActionService
                 || ! $service->technicians()->where('employee_id', $employee->id)->exists()) {
                 throw new BusinessRuleException('Completed inspection and assigned technician are required.');
             }
+            $qualified = $employee->status === 'active'
+                && (int) $employee->company_id === (int) $service->workOrder->company_id
+                && (int) $employee->branch_id === (int) $service->workOrder->branch_id
+                && $employee->serviceSkills()
+                    ->where('service_id', $service->service_id)
+                    ->where('is_active', true)
+                    ->where(fn ($query) => $query
+                        ->whereNull('certification_expires_at')
+                        ->orWhereDate('certification_expires_at', '>=', today()))
+                    ->exists();
+            if (! $qualified) {
+                throw new BusinessRuleException('الفني المسند غير مؤهل حاليًا للخدمة المطلوبة.', status: 403);
+            }
             if (! $materialsOverride && $service->materials()->whereIn('status', ['planned'])->exists()) {
                 throw new BusinessRuleException('Materials must be reserved before work starts.');
             }

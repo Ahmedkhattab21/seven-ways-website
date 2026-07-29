@@ -41,6 +41,7 @@ use App\Models\Customer;
 use App\Models\CustomerPayment;
 use App\Models\CustomerRefund;
 use App\Models\DocumentSequence;
+use App\Models\Employee;
 use App\Models\EmployeeServiceSkill;
 use App\Models\FinancialReportDefinition;
 use App\Models\FiscalYear;
@@ -145,6 +146,7 @@ use App\Policies\CostCenterPolicy;
 use App\Policies\CustomerPaymentPolicy;
 use App\Policies\CustomerPolicy;
 use App\Policies\CustomerRefundPolicy;
+use App\Policies\EmployeePolicy;
 use App\Policies\EmployeeServiceSkillPolicy;
 use App\Policies\FinancialReportDefinitionPolicy;
 use App\Policies\FiscalYearPolicy;
@@ -296,6 +298,7 @@ class AuthServiceProvider extends ServiceProvider
         Appointment::class => AppointmentPolicy::class,
         AppointmentDeposit::class => AppointmentDepositPolicy::class,
         EmployeeServiceSkill::class => EmployeeServiceSkillPolicy::class,
+        Employee::class => EmployeePolicy::class,
         ServiceCommissionRule::class => ServiceCommissionRulePolicy::class,
         WorkOrder::class => WorkOrderPolicy::class,
         WorkOrderServiceModel::class => WorkOrderServicePolicy::class,

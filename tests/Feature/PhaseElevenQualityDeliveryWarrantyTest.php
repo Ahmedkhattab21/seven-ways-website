@@ -45,6 +45,13 @@ class PhaseElevenQualityDeliveryWarrantyTest extends TestCase
 {
     use DatabaseTransactions;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->enableModules('work_orders', 'technicians', 'quality', 'rework', 'delivery', 'warranties');
+    }
+
     public function test_quality_starts_only_for_awaiting_order_and_snapshots_template(): void
     {
         $context = $this->context();

@@ -6,7 +6,7 @@ use App\Core\Tenancy\TenantContext;
 use App\Http\Requests\WorkOrderRequest;
 use App\Models\Appointment;
 use App\Models\Customer;
-use App\Models\Employee;
+use App\Models\EmployeeServiceSkill;
 use App\Models\Service;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
@@ -62,13 +62,27 @@ class WorkOrderController extends Controller
         $this->authorize('view', $workOrder);
         $workOrder->load([
             'branch', 'warehouse', 'customer', 'vehicle', 'inspection.items', 'inspection.attachments',
-            'services.technicians.employee', 'services.materials.product', 'wastes', 'statusLogs',
+            'services.service', 'services.technicians.employee.serviceSkills', 'services.materials.product', 'wastes', 'statusLogs',
             'qualityChecks', 'reworkOrders', 'deliveryInspection',
         ]);
 
+        $serviceIds = $workOrder->services->pluck('service_id')->filter()->unique();
+        $qualifiedTechnicians = EmployeeServiceSkill::query()
+            ->where('company_id', $workOrder->company_id)
+            ->where('branch_id', $workOrder->branch_id)
+            ->whereIn('service_id', $serviceIds)
+            ->where('is_active', true)
+            ->where(fn ($query) => $query
+                ->whereNull('certification_expires_at')
+                ->orWhereDate('certification_expires_at', '>=', today()))
+            ->whereHas('employee', fn ($query) => $query->where('status', 'active'))
+            ->with(['employee', 'service'])
+            ->get()
+            ->groupBy('service_id');
+
         return view('work-orders.show', [
             'workOrder' => $workOrder,
-            'employees' => Employee::where('company_id', $workOrder->company_id)->where('branch_id', $workOrder->branch_id)->where('status', 'active')->get(),
+            'qualifiedTechnicians' => $qualifiedTechnicians,
         ]);
     }
 }

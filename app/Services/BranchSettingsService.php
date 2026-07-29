@@ -11,6 +11,10 @@ use Illuminate\Validation\ValidationException;
 
 class BranchSettingsService
 {
+    public function __construct(private WorkOrderWarehouseService $workOrderWarehouses)
+    {
+    }
+
     public function update(Branch $branch, array $data): BranchSetting
     {
         $this->assertCompanyReference($data['default_tax_id'] ?? null, Tax::class, $branch->company_id, 'default_tax_id');
@@ -19,6 +23,10 @@ class BranchSettingsService
             PaymentMethod::class,
             $branch->company_id,
             'default_payment_method_id'
+        );
+        $this->workOrderWarehouses->assertEligibleSelection(
+            $branch,
+            $data['default_work_order_warehouse_id'] ?? null
         );
 
         return DB::transaction(function () use ($branch, $data) {

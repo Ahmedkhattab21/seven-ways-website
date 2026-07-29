@@ -14,7 +14,7 @@ class Branch extends BaseModel
     use SoftDeletes;
 
     protected $fillable = [
-        'company_id', 'code', 'name', 'commercial_name', 'email', 'phone',
+        'company_id', 'responsible_user_id', 'responsible_assigned_at', 'code', 'name', 'commercial_name', 'email', 'phone',
         'tax_number', 'address', 'latitude', 'longitude', 'is_main', 'is_active',
     ];
 
@@ -23,11 +23,17 @@ class Branch extends BaseModel
         'is_active' => 'boolean',
         'latitude' => 'decimal:7',
         'longitude' => 'decimal:7',
+        'responsible_assigned_at' => 'datetime',
     ];
 
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function responsibleUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'responsible_user_id');
     }
 
     public function settings(): HasOne

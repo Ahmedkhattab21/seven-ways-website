@@ -40,9 +40,19 @@ class AppointmentActionController extends Controller
         AppointmentCheckInService $service
     ): RedirectResponse {
         $this->authorize('checkIn', $appointment);
-        $service->checkIn($appointment, $request->safe()->only(['arrival_notes', 'odometer_snapshot']));
+        $isRecovery = $appointment->status === 'checked_in';
+        $workOrder = $service->checkIn(
+            $appointment,
+            $request->safe()->only(['arrival_notes', 'odometer_snapshot'])
+        );
 
-        return back()->with('success', 'تم تسجيل وصول العميل دون إنشاء أمر عمل.');
+        $message = match (true) {
+            ! $workOrder->wasRecentlyCreated => 'يوجد أمر عمل مرتبط بهذا الحجز بالفعل. تم فتح أمر العمل الحالي.',
+            $isRecovery => 'تم استكمال إنشاء أمر العمل بنجاح.',
+            default => 'تم تسجيل وصول العميل وإنشاء أمر العمل بنجاح.',
+        };
+
+        return redirect()->route('work-orders.show', $workOrder)->with('success', $message);
     }
 
     public function cancel(

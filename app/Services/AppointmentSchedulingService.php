@@ -26,8 +26,7 @@ class AppointmentSchedulingService
         array $serviceIds,
         ?Appointment $ignore = null,
         array $packageServiceIds = []
-    ): void
-    {
+    ): void {
         if ($branch->company_id !== $this->tenant->companyId() || ! $branch->is_active
             || ! $this->tenant->user()?->canAccessBranch($branch) || $end->lte($start)) {
             throw new BusinessRuleException('Invalid branch or appointment period.', status: 403);

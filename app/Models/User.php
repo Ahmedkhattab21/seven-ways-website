@@ -7,6 +7,7 @@ use App\Core\Support\UserStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -57,6 +58,11 @@ class User extends Authenticatable
         return $this->belongsTo(Branch::class);
     }
 
+    public function responsibleBranch(): HasOne
+    {
+        return $this->hasOne(Branch::class, 'responsible_user_id');
+    }
+
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'user_roles');
@@ -67,6 +73,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Branch::class, 'user_branch_access')
             ->withPivot(['is_default', 'can_view', 'can_create', 'can_update', 'can_approve'])
             ->withTimestamps();
+    }
+
+    public function employee(): HasOne
+    {
+        return $this->hasOne(Employee::class);
     }
 
     public function isActive(): bool
@@ -96,6 +107,10 @@ class User extends Authenticatable
     {
         if ($branch->company_id !== $this->company_id || ! $branch->is_active) {
             return false;
+        }
+
+        if ($this->hasRole('branch_manager') && ! $this->isCompanyAdministrator() && ! $this->hasRole('system_admin')) {
+            return $this->branch_id === $branch->id;
         }
 
         return $this->hasRole('system_admin')

@@ -27,9 +27,11 @@ class ProductionReferenceSeeder extends Seeder
             BankReconciliationSeeder::class,
             TreasuryOperationsSeeder::class,
             EmployeeFinanceSeeder::class,
+            EmployeeManagementSeeder::class,
             CentralWorkflowSeeder::class,
             AnalyticsReportingSeeder::class,
             CashierPermissionReconciler::class,
+            ThreeRoleOperatingModelSeeder::class,
         ]);
     }
 }

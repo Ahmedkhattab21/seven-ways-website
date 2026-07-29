@@ -110,6 +110,17 @@
             </div>
         </div>
         <div class="sw-card__body quotation-action-list">
+            @if(config('modules.sales.enabled') && in_array($quotation->status, ['approved', 'sent', 'accepted'], true)
+                && auth()->user()->hasPermission('sales_invoices.create'))
+                <form method="POST" action="{{ route('quotations.invoice', $quotation) }}">
+                    @csrf
+                    <div>
+                        <strong>تحويل إلى فاتورة</strong>
+                        <small>إنشاء فاتورة مبيعات مباشرة من العرض بدون حجز أو أمر عمل.</small>
+                    </div>
+                    <button class="sw-btn sw-btn--primary">تحويل إلى فاتورة</button>
+                </form>
+            @endif
             @can('submit', $quotation)
                 <form method="POST" action="{{ route('quotations.submit', $quotation) }}">
                     @csrf
@@ -174,7 +185,7 @@
                 </form>
             @endcan
 
-            @if($quotation->status === 'accepted' && $quotation->appointments->isEmpty())
+            @if(config('modules.appointments.enabled') && $quotation->status === 'accepted' && $quotation->appointments->isEmpty())
                 <form method="POST" action="{{ route('quotations.appointment', $quotation) }}">
                     @csrf
                     <label>

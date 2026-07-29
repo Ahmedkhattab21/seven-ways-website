@@ -6,6 +6,14 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class BranchSettingsRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'working_day_start' => $this->normalizeTime($this->input('working_day_start')),
+            'working_day_end' => $this->normalizeTime($this->input('working_day_end')),
+        ]);
+    }
+
     public function authorize(): bool
     {
         return $this->user()->hasRole('system_admin') || $this->user()->hasPermission('branch_settings.manage');
@@ -16,6 +24,7 @@ class BranchSettingsRequest extends FormRequest
         return [
             'default_tax_id' => ['nullable', 'integer'],
             'default_payment_method_id' => ['nullable', 'integer'],
+            'default_work_order_warehouse_id' => ['nullable', 'integer'],
             'invoice_prefix' => ['nullable', 'string', 'max:20'],
             'quotation_prefix' => ['nullable', 'string', 'max:20'],
             'appointment_prefix' => ['nullable', 'string', 'max:20'],
@@ -32,5 +41,25 @@ class BranchSettingsRequest extends FormRequest
             'weekend_days' => ['nullable', 'array'],
             'weekend_days.*' => ['integer', 'between:0,6'],
         ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'working_day_start.date_format' => 'وقت بداية العمل غير صالح.',
+            'working_day_end.date_format' => 'وقت نهاية العمل غير صالح.',
+            'working_day_end.after' => 'يجب أن يكون وقت نهاية العمل بعد وقت البداية.',
+        ];
+    }
+
+    private function normalizeTime(mixed $value): mixed
+    {
+        if (! is_string($value) || $value === '') {
+            return $value;
+        }
+
+        return preg_match('/^\d{2}:\d{2}:\d{2}$/', $value)
+            ? substr($value, 0, 5)
+            : $value;
     }
 }

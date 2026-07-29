@@ -7,12 +7,13 @@ use App\Http\Requests\BranchSettingsRequest;
 use App\Models\PaymentMethod;
 use App\Models\Tax;
 use App\Services\BranchSettingsService;
+use App\Services\WorkOrderWarehouseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class BranchSettingsController extends Controller
 {
-    public function edit(TenantContext $tenant): View
+    public function edit(TenantContext $tenant, WorkOrderWarehouseService $workOrderWarehouses): View
     {
         $branch = $tenant->branch();
         abort_unless($branch, 404);
@@ -35,8 +36,9 @@ class BranchSettingsController extends Controller
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->get();
+        $warehouses = $workOrderWarehouses->eligibleQuery($branch)->orderBy('name')->get();
 
-        return view('settings.branch', compact('branch', 'settings', 'taxes', 'paymentMethods'));
+        return view('settings.branch', compact('branch', 'settings', 'taxes', 'paymentMethods', 'warehouses'));
     }
 
     public function update(

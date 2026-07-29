@@ -8,11 +8,16 @@ use App\Http\Requests\SalesInvoiceRequest;
 use App\Http\Requests\SalesProductReturnRequest;
 use App\Models\Customer;
 use App\Models\Product;
+use App\Models\Quotation;
 use App\Models\SalesCreditNote;
 use App\Models\SalesInvoice;
 use App\Models\SalesInvoiceItem;
+use App\Models\Service;
+use App\Models\ServicePackage;
+use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Models\WorkOrder;
+use App\Services\QuotationToSalesInvoiceService;
 use App\Services\SalesInvoiceApprovalService;
 use App\Services\SalesInvoiceIssuanceService;
 use App\Services\SalesInvoiceService;
@@ -36,9 +41,12 @@ class SalesInvoiceController extends Controller
         $this->authorize('create', SalesInvoice::class);
 
         return view('sales-invoices.form', [
-            'customers' => Customer::forUser($tenant->user())->where('status', 'active')->get(),
+            'customers' => Customer::forUser($tenant->user())->where('status', 'active')->with('vehicles')->get(),
+            'vehicles' => Vehicle::forUser($tenant->user())->where('status', 'active')->with('customer')->get(),
             'products' => Product::where('company_id', $tenant->companyId())->where('is_sellable', true)->where('is_active', true)->get(),
-            'warehouses' => \App\Models\Warehouse::where('company_id', $tenant->companyId())->where('branch_id', $tenant->branchId())->where('is_system', false)->where('is_active', true)->get(),
+            'services' => Service::where('company_id', $tenant->companyId())->where('is_active', true)->get(),
+            'packages' => ServicePackage::where('company_id', $tenant->companyId())->where('is_active', true)->get(),
+            'warehouses' => Warehouse::where('company_id', $tenant->companyId())->where('branch_id', $tenant->branchId())->where('is_system', false)->where('is_active', true)->get(),
         ]);
     }
 
@@ -56,6 +64,15 @@ class SalesInvoiceController extends Controller
         $invoice = $service->create($workOrder);
 
         return redirect()->route('sales-invoices.show', $invoice)->with('success', 'Invoice draft created from work order.');
+    }
+
+    public function fromQuotation(Quotation $quotation, QuotationToSalesInvoiceService $service): RedirectResponse
+    {
+        $this->authorize('create', SalesInvoice::class);
+        $invoice = $service->convert($quotation);
+
+        return redirect()->route('sales-invoices.show', $invoice)
+            ->with('success', 'تم تحويل عرض السعر إلى فاتورة مبيعات.');
     }
 
     public function show(SalesInvoice $salesInvoice): View

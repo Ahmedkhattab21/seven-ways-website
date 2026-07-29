@@ -147,7 +147,7 @@ class TenantFoundationTest extends TestCase
         $response->assertOk()->assertSee('class="sw-check__box"', false)->assertSee('name="branch_ids[]"', false)
             ->assertSee('name="role_ids[]"', false);
         $cashier = Role::query()->whereNull('company_id')->where('name', 'cashier')->firstOrFail();
-        $this->assertSame(1, substr_count($html, 'value="'.$cashier->id.'"'));
+        $this->assertSame(0, substr_count($html, 'value="'.$cashier->id.'"'));
         $this->assertSame(1, substr_count($html, 'value="'.$companyRole->id.'"'));
         $this->assertStringNotContainsString('value="'.$systemRole->id.'"', $html);
     }

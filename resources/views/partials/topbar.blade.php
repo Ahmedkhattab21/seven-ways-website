@@ -15,7 +15,7 @@
         <div class="sw-topbar__title"><strong>@yield('page-title', 'لوحة التحكم')</strong><span>Seven Ways ERP</span></div>
     </div>
     <div class="sw-topbar__actions">
-        @if($branches->count() > 1)
+        @if(!$user->hasRole('branch_manager') && $branches->count() > 1)
             <form method="POST" action="{{ route('branch-context.store') }}" class="sw-branch-selector">
                 @csrf
                 <x-icon name="building" :size="18" />

@@ -69,6 +69,7 @@ class UserManagementController extends Controller
     {
         $branches = $tenant->accessibleBranches();
         $roles = Role::query()->where('is_active', true)
+            ->whereNotIn('name', ['sales', 'cashier', 'receptionist', 'warehouse_keeper', 'technician', 'quality_controller'])
             ->where(fn ($query) => $query->whereNull('company_id')->orWhere('company_id', $tenant->companyId()))
             ->when(! request()->user()->isCompanyAdministrator() && ! request()->user()->hasRole('system_admin'),
                 fn ($query) => $query->whereNotIn('name', ['system_admin', 'company_owner', 'general_manager']))

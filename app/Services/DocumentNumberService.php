@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Core\Exceptions\BusinessRuleException;
 use App\Core\Tenancy\TenantContext;
 use App\Models\Branch;
 use App\Models\Company;
@@ -63,6 +64,26 @@ class DocumentNumberService
 
             return $this->render($sequence, $date);
         });
+    }
+
+    public function assertConfigured(string $documentType, int $companyId, ?int $branchId = null): void
+    {
+        $this->assertTenant($companyId, $branchId);
+
+        $exists = DocumentSequence::query()
+            ->where('company_id', $companyId)
+            ->where('branch_id', $branchId)
+            ->where('document_type', $documentType)
+            ->where('is_active', true)
+            ->exists();
+
+        if (! $exists) {
+            throw new BusinessRuleException(
+                $documentType === 'work_order'
+                    ? 'تسلسل أرقام أوامر العمل غير مُعد لهذا الفرع.'
+                    : 'لا يوجد تسلسل أرقام نشط لهذا النوع من المستندات.'
+            );
+        }
     }
 
     public static function scopeKey(int $companyId, ?int $branchId, string $documentType, ?string $periodKey): string

@@ -2166,6 +2166,26 @@ svg {
     gap: var(--sw-space-5);
 }
 
+.sw-form-section {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: var(--sw-space-4);
+    padding: var(--sw-space-5);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-lg);
+    background: var(--sw-surface-soft);
+}
+
+.sw-form-section > h3,
+.sw-form-section > p {
+    margin: 0;
+}
+
+.sw-form-section .sw-help {
+    color: var(--sw-text-muted);
+    line-height: 1.8;
+}
+
 .sw-form-actions,
 .sw-actions {
     display: flex;
@@ -3434,6 +3454,730 @@ svg {
     }
 }
 
+/* Work order creation */
+.work-order-create-page,
+.work-order-create-form {
+    display: grid;
+    gap: var(--sw-space-6);
+}
+
+.work-order-create-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--sw-space-5);
+}
+
+.work-order-create-header h1,
+.work-order-create-header p,
+.work-order-create-section__header h2,
+.work-order-create-section__header p {
+    margin: 0;
+}
+
+.work-order-create-header h1 {
+    margin-top: var(--sw-space-2);
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+
+.work-order-create-header p,
+.work-order-create-section__header p {
+    margin-top: var(--sw-space-2);
+    color: var(--sw-text-muted);
+}
+
+.work-order-create-header__eyebrow {
+    color: var(--sw-primary);
+    font-size: var(--sw-font-xs);
+    font-weight: var(--sw-weight-bold);
+}
+
+.work-order-create-section__header {
+    padding: var(--sw-space-5) var(--sw-space-6);
+    border-bottom: 1px solid var(--sw-border);
+}
+
+.work-order-create-grid,
+.work-order-create-service-grid {
+    display: grid;
+    gap: var(--sw-space-5);
+    padding: var(--sw-space-6);
+}
+
+.work-order-create-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.work-order-create-service-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.work-order-create-service-grid__service,
+.work-order-create-service-grid__description {
+    grid-column: span 2;
+}
+
+.work-order-create-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: var(--sw-space-3);
+    padding-top: var(--sw-space-2);
+}
+
+/* Work order details */
+.work-order-show-page {
+    display: grid;
+    gap: var(--sw-space-6);
+}
+
+.work-order-summary {
+    padding: var(--sw-space-6);
+}
+
+.work-order-summary__content,
+.work-order-service__heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--sw-space-5);
+}
+
+.work-order-summary__eyebrow {
+    color: var(--sw-primary);
+    font-size: var(--sw-font-xs);
+    font-weight: var(--sw-weight-bold);
+}
+
+.work-order-summary h1 {
+    margin: var(--sw-space-2) 0 var(--sw-space-3);
+    font-size: clamp(1.6rem, 3vw, 2.35rem);
+}
+
+.work-order-summary__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sw-space-2) var(--sw-space-5);
+    color: var(--sw-text-secondary);
+}
+
+.work-order-summary__meta span {
+    position: relative;
+}
+
+.work-order-summary__meta span:not(:last-child)::after {
+    position: absolute;
+    inset-inline-end: calc(var(--sw-space-3) * -1);
+    color: var(--sw-text-muted);
+    content: "•";
+}
+
+.work-order-summary__status {
+    display: grid;
+    justify-items: end;
+    gap: var(--sw-space-3);
+}
+
+.work-order-summary__status small,
+.work-order-section__header p,
+.work-order-service__heading p,
+.work-order-empty {
+    color: var(--sw-text-muted);
+}
+
+.work-order-summary__actions {
+    padding-top: var(--sw-space-5);
+    margin-top: var(--sw-space-5);
+    border-top: 1px solid var(--sw-border);
+}
+
+.work-order-summary__actions form,
+.work-order-service__actions form {
+    margin: 0;
+}
+
+.work-order-related-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--sw-space-6);
+}
+
+.work-order-section__header {
+    padding: var(--sw-space-5) var(--sw-space-6);
+    border-bottom: 1px solid var(--sw-border);
+}
+
+.work-order-section__header h2,
+.work-order-section__header p,
+.work-order-service h3,
+.work-order-service p {
+    margin: 0;
+}
+
+.work-order-section__header p {
+    margin-top: var(--sw-space-2);
+}
+
+.work-order-link-list,
+.work-order-services,
+.work-order-timeline {
+    display: grid;
+    gap: var(--sw-space-4);
+    padding: var(--sw-space-5) var(--sw-space-6);
+}
+
+.work-order-link-list a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sw-space-3);
+    padding: var(--sw-space-4);
+    color: var(--sw-text);
+    background: var(--sw-surface-soft);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+}
+
+.work-order-service {
+    display: grid;
+    gap: var(--sw-space-5);
+    padding: var(--sw-space-5);
+    background: var(--sw-surface-soft);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-lg);
+}
+
+.work-order-service__heading p {
+    margin-top: var(--sw-space-2);
+}
+
+.work-order-technician-form {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr auto;
+    align-items: end;
+    gap: var(--sw-space-4);
+}
+
+.work-order-technician-form label,
+.work-order-cancel-form label {
+    display: grid;
+    gap: var(--sw-space-2);
+    min-width: 0;
+    color: var(--sw-text-secondary);
+    font-size: var(--sw-font-sm);
+}
+
+.work-order-technician-form select,
+.work-order-technician-form input,
+.work-order-material-actions input,
+.work-order-cancel-form input {
+    width: 100%;
+}
+
+.work-order-service__actions {
+    padding-top: var(--sw-space-4);
+    border-top: 1px solid var(--sw-border);
+}
+
+.work-order-materials-table td {
+    vertical-align: top;
+}
+
+.work-order-material-actions {
+    display: grid;
+    min-width: 20rem;
+    gap: var(--sw-space-3);
+}
+
+.work-order-material-actions form {
+    display: flex;
+    align-items: center;
+    gap: var(--sw-space-2);
+}
+
+.work-order-cost-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--sw-space-4);
+    padding: var(--sw-space-5) var(--sw-space-6);
+}
+
+.work-order-cost-grid > div {
+    display: grid;
+    gap: var(--sw-space-2);
+    padding: var(--sw-space-4);
+    background: var(--sw-surface-soft);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+}
+
+.work-order-cost-grid span,
+.work-order-timeline__item span {
+    color: var(--sw-text-muted);
+    font-size: var(--sw-font-xs);
+}
+
+.work-order-cost-grid strong {
+    font-size: var(--sw-font-lg);
+}
+
+.work-order-timeline__item {
+    position: relative;
+    display: grid;
+    gap: var(--sw-space-2);
+    padding: var(--sw-space-4) var(--sw-space-5);
+    background: var(--sw-surface-soft);
+    border-inline-start: 3px solid var(--sw-primary);
+    border-radius: var(--sw-radius-md);
+}
+
+.work-order-timeline__item p {
+    margin: 0;
+    color: var(--sw-text-secondary);
+}
+
+.work-order-cancel-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: var(--sw-space-4);
+    padding: var(--sw-space-5) var(--sw-space-6);
+}
+
+/* Work orders list */
+.work-orders-index-page {
+    display: grid;
+    gap: var(--sw-space-6);
+}
+
+.work-orders-index-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--sw-space-5);
+}
+
+.work-orders-index-header h1,
+.work-orders-index-header p,
+.work-orders-filter-card__header h2,
+.work-orders-filter-card__header p,
+.work-orders-table-card__header h2,
+.work-orders-table-card__header p {
+    margin: 0;
+}
+
+.work-orders-index-header h1 {
+    margin-top: var(--sw-space-2);
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+
+.work-orders-index-header p,
+.work-orders-filter-card__header p,
+.work-orders-table-card__header p {
+    margin-top: var(--sw-space-2);
+    color: var(--sw-text-muted);
+}
+
+.work-orders-index-header__eyebrow {
+    color: var(--sw-primary);
+    font-size: var(--sw-font-xs);
+    font-weight: var(--sw-weight-bold);
+}
+
+.work-orders-filter-card__header,
+.work-orders-table-card__header {
+    padding: var(--sw-space-5) var(--sw-space-6);
+    border-bottom: 1px solid var(--sw-border);
+}
+
+.work-orders-filter-form {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+    align-items: end;
+    gap: var(--sw-space-4);
+    padding: var(--sw-space-5) var(--sw-space-6);
+}
+
+.work-orders-filter-form label {
+    display: grid;
+    gap: var(--sw-space-2);
+    min-width: 0;
+    color: var(--sw-text-secondary);
+    font-size: var(--sw-font-sm);
+}
+
+.work-orders-filter-form select {
+    width: 100%;
+}
+
+.work-orders-filter-form__actions {
+    display: flex;
+    gap: var(--sw-space-2);
+}
+
+.work-orders-table-card .sw-table th,
+.work-orders-table-card .sw-table td {
+    padding: var(--sw-space-4) var(--sw-space-5);
+    vertical-align: middle;
+}
+
+.work-orders-table-card__number {
+    color: var(--sw-text);
+    font-weight: var(--sw-weight-bold);
+    white-space: nowrap;
+}
+
+.work-orders-table-card__number:hover {
+    color: var(--sw-primary);
+}
+
+.work-orders-empty {
+    display: grid;
+    justify-items: center;
+    gap: var(--sw-space-2);
+    padding: var(--sw-space-8);
+    color: var(--sw-text-muted);
+    text-align: center;
+}
+
+.work-orders-empty strong {
+    color: var(--sw-text);
+}
+
+.work-orders-pagination:empty {
+    display: none;
+}
+
+/* Vehicle receipt inspection */
+.vehicle-inspection-page {
+    display: grid;
+    gap: var(--sw-space-6);
+}
+
+.vehicle-inspection-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--sw-space-5);
+}
+
+.vehicle-inspection-header h1,
+.vehicle-inspection-header p,
+.vehicle-inspection-section-header h2,
+.vehicle-inspection-section-header p,
+.vehicle-inspection-complete h2,
+.vehicle-inspection-complete p {
+    margin: 0;
+}
+
+.vehicle-inspection-header h1 {
+    margin-top: var(--sw-space-2);
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+
+.vehicle-inspection-header p,
+.vehicle-inspection-section-header p,
+.vehicle-inspection-complete p {
+    margin-top: var(--sw-space-2);
+    color: var(--sw-text-muted);
+}
+
+.vehicle-inspection-header__eyebrow {
+    color: var(--sw-primary);
+    font-size: var(--sw-font-xs);
+    font-weight: var(--sw-weight-bold);
+}
+
+.vehicle-inspection-header__meta {
+    display: grid;
+    justify-items: end;
+    gap: var(--sw-space-3);
+}
+
+.vehicle-inspection-section-header {
+    padding: var(--sw-space-5) var(--sw-space-6);
+    border-bottom: 1px solid var(--sw-border);
+}
+
+.vehicle-inspection-form__body {
+    display: grid;
+    gap: var(--sw-space-6);
+    padding: var(--sw-space-6);
+}
+
+.vehicle-inspection-main-grid,
+.vehicle-inspection-item__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--sw-space-5);
+}
+
+.vehicle-inspection-main-grid label,
+.vehicle-inspection-item label,
+.vehicle-inspection-photo-card form label,
+.vehicle-inspection-complete label {
+    display: grid;
+    gap: var(--sw-space-2);
+    min-width: 0;
+    color: var(--sw-text-secondary);
+    font-size: var(--sw-font-sm);
+}
+
+.vehicle-inspection-main-grid input,
+.vehicle-inspection-main-grid textarea,
+.vehicle-inspection-item input,
+.vehicle-inspection-item select,
+.vehicle-inspection-photo-card input,
+.vehicle-inspection-photo-card select,
+.vehicle-inspection-complete input {
+    width: 100%;
+}
+
+.vehicle-inspection-main-grid__notes {
+    grid-column: 1 / -1;
+}
+
+.vehicle-inspection-item {
+    min-width: 0;
+    padding: var(--sw-space-5);
+    margin: 0;
+    background: var(--sw-surface-soft);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-lg);
+}
+
+.vehicle-inspection-item legend {
+    padding-inline: var(--sw-space-2);
+    color: var(--sw-text);
+    font-size: var(--sw-font-lg);
+    font-weight: var(--sw-weight-bold);
+}
+
+.vehicle-inspection-check {
+    display: flex !important;
+    align-items: center;
+    grid-column: 1 / -1;
+    gap: var(--sw-space-3) !important;
+    margin-top: var(--sw-space-5);
+}
+
+.vehicle-inspection-check input {
+    width: auto;
+}
+
+.vehicle-inspection-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: var(--sw-space-5);
+    border-top: 1px solid var(--sw-border);
+}
+
+.vehicle-inspection-photo-card form {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(12rem, 1fr) auto;
+    align-items: end;
+    gap: var(--sw-space-4);
+    padding: var(--sw-space-6);
+}
+
+.vehicle-inspection-complete {
+    display: grid;
+    grid-template-columns: minmax(14rem, 0.8fr) minmax(0, 1fr) auto;
+    align-items: end;
+    gap: var(--sw-space-5);
+    padding: var(--sw-space-6);
+}
+
+.vehicle-inspection-photos__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: var(--sw-space-4);
+    padding: var(--sw-space-6);
+}
+
+.vehicle-inspection-photos__list > a {
+    display: grid;
+    gap: var(--sw-space-2);
+    min-width: 0;
+    padding: var(--sw-space-4);
+    color: var(--sw-text);
+    background: var(--sw-surface-soft);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+}
+
+.vehicle-inspection-photos__list > a span {
+    overflow: hidden;
+    font-weight: var(--sw-weight-bold);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vehicle-inspection-photos__list > a small,
+.vehicle-inspection-empty {
+    color: var(--sw-text-muted);
+}
+
+.vehicle-inspection-empty {
+    display: grid;
+    justify-items: center;
+    grid-column: 1 / -1;
+    gap: var(--sw-space-2);
+    padding: var(--sw-space-8);
+    text-align: center;
+}
+
+.vehicle-inspection-empty strong {
+    color: var(--sw-text);
+}
+
+@media (max-width: 900px) {
+    .work-order-create-grid,
+    .work-order-create-service-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .work-order-related-grid,
+    .work-order-cost-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .work-order-technician-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .work-orders-filter-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .vehicle-inspection-photo-card form,
+    .vehicle-inspection-complete {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .vehicle-inspection-photo-card form .sw-button,
+    .vehicle-inspection-complete .sw-button {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 640px) {
+    .work-order-create-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .work-order-create-header .sw-button,
+    .work-order-create-actions .sw-button {
+        width: 100%;
+    }
+
+    .work-order-create-grid,
+    .work-order-create-service-grid {
+        grid-template-columns: 1fr;
+        padding: var(--sw-space-4);
+    }
+
+    .work-order-create-section__header {
+        padding: var(--sw-space-4);
+    }
+
+    .work-order-create-service-grid__service,
+    .work-order-create-service-grid__description {
+        grid-column: auto;
+    }
+
+    .work-order-summary,
+    .work-order-section__header,
+    .work-order-link-list,
+    .work-order-services,
+    .work-order-timeline {
+        padding: var(--sw-space-4);
+    }
+
+    .work-order-summary__content,
+    .work-order-service__heading {
+        display: grid;
+    }
+
+    .work-order-summary__status {
+        justify-items: start;
+    }
+
+    .work-order-related-grid,
+    .work-order-cost-grid,
+    .work-order-technician-form,
+    .work-order-cancel-form {
+        grid-template-columns: 1fr;
+    }
+
+    .work-order-summary__actions .sw-button,
+    .work-order-service__actions .sw-button,
+    .work-order-cancel-form .sw-button {
+        width: 100%;
+    }
+
+    .work-order-summary__actions form,
+    .work-order-service__actions form {
+        width: 100%;
+    }
+
+    .work-orders-index-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .work-orders-index-header .sw-button {
+        width: 100%;
+    }
+
+    .work-orders-filter-card__header,
+    .work-orders-table-card__header,
+    .work-orders-filter-form {
+        padding: var(--sw-space-4);
+    }
+
+    .work-orders-filter-form {
+        grid-template-columns: 1fr;
+    }
+
+    .work-orders-filter-form__actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .vehicle-inspection-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .vehicle-inspection-header__meta {
+        justify-items: start;
+    }
+
+    .vehicle-inspection-section-header,
+    .vehicle-inspection-form__body,
+    .vehicle-inspection-photo-card form,
+    .vehicle-inspection-complete,
+    .vehicle-inspection-photos__list {
+        padding: var(--sw-space-4);
+    }
+
+    .vehicle-inspection-main-grid,
+    .vehicle-inspection-item__grid,
+    .vehicle-inspection-photo-card form,
+    .vehicle-inspection-complete {
+        grid-template-columns: 1fr;
+    }
+
+    .vehicle-inspection-form__actions .sw-button,
+    .vehicle-inspection-photo-card .sw-button,
+    .vehicle-inspection-complete .sw-button {
+        width: 100%;
+    }
+}
+
 .appointment-show-page {
     display: grid;
     gap: var(--sw-space-6);
@@ -3865,5 +4609,279 @@ svg {
 
     .appointment-form-actions > * {
         flex: 1;
+    }
+}
+
+.employee-page,
+.employee-form {
+    display: grid;
+    gap: var(--sw-space-6);
+}
+
+.employee-filter-grid,
+.employee-form-grid {
+    column-gap: var(--sw-space-6);
+    row-gap: var(--sw-space-5);
+}
+
+.employee-form-help {
+    margin: 0 0 var(--sw-space-5);
+    color: var(--sw-text-muted);
+}
+
+.employee-skills {
+    display: grid;
+    gap: var(--sw-space-4);
+    margin-bottom: var(--sw-space-4);
+}
+
+.employee-skills-empty,
+.employee-skills-warning {
+    margin: 0 0 var(--sw-space-4);
+    padding: var(--sw-space-4);
+    border-radius: var(--sw-radius-md);
+}
+
+.employee-skills-empty {
+    color: var(--sw-text-muted);
+    background: var(--sw-white-faint);
+    border: 1px dashed var(--sw-border);
+    text-align: center;
+}
+
+.employee-skills-warning {
+    color: var(--sw-warning);
+    background: color-mix(in srgb, var(--sw-warning) 9%, var(--sw-surface));
+    border: 1px solid color-mix(in srgb, var(--sw-warning) 35%, var(--sw-border));
+}
+
+.employee-skills-toolbar,
+.employee-skill-row__heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sw-space-3);
+}
+
+.employee-skills-toolbar {
+    flex-wrap: wrap;
+}
+
+.employee-skill-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: end;
+    gap: var(--sw-space-4);
+    padding: var(--sw-space-5);
+    background: var(--sw-white-faint);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+}
+
+.employee-skill-row__heading {
+    grid-column: 1 / -1;
+    padding-bottom: var(--sw-space-3);
+    border-bottom: 1px solid var(--sw-border);
+}
+
+.employee-skill-row label {
+    display: grid;
+    gap: var(--sw-space-2);
+    min-width: 0;
+}
+
+.employee-skill-row input,
+.employee-skill-row select {
+    width: 100%;
+}
+
+.employee-skill-row__notes {
+    grid-column: span 2;
+}
+
+.employee-form-actions {
+    position: sticky;
+    bottom: var(--sw-space-4);
+    z-index: 5;
+    padding: var(--sw-space-4);
+    background: color-mix(in srgb, var(--sw-surface) 92%, transparent);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+    box-shadow: var(--sw-shadow-lg);
+    backdrop-filter: blur(12px);
+}
+
+.employee-details-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--sw-space-5);
+}
+
+.employee-details-grid > div {
+    display: grid;
+    gap: var(--sw-space-2);
+    padding: var(--sw-space-4);
+    background: var(--sw-white-faint);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+}
+
+.employee-details-grid span {
+    color: var(--sw-text-muted);
+    font-size: var(--sw-font-sm);
+}
+
+.employee-disable-form {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.work-order-readiness {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sw-space-3);
+}
+
+.work-order-readiness span {
+    padding: var(--sw-space-2) var(--sw-space-3);
+    color: var(--sw-text-muted);
+    background: var(--sw-white-faint);
+    border: 1px solid var(--sw-border);
+    border-radius: 999px;
+}
+
+.work-order-readiness span.is-ready {
+    color: var(--sw-success);
+    border-color: color-mix(in srgb, var(--sw-success) 40%, var(--sw-border));
+}
+
+.sales-invoice-form {
+    display: grid;
+    gap: var(--sw-space-6);
+}
+
+.sales-invoice-header-grid,
+.sales-invoice-item-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--sw-space-5);
+}
+
+.sales-invoice-items {
+    display: grid;
+    gap: var(--sw-space-5);
+}
+
+.sales-invoice-item {
+    display: grid;
+    gap: var(--sw-space-5);
+    padding: var(--sw-space-5);
+    margin: 0;
+    background: var(--sw-white-faint);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+}
+
+.sales-invoice-item legend {
+    padding-inline: var(--sw-space-2);
+    font-weight: var(--sw-weight-bold);
+}
+
+.sales-invoice-item__description {
+    grid-column: span 2;
+}
+
+.sales-invoice-item > .sw-button {
+    justify-self: end;
+}
+
+.sales-invoice-actions {
+    position: sticky;
+    bottom: var(--sw-space-4);
+    z-index: 5;
+    display: flex;
+    justify-content: flex-end;
+    padding: var(--sw-space-4);
+    background: color-mix(in srgb, var(--sw-surface) 92%, transparent);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+    box-shadow: var(--sw-shadow-lg);
+    backdrop-filter: blur(12px);
+}
+
+@media (max-width: 760px) {
+    .sales-invoice-header-grid,
+    .sales-invoice-item-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sales-invoice-item__description {
+        grid-column: auto;
+    }
+
+    .sales-invoice-actions .sw-button {
+        width: 100%;
+    }
+}
+
+.work-order-no-technician {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sw-space-4);
+    padding: var(--sw-space-4);
+    background: color-mix(in srgb, var(--sw-warning) 9%, var(--sw-surface));
+    border: 1px solid color-mix(in srgb, var(--sw-warning) 35%, var(--sw-border));
+    border-radius: var(--sw-radius-md);
+}
+
+.work-order-no-technician p {
+    margin: 0;
+}
+
+.work-order-technician-list {
+    display: grid;
+    gap: var(--sw-space-3);
+}
+
+.work-order-technician-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sw-space-3);
+    padding: var(--sw-space-3) var(--sw-space-4);
+    background: var(--sw-white-faint);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+}
+
+.work-order-technician-card span {
+    color: var(--sw-text-muted);
+}
+
+@media (max-width: 900px) {
+    .employee-skill-row,
+    .employee-details-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .employee-skill-row,
+    .employee-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .employee-skill-row__notes {
+        grid-column: auto;
+    }
+
+    .employee-skill-row__heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .work-order-no-technician {
+        align-items: stretch;
+        flex-direction: column;
     }
 }

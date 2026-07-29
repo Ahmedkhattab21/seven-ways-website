@@ -25,6 +25,8 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleBrand;
 use App\Models\VehicleModel;
+use App\Models\Warehouse;
+use App\Models\WorkOrder;
 use App\Services\AppointmentCancellationService;
 use App\Services\AppointmentCheckInService;
 use App\Services\AppointmentDepositService;
@@ -43,6 +45,13 @@ use Tests\TestCase;
 class PhaseNineQuotationAppointmentTest extends TestCase
 {
     use DatabaseTransactions;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->enableModules('appointments', 'work_orders');
+    }
 
     public function test_quotation_snapshot_calculation_is_backend_owned_and_immutable_from_catalog_changes(): void
     {
@@ -132,8 +141,8 @@ class PhaseNineQuotationAppointmentTest extends TestCase
         $quotation = $this->acceptedQuotation($context);
 
         $appointment = app(QuotationToAppointmentService::class)->convert($quotation, [
-            'scheduled_start' => now()->addDay()->startOfHour(),
-            'scheduled_end' => now()->addDay()->startOfHour()->addHour(),
+            'scheduled_start' => now()->addDay()->setTime(10, 0),
+            'scheduled_end' => now()->addDay()->setTime(11, 0),
             'priority' => 'normal',
         ]);
 
@@ -205,9 +214,39 @@ class PhaseNineQuotationAppointmentTest extends TestCase
         app(AppointmentService::class)->save($data, $services);
     }
 
-    public function test_operational_deposit_and_check_in_have_no_accounting_or_work_order_effect(): void
+    public function test_operational_deposit_and_check_in_create_one_work_order_without_accounting_effect(): void
     {
         $context = $this->context();
+        $warehouse = Warehouse::query()->forceCreate([
+            'company_id' => $context['company']->id,
+            'branch_id' => $context['branch']->id,
+            'code' => 'WO-'.uniqid(),
+            'name' => 'Work order warehouse',
+            'warehouse_type' => 'normal',
+            'is_active' => true,
+            'is_system' => false,
+            'allows_work_order_issue' => true,
+        ]);
+        $context['branch']->settings()->update([
+            'default_work_order_warehouse_id' => $warehouse->id,
+        ]);
+        DocumentSequence::query()->forceCreate([
+            'company_id' => $context['company']->id,
+            'branch_id' => $context['branch']->id,
+            'document_type' => 'work_order',
+            'prefix' => 'WO-',
+            'current_number' => 0,
+            'padding' => 6,
+            'reset_period' => 'yearly',
+            'period_key' => now()->format('Y'),
+            'scope_key' => DocumentNumberService::scopeKey(
+                $context['company']->id,
+                $context['branch']->id,
+                'work_order',
+                now()->format('Y')
+            ),
+            'is_active' => true,
+        ]);
         $appointment = app(AppointmentService::class)->save(
             array_merge($this->appointmentData($context), ['deposit_required' => true, 'deposit_amount' => 100]),
             $this->appointmentServices($context)
@@ -217,13 +256,25 @@ class PhaseNineQuotationAppointmentTest extends TestCase
             'received_at' => now(), 'notes' => 'Operational only',
         ]);
         $appointment->forceFill(['status' => 'confirmed'])->save();
-        app(AppointmentCheckInService::class)->checkIn($appointment->fresh(), ['odometer_snapshot' => 12000]);
+        $workOrder = app(AppointmentCheckInService::class)->checkIn(
+            $appointment->fresh(),
+            ['odometer_snapshot' => 12000]
+        );
+        $sameWorkOrder = app(AppointmentCheckInService::class)->checkIn(
+            $appointment->fresh(),
+            ['odometer_snapshot' => 12000]
+        );
 
         $this->assertSame('paid', $appointment->fresh()->deposit_status);
         $this->assertSame('recorded', $deposit->status);
-        $this->assertSame('checked_in', $appointment->fresh()->status);
+        $this->assertSame('in_progress', $appointment->fresh()->status);
+        $this->assertSame($workOrder->id, $sameWorkOrder->id);
+        $this->assertSame($warehouse->id, $workOrder->warehouse_id);
+        $this->assertSame($appointment->id, $workOrder->appointment_id);
+        $this->assertSame(1, $workOrder->services()->count());
+        $this->assertNotNull($workOrder->inspection);
         $this->assertSame(0, \DB::table('journal_entries')->count());
-        $this->assertSame(0, \App\Models\WorkOrder::query()->count());
+        $this->assertSame(1, WorkOrder::query()->count());
     }
 
     public function test_expiration_command_is_idempotent_and_ignores_accepted(): void

@@ -120,6 +120,191 @@ ready(() => {
         });
     });
 
+    document.querySelectorAll('[data-employee-skills-config]').forEach((configElement) => {
+        const form = configElement.closest('form');
+        const container = form?.querySelector('[data-employee-skills]');
+        const emptyState = form?.querySelector('[data-employee-skills-empty]');
+        const count = form?.querySelector('[data-employee-skills-count]');
+        const warning = form?.querySelector('[data-employee-skills-warning]');
+        const addButton = form?.querySelector('[data-add-employee-skill]');
+        const branchSelect = form?.elements.namedItem('branch_id');
+        const userSelect = form?.elements.namedItem('user_id');
+        if (!form || !container || !branchSelect || !addButton) return;
+
+        let config;
+        try {
+            config = JSON.parse(configElement.textContent);
+        } catch {
+            if (warning) {
+                warning.textContent = 'تعذر تحميل بيانات مهارات الخدمات. أعد تحميل الصفحة وحاول مرة أخرى.';
+                warning.removeAttribute('hidden');
+            }
+            addButton.disabled = true;
+            return;
+        }
+
+        const services = Array.isArray(config.services) ? config.services : [];
+        const levels = config.levels && typeof config.levels === 'object' ? config.levels : {};
+        const errors = config.errors && typeof config.errors === 'object' ? config.errors : {};
+        let rows = Array.isArray(config.initialRows) ? config.initialRows.map((row) => ({ ...row })) : [];
+
+        const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;',
+        })[character]);
+
+        const branchServices = () => {
+            const branchId = Number(branchSelect.value);
+            return services.filter((service) => service.branches.map(Number).includes(branchId));
+        };
+
+        const fieldError = (index, field) => {
+            const messages = errors[`skills.${index}.${field}`];
+            if (!Array.isArray(messages) || messages.length === 0) return '';
+
+            return `<p class="sw-field__error">${escapeHtml(messages[0])}</p>`;
+        };
+
+        const serviceOptions = (selected, rowIndex) => {
+            const usedByOtherRows = new Set(rows
+                .filter((row, index) => index !== rowIndex && row.service_id)
+                .map((row) => String(row.service_id)));
+
+            return [
+                '<option value="">اختر الخدمة</option>',
+                ...branchServices()
+                    .filter((service) => !usedByOtherRows.has(String(service.id))
+                        || String(service.id) === String(selected ?? ''))
+                    .map((service) => `<option value="${service.id}" ${String(service.id) === String(selected ?? '') ? 'selected' : ''}>${escapeHtml(service.label)}</option>`),
+            ].join('');
+        };
+
+        const levelOptions = (selected) => Object.entries(levels)
+            .map(([value, label]) => `<option value="${escapeHtml(value)}" ${value === (selected || 'intermediate') ? 'selected' : ''}>${escapeHtml(label)}</option>`)
+            .join('');
+
+        const showWarning = (message = '') => {
+            if (!warning) return;
+            warning.textContent = message;
+            warning.toggleAttribute('hidden', message === '');
+        };
+
+        const filterUsers = () => {
+            if (!userSelect?.options) return;
+            const branchId = String(branchSelect.value);
+            [...userSelect.options].forEach((option) => {
+                if (!option.value) return;
+                const allowed = (option.dataset.branches || '').split(',').includes(branchId);
+                option.hidden = !allowed;
+                option.disabled = !allowed;
+                if (!allowed && option.selected) userSelect.value = '';
+            });
+        };
+
+        const bindRow = (element, index) => {
+            element.querySelector('[data-skill-service]')?.addEventListener('change', (event) => {
+                const value = event.target.value;
+                const duplicate = value && rows.some((row, rowIndex) => (
+                    rowIndex !== index && String(row.service_id) === value
+                ));
+                if (duplicate) {
+                    rows[index].service_id = '';
+                    showWarning('لا يمكن تكرار نفس الخدمة داخل مهارات الموظف.');
+                } else {
+                    rows[index].service_id = value;
+                    showWarning();
+                }
+                render();
+            });
+
+            element.querySelector('[data-skill-level]')?.addEventListener('change', (event) => {
+                rows[index].skill_level = event.target.value;
+            });
+            element.querySelector('[data-skill-certified-at]')?.addEventListener('input', (event) => {
+                rows[index].certified_at = event.target.value;
+            });
+            element.querySelector('[data-skill-expires-at]')?.addEventListener('input', (event) => {
+                rows[index].certification_expires_at = event.target.value;
+            });
+            element.querySelector('[data-skill-primary]')?.addEventListener('change', (event) => {
+                rows[index].is_primary = event.target.checked ? 1 : 0;
+            });
+            element.querySelector('[data-skill-active]')?.addEventListener('change', (event) => {
+                rows[index].is_active = event.target.checked ? 1 : 0;
+            });
+            element.querySelector('[data-skill-notes]')?.addEventListener('input', (event) => {
+                rows[index].notes = event.target.value;
+            });
+            element.querySelector('[data-remove-employee-skill]')?.addEventListener('click', () => {
+                rows.splice(index, 1);
+                showWarning();
+                render();
+            });
+        };
+
+        const render = () => {
+            container.replaceChildren();
+            rows.forEach((row, index) => {
+                const element = document.createElement('section');
+                element.className = 'employee-skill-row';
+                element.dataset.employeeSkillRow = '';
+                element.innerHTML = `
+                    <div class="employee-skill-row__heading">
+                        <strong>مهارة الخدمة رقم ${index + 1}</strong>
+                        <button class="sw-button sw-button--danger" type="button" data-remove-employee-skill>حذف المهارة</button>
+                    </div>
+                    <label><span>الخدمة</span><select name="skills[${index}][service_id]" data-skill-service required>${serviceOptions(row.service_id, index)}</select>${fieldError(index, 'service_id')}</label>
+                    <label><span>مستوى المهارة</span><select name="skills[${index}][skill_level]" data-skill-level required>${levelOptions(row.skill_level)}</select>${fieldError(index, 'skill_level')}</label>
+                    <label><span>تاريخ الاعتماد</span><input type="date" name="skills[${index}][certified_at]" data-skill-certified-at value="${escapeHtml(row.certified_at)}">${fieldError(index, 'certified_at')}</label>
+                    <label><span>انتهاء الاعتماد</span><input type="date" name="skills[${index}][certification_expires_at]" data-skill-expires-at value="${escapeHtml(row.certification_expires_at)}">${fieldError(index, 'certification_expires_at')}</label>
+                    <label class="sw-check"><input type="hidden" name="skills[${index}][is_primary]" value="0"><input type="checkbox" name="skills[${index}][is_primary]" data-skill-primary value="1" ${Number(row.is_primary) ? 'checked' : ''}> مهارة أساسية</label>
+                    <label class="sw-check"><input type="hidden" name="skills[${index}][is_active]" value="0"><input type="checkbox" name="skills[${index}][is_active]" data-skill-active value="1" ${row.is_active === undefined || Number(row.is_active) ? 'checked' : ''}> مهارة نشطة</label>
+                    <label class="employee-skill-row__notes"><span>ملاحظات</span><input name="skills[${index}][notes]" data-skill-notes value="${escapeHtml(row.notes)}" maxlength="2000">${fieldError(index, 'notes')}</label>
+                `;
+                container.append(element);
+                bindRow(element, index);
+            });
+
+            emptyState?.toggleAttribute('hidden', rows.length !== 0);
+            if (count) count.textContent = String(rows.length);
+        };
+
+        addButton.addEventListener('click', () => {
+            rows.push({
+                service_id: '',
+                skill_level: 'intermediate',
+                is_primary: 0,
+                is_active: 1,
+                certified_at: null,
+                certification_expires_at: null,
+                notes: null,
+            });
+            showWarning();
+            render();
+        });
+
+        branchSelect.addEventListener('change', () => {
+            const availableIds = new Set(branchServices().map((service) => String(service.id)));
+            let removedUnavailableService = false;
+            rows = rows.map((row) => {
+                if (!row.service_id || availableIds.has(String(row.service_id))) return row;
+                removedUnavailableService = true;
+                return { ...row, service_id: '' };
+            });
+            showWarning(removedUnavailableService
+                ? 'تم إزالة خدمة غير متاحة في الفرع المحدد.'
+                : '');
+            filterUsers();
+            render();
+        });
+
+        filterUsers();
+        render();
+    });
+
     document.querySelectorAll('[data-quotation-customer]').forEach((customerSelect) => {
         const form = customerSelect.closest('form');
         const vehicleSelect = form?.querySelector('[data-quotation-vehicle]');
@@ -551,6 +736,54 @@ ready(() => {
         approvedPrice?.addEventListener('input', calculate);
         reindex();
         calculate();
+    });
+
+    document.querySelectorAll('[data-sales-invoice-form]').forEach((form) => {
+        const container = form.querySelector('[data-invoice-items]');
+        const template = form.querySelector('[data-invoice-item-template]');
+        const customer = form.querySelector('[data-invoice-customer]');
+        const vehicle = form.querySelector('[data-invoice-vehicle]');
+        let itemIndex = 0;
+
+        const filterVehicles = () => {
+            const selectedCustomer = customer?.value;
+            vehicle?.querySelectorAll('option[data-customer-id]').forEach((option) => {
+                option.hidden = Boolean(selectedCustomer) && option.dataset.customerId !== selectedCustomer;
+                option.disabled = option.hidden;
+            });
+            if (vehicle?.selectedOptions[0]?.disabled) vehicle.value = '';
+        };
+        const bindItem = (row) => {
+            const type = row.querySelector('[data-invoice-item-type]');
+            const sync = () => {
+                row.querySelectorAll('[data-invoice-reference]').forEach((field) => {
+                    const reference = field.dataset.invoiceReference;
+                    const visible = reference === type.value || (reference === 'warehouse' && type.value === 'product');
+                    field.hidden = !visible;
+                    field.querySelectorAll('select, input').forEach((input) => {
+                        input.disabled = !visible;
+                        input.required = visible;
+                    });
+                });
+            };
+            type.addEventListener('change', sync);
+            row.querySelector('[data-remove-invoice-item]')?.addEventListener('click', () => {
+                if (container.children.length > 1) row.remove();
+            });
+            sync();
+        };
+        const addItem = () => {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = template.innerHTML.replaceAll('__INDEX__', String(itemIndex++)).trim();
+            const row = wrapper.firstElementChild;
+            container.append(row);
+            bindItem(row);
+        };
+
+        customer?.addEventListener('change', filterVehicles);
+        form.querySelector('[data-add-invoice-item]')?.addEventListener('click', addItem);
+        filterVehicles();
+        addItem();
     });
 
     document.querySelectorAll('[data-modal-open]').forEach((trigger) => {

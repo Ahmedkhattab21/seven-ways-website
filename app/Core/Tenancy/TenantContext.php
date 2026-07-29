@@ -73,7 +73,11 @@ class TenantContext
             ->orderByDesc('is_main')
             ->orderBy('name');
 
-        if (! $this->user->hasRole('system_admin') && ! $this->user->isCompanyAdministrator()) {
+        if ($this->user->hasRole('branch_manager')
+            && ! $this->user->hasRole('system_admin')
+            && ! $this->user->isCompanyAdministrator()) {
+            $query->whereKey($this->user->branch_id);
+        } elseif (! $this->user->hasRole('system_admin') && ! $this->user->isCompanyAdministrator()) {
             $ids = $this->user->accessibleBranches()->wherePivot('can_view', true)->pluck('branches.id');
             if ($this->user->branch_id) {
                 $ids->push($this->user->branch_id);

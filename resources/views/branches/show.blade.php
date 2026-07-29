@@ -15,6 +15,8 @@
         <div><dt>النوع</dt><dd>{{ $branch->is_main ? 'رئيسي' : 'فرع' }}</dd></div>
         <div><dt>الحالة</dt><dd><x-status-badge :status="$branch->is_active ? 'active' : 'inactive'" /></dd></div>
         <div><dt>عدد المستخدمين</dt><dd>{{ $branch->accessible_users_count }}</dd></div>
+        <div><dt>مسؤول تشغيل الفرع</dt><dd>{{ $branch->responsibleUser?->name ?? 'غير معيّن' }}</dd></div>
+        <div><dt>بريد المسؤول</dt><dd>{{ $branch->responsibleUser?->email ?? '—' }}</dd></div>
         <div><dt>العنوان</dt><dd>{{ $branch->address ?? '—' }}</dd></div>
     </dl>
 </x-card>

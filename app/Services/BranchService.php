@@ -4,15 +4,23 @@ namespace App\Services;
 
 use App\Models\Branch;
 use App\Models\Company;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class BranchService
 {
+    public function __construct(private BranchResponsibleUserService $responsibleUsers)
+    {
+    }
+
     public function create(int $companyId, array $data): Branch
     {
         return DB::transaction(function () use ($companyId, $data) {
+            $responsibleAccount = $data['responsible_account'] ?? null;
+            unset($data['responsible_account']);
             abort_unless(Company::query()->whereKey($companyId)->where('is_active', true)->exists(), 422, 'الشركة غير نشطة.');
             Branch::query()->where('company_id', $companyId)->lockForUpdate()->get();
             $hasActiveBranch = Branch::query()->where('company_id', $companyId)->where('is_active', true)->exists();
@@ -24,6 +32,25 @@ class BranchService
 
             $branch = Branch::query()->create([...$data, 'company_id' => $companyId, 'is_main' => $isMain]);
             $branch->settings()->create([]);
+
+            if ($responsibleAccount) {
+                $role = Role::query()
+                    ->where('name', 'branch_manager')
+                    ->where(fn ($query) => $query->where('company_id', $companyId)->orWhereNull('company_id'))
+                    ->orderByRaw('company_id is null')
+                    ->firstOrFail();
+                $user = new User();
+                $user->forceFill([
+                    'company_id' => $companyId,
+                    'branch_id' => $branch->id,
+                    'name' => $responsibleAccount['name'],
+                    'email' => $responsibleAccount['email'],
+                    'password' => Hash::make($responsibleAccount['password']),
+                    'status' => $responsibleAccount['status'],
+                ])->save();
+                $user->roles()->attach($role);
+                $this->responsibleUsers->assign($branch, $user);
+            }
 
             if (! $hasActiveBranch) {
                 User::query()->where('company_id', $companyId)

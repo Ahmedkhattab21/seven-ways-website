@@ -31,6 +31,11 @@ class BranchRequest extends FormRequest
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'is_main' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
+            'responsible_name' => ['nullable', 'required_with:responsible_email', 'string', 'max:255'],
+            'responsible_email' => ['nullable', 'required_with:responsible_name', 'email', 'max:255', 'unique:users,email'],
+            'responsible_password' => ['nullable', 'required_with:responsible_email', 'string', 'min:10', 'confirmed'],
+            'responsible_password_confirmation' => ['nullable', 'string'],
+            'responsible_status' => ['nullable', Rule::in(['active', 'inactive'])],
         ];
     }
 }

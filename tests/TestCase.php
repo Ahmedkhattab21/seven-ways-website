@@ -25,6 +25,13 @@ abstract class TestCase extends BaseTestCase
         );
     }
 
+    protected function enableModules(string ...$modules): void
+    {
+        foreach ($modules as $module) {
+            config()->set("modules.{$module}.enabled", true);
+        }
+    }
+
     private function guardTestingDatabase(): void
     {
         $testDatabase = (string) config('database.connections.mysql.database');

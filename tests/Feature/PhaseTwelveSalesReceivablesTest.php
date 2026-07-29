@@ -7,6 +7,8 @@ use App\Core\Tenancy\TenantContext;
 use App\Models\Appointment;
 use App\Models\AppointmentDeposit;
 use App\Models\Branch;
+use App\Models\BranchService;
+use App\Models\BranchServicePackage;
 use App\Models\Company;
 use App\Models\Currency;
 use App\Models\Customer;
@@ -15,11 +17,13 @@ use App\Models\PaymentMethod;
 use App\Models\Permission;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\Quotation;
 use App\Models\Role;
 use App\Models\SalesInvoice;
 use App\Models\SalesProductReturn;
 use App\Models\Service;
 use App\Models\ServiceCategory;
+use App\Models\ServicePackage;
 use App\Models\StockBalance;
 use App\Models\StockMovement;
 use App\Models\Tax;
@@ -38,6 +42,7 @@ use App\Services\DocumentNumberService;
 use App\Services\InventoryService;
 use App\Services\OperationalDepositConversionService;
 use App\Services\PaymentAllocationService;
+use App\Services\QuotationToSalesInvoiceService;
 use App\Services\SalesCreditNoteService;
 use App\Services\SalesInvoiceApprovalService;
 use App\Services\SalesInvoiceBalanceService;
@@ -281,6 +286,98 @@ class PhaseTwelveSalesReceivablesTest extends TestCase
         ], [['item_type' => 'custom', 'description' => 'Service', 'quantity' => 1, 'unit_price' => 100]]);
         $second = $this->context();
         $this->actingAs($second['user'])->get(route('sales-invoices.show', $invoice))->assertForbidden();
+    }
+
+    public function test_approved_quotation_converts_directly_to_one_invoice_without_work_order(): void
+    {
+        $context = $this->context();
+        $quotation = Quotation::query()->forceCreate([
+            'uuid' => (string) Str::uuid(),
+            'company_id' => $context['company']->id,
+            'branch_id' => $context['branch']->id,
+            'quotation_number' => 'QT-'.uniqid(),
+            'customer_id' => $context['customer']->id,
+            'vehicle_id' => $context['vehicle']->id,
+            'status' => 'accepted',
+            'quotation_date' => today(),
+            'valid_until' => today()->addWeek(),
+            'currency_id' => $context['currency']->id,
+            'subtotal' => 100,
+            'tax_amount' => 15,
+            'total' => 115,
+            'created_by' => $context['user']->id,
+        ]);
+        $quotation->items()->create([
+            'item_type' => 'service',
+            'service_id' => $context['service']->id,
+            'description' => 'Service snapshot',
+            'quantity' => 1,
+            'unit_price' => 100,
+            'gross_amount' => 100,
+            'net_amount' => 100,
+            'tax_rate' => 15,
+            'tax_amount' => 15,
+            'total' => 115,
+            'price_source' => 'service_price',
+        ]);
+
+        $first = app(QuotationToSalesInvoiceService::class)->convert($quotation);
+        $second = app(QuotationToSalesInvoiceService::class)->convert($quotation->fresh());
+
+        $this->assertSame($first->id, $second->id);
+        $this->assertSame($quotation->id, $first->quotation_id);
+        $this->assertNull($first->work_order_id);
+        $this->assertSame('draft', $first->status);
+        $this->assertSame('converted', $quotation->fresh()->status);
+        $this->assertSame(1, SalesInvoice::query()->where('quotation_id', $quotation->id)->count());
+    }
+
+    public function test_direct_invoice_accepts_product_service_package_and_custom_items(): void
+    {
+        $context = $this->context();
+        BranchService::query()->forceCreate([
+            'company_id' => $context['company']->id,
+            'branch_id' => $context['branch']->id,
+            'service_id' => $context['service']->id,
+            'is_available' => true,
+            'default_price' => 80,
+            'is_active' => true,
+        ]);
+        $package = ServicePackage::query()->forceCreate([
+            'uuid' => (string) Str::uuid(),
+            'company_id' => $context['company']->id,
+            'code' => 'PKG'.uniqid(),
+            'name' => 'Service package',
+            'package_type' => 'fixed',
+            'is_active' => true,
+        ]);
+        $package->items()->create([
+            'service_id' => $context['service']->id,
+            'quantity' => 1,
+            'is_required' => true,
+        ]);
+        BranchServicePackage::query()->forceCreate([
+            'branch_id' => $context['branch']->id,
+            'service_package_id' => $package->id,
+            'price' => 70,
+            'is_available' => true,
+            'effective_from' => today(),
+        ]);
+
+        $invoice = app(SalesInvoiceService::class)->createDirect([
+            'customer_id' => $context['customer']->id,
+            'vehicle_id' => $context['vehicle']->id,
+            'invoice_date' => today()->toDateString(),
+        ], [
+            ['item_type' => 'product', 'product_id' => $context['product']->id, 'warehouse_id' => $context['warehouse']->id, 'quantity' => 1],
+            ['item_type' => 'service', 'service_id' => $context['service']->id, 'quantity' => 1],
+            ['item_type' => 'package', 'service_package_id' => $package->id, 'quantity' => 1],
+            ['item_type' => 'custom', 'description' => 'Custom item', 'quantity' => 1, 'unit_price' => 20],
+        ]);
+
+        $this->assertSame(['product', 'service', 'package', 'custom'], $invoice->items->pluck('item_type')->all());
+        $this->assertSame('80.0000', $invoice->items->firstWhere('item_type', 'service')->unit_price);
+        $this->assertSame('70.0000', $invoice->items->firstWhere('item_type', 'package')->unit_price);
     }
 
     private function issuedInvoice(array $context, float $amount): SalesInvoice

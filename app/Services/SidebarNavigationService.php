@@ -23,7 +23,8 @@ class SidebarNavigationService
 
     public function __construct(
         private Request $request,
-        private CompanySetupProgressService $setupProgress
+        private CompanySetupProgressService $setupProgress,
+        private ModuleRegistry $modules
     ) {
     }
 
@@ -58,7 +59,10 @@ class SidebarNavigationService
 
     private function resolveItem(array $item, array $permissions): ?array
     {
-        if (! Route::has($item['route']) || ! $this->isAllowed($item, $permissions)) {
+        if (! Route::has($item['route'])
+            || ! $this->modules->enabledForRoute($item['route'], $this->request)
+            || (isset($item['module']) && ! $this->modules->enabled($item['module']))
+            || ! $this->isAllowed($item, $permissions)) {
             return null;
         }
 

@@ -10,7 +10,9 @@ use App\Models\Employee;
 use App\Models\PaymentMethod;
 use App\Models\Service;
 use App\Models\Vehicle;
+use App\Models\WorkOrder;
 use App\Services\AppointmentService;
+use App\Services\WorkOrderWarehouseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -52,12 +54,26 @@ class AppointmentController extends Controller
         return redirect()->route('appointments.show', $appointment)->with('success', 'تم إنشاء الحجز.');
     }
 
-    public function show(Appointment $appointment, TenantContext $tenant): View
-    {
+    public function show(
+        Appointment $appointment,
+        TenantContext $tenant,
+        WorkOrderWarehouseService $workOrderWarehouses
+    ): View {
         $this->authorize('view', $appointment);
         $appointment->load(['branch', 'customer', 'vehicle', 'quotation', 'assignedEmployee', 'services.service', 'deposits.paymentMethod']);
 
-        return view('appointments.show', ['appointment' => $appointment] + $this->references($tenant));
+        $activeWorkOrder = WorkOrder::query()
+            ->where('appointment_id', $appointment->id)
+            ->whereNotIn('status', WorkOrder::TERMINAL_STATUSES)
+            ->latest('id')
+            ->first();
+        $defaultWorkOrderWarehouse = $workOrderWarehouses->defaultFor($appointment->branch);
+
+        return view('appointments.show', compact(
+            'appointment',
+            'activeWorkOrder',
+            'defaultWorkOrderWarehouse'
+        ) + $this->references($tenant));
     }
 
     public function edit(Appointment $appointment, TenantContext $tenant): View
