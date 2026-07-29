@@ -49,6 +49,33 @@ ready(() => {
         });
     });
 
+    document.querySelectorAll('[data-sidebar-group]').forEach((group) => {
+        const key = group.dataset.sidebarGroupKey;
+        const toggle = group.querySelector('[data-sidebar-group-toggle]');
+        const panel = group.querySelector('[data-sidebar-group-panel]');
+        const containsActiveRoute = group.dataset.sidebarGroupActive === 'true';
+        const storedState = localStorage.getItem(`sw-sidebar-group-${key}`);
+        const initiallyOpen = containsActiveRoute
+            || storedState === 'true'
+            || (storedState === null && toggle?.getAttribute('aria-expanded') === 'true');
+
+        panel?.toggleAttribute('hidden', !initiallyOpen);
+        toggle?.setAttribute('aria-expanded', String(initiallyOpen));
+
+        toggle?.addEventListener('click', () => {
+            if (desktopBreakpoint.matches && appShell?.classList.contains('is-sidebar-collapsed')) {
+                appShell.classList.remove('is-sidebar-collapsed');
+                localStorage.setItem('sw-sidebar-collapsed', 'false');
+            }
+
+            const willOpen = panel?.hasAttribute('hidden');
+            panel?.toggleAttribute('hidden');
+            toggle.setAttribute('aria-expanded', String(willOpen));
+            localStorage.setItem(`sw-sidebar-group-${key}`, String(willOpen));
+            syncSidebarState();
+        });
+    });
+
     desktopBreakpoint.addEventListener('change', () => {
         appShell?.classList.remove('is-sidebar-open');
         syncSidebarState();
