@@ -86,6 +86,13 @@ class ProductController extends Controller
             'standard_cost' => ['nullable', 'numeric', 'min:0'], 'default_sale_price' => ['nullable', 'numeric', 'min:0'],
             'minimum_stock' => ['required', 'numeric', 'min:0'], 'maximum_stock' => ['nullable', 'numeric', 'gte:minimum_stock'],
             'reorder_quantity' => ['nullable', 'numeric', 'min:0'], 'warranty_months' => ['nullable', 'integer', 'min:0'],
+            'requires_warranty' => ['sometimes', 'boolean'],
+            'default_warranty_film_type' => ['nullable', 'string', 'max:255'],
+            'default_warranty_duration_value' => ['nullable', 'integer', 'min:1'],
+            'default_warranty_duration_unit' => ['nullable', Rule::in(['days', 'months', 'years', 'lifetime'])],
+            'default_warranty_application_area' => ['nullable', 'string', 'max:255'],
+            'default_warranty_terms' => ['nullable', 'string', 'max:10000'],
+            'default_warranty_notes' => ['nullable', 'string', 'max:5000'],
             'is_sellable' => ['boolean'], 'is_purchasable' => ['boolean'], 'is_consumable' => ['boolean'], 'is_active' => ['boolean'],
         ]);
     }

@@ -12,7 +12,11 @@ class SalesInvoiceItem extends BaseModel
 
     protected $guarded = ['id', 'sales_invoice_id', 'gross_amount', 'discount_amount', 'net_amount', 'tax_amount', 'total', 'cost_snapshot', 'margin_snapshot', 'issued_movement_id', 'returned_quantity'];
 
-    protected $casts = ['metadata' => 'array'];
+    protected $casts = [
+        'metadata' => 'array',
+        'warranty_applies' => 'boolean',
+        'warranty_snapshot' => 'array',
+    ];
 
     public function invoice(): BelongsTo
     {

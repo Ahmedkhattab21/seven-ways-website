@@ -32,13 +32,17 @@ class Company extends BaseModel
         'name', 'legal_name', 'commercial_registration', 'tax_number', 'email',
         'phone', 'logo_path', 'address', 'country_code', 'currency_code', 'currency_id',
         'timezone', 'fiscal_year_start_month', 'date_format', 'time_format',
-        'money_decimal_places', 'default_language', 'ui_direction', 'default_tax_id', 'is_active',
+        'money_decimal_places', 'default_language', 'ui_direction', 'default_tax_id',
+        'is_taxable', 'opening_balances_decision', 'is_active',
+        'invoice_print_settings',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'fiscal_year_start_month' => 'integer',
         'money_decimal_places' => 'integer',
+        'is_taxable' => 'boolean',
+        'invoice_print_settings' => 'array',
     ];
 
     public function branches(): HasMany

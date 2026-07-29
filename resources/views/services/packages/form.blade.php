@@ -105,6 +105,19 @@
             </section>
         @endif
 
+        <section class="sw-card">
+            <h3>إعدادات الضمان الافتراضية</h3>
+            <input type="hidden" name="requires_warranty" value="0">
+            <x-form.checkbox name="requires_warranty" label="الباقة تشمل ضمانًا" :checked="old('requires_warranty', $servicePackage->requires_warranty)" />
+            <div class="sw-form-grid">
+                <x-form.input name="default_warranty_film_type" label="نوع الفيلم" :value="old('default_warranty_film_type', $servicePackage->default_warranty_film_type)" />
+                <x-form.input name="default_warranty_application_area" label="منطقة التطبيق" :value="old('default_warranty_application_area', $servicePackage->default_warranty_application_area)" />
+                <x-form.input type="number" name="default_warranty_duration_value" label="مدة الضمان" :value="old('default_warranty_duration_value', $servicePackage->default_warranty_duration_value)" min="1" />
+                <label>وحدة المدة<select class="sw-input" name="default_warranty_duration_unit"><option value="">اختر</option>@foreach(['days'=>'أيام','months'=>'شهور','years'=>'سنوات','lifetime'=>'مدى الحياة'] as $value=>$label)<option value="{{ $value }}" @selected(old('default_warranty_duration_unit', $servicePackage->default_warranty_duration_unit) === $value)>{{ $label }}</option>@endforeach</select></label>
+                <x-form.textarea name="default_warranty_terms" label="شروط الضمان">{{ $servicePackage->default_warranty_terms }}</x-form.textarea>
+                <x-form.textarea name="default_warranty_notes" label="ملاحظات الضمان">{{ $servicePackage->default_warranty_notes }}</x-form.textarea>
+            </div>
+        </section>
         <input type="hidden" name="is_active" value="0">
         <x-form.checkbox name="is_active" label="الباقة نشطة" :checked="old('is_active', $servicePackage->exists ? $servicePackage->is_active : true)" />
         <div class="sw-form-actions"><x-button type="submit">حفظ باقة الخدمات</x-button></div>

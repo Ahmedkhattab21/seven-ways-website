@@ -15,7 +15,7 @@
                         <strong id="sidebar-setup-title">إكمال إعداد النظام</strong>
                         <small>{{ $setup['completed'] }} من {{ $setup['total'] }} خطوات مكتملة</small>
                     </div>
-                    <span>{{ round(($setup['completed'] / max($setup['total'], 1)) * 100) }}%</span>
+                    <span>{{ $setup['percentage'] }}%</span>
                 </div>
                 <div class="sw-setup-progress__track" aria-hidden="true">
                     <span style="width: {{ ($setup['completed'] / max($setup['total'], 1)) * 100 }}%"></span>
@@ -26,6 +26,9 @@
                             <span class="sw-setup-step__marker" aria-hidden="true">{{ $step['complete'] ? '✓' : $loop->iteration }}</span>
                             <span class="sw-setup-step__content">
                                 <strong>{{ $step['label'] }}</strong>
+                                @if(filled($step['details']['status_label'] ?? null))
+                                    <small>{{ $step['details']['status_label'] }}</small>
+                                @endif
                                 @if(($step['details']['required_count'] ?? 0) > 0)
                                     <small>{{ $step['details']['completed_count'] }} من {{ $step['details']['required_count'] }} أنواع مكتملة</small>
                                     @foreach(array_slice($step['details']['missing_items'] ?? [], 0, 3) as $missing)
@@ -35,7 +38,29 @@
                                         </small>
                                     @endforeach
                                 @endif
+                                @foreach($step['details']['missing_branch_responsibles'] ?? [] as $branchName)
+                                    <small class="sw-setup-step__missing">ناقص مسؤول تشغيل نشط: {{ $branchName }}</small>
+                                @endforeach
                             </span>
+                        </a>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        @if($sidebarNavigation['financialAlert'])
+            <section class="sw-setup-progress" aria-labelledby="sidebar-financial-alert-title">
+                <div class="sw-setup-progress__header">
+                    <div>
+                        <strong id="sidebar-financial-alert-title">تنبيهات الإعداد المالي</strong>
+                        <small>راجع المتطلبات المالية غير المكتملة</small>
+                    </div>
+                </div>
+                <div class="sw-setup-progress__steps">
+                    @foreach($sidebarNavigation['financialAlert']['items'] as $item)
+                        <a class="sw-setup-step" href="{{ $item['url'] }}">
+                            <span class="sw-setup-step__marker" aria-hidden="true">!</span>
+                            <span class="sw-setup-step__content"><strong>{{ $item['label'] }}</strong></span>
                         </a>
                     @endforeach
                 </div>

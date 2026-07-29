@@ -37,11 +37,15 @@ class OpeningBalancePolicy
 
     public function approve(User $user, OpeningBalanceDocument $model): bool
     {
-        return $this->accountingScoped($user, $model) && $user->hasPermission('accounting.opening_balances.approve');
+        return $this->accountingScoped($user, $model)
+            && $user->isCompanyAdministrator()
+            && $user->hasPermission('accounting.opening_balances.approve');
     }
 
     public function markReady(User $user, OpeningBalanceDocument $model): bool
     {
-        return $this->accountingScoped($user, $model) && $user->hasPermission('accounting.opening_balances.mark_ready');
+        return $this->accountingScoped($user, $model)
+            && $user->isCompanyAdministrator()
+            && $user->hasPermission('accounting.opening_balances.mark_ready');
     }
 }

@@ -1,8 +1,15 @@
 @extends('layouts.app')
 @php
     $editing = $user->exists;
-    $selectedBranches = collect(old('branch_ids', $user->accessibleBranches->pluck('id')->all()))->map(fn ($id) => (int) $id);
-    $selectedRoles = collect(old('role_ids', $user->roles->pluck('id')->all()))->map(fn ($id) => (int) $id);
+    $defaultBranchId = old('branch_id', $user->branch_id ?: $prefillBranchId);
+    $selectedBranches = collect(old(
+        'branch_ids',
+        $user->accessibleBranches->pluck('id')->all() ?: ($prefillBranchId ? [$prefillBranchId] : [])
+    ))->map(fn ($id) => (int) $id);
+    $selectedRoles = collect(old(
+        'role_ids',
+        $user->roles->pluck('id')->all() ?: ($prefillRoleId ? [$prefillRoleId] : [])
+    ))->map(fn ($id) => (int) $id);
 @endphp
 @section('title', $editing ? 'تعديل المستخدم' : 'إضافة مستخدم')
 @section('page-title', $editing ? 'تعديل المستخدم' : 'إضافة مستخدم')
@@ -11,6 +18,12 @@
 <x-card>
     <form method="POST" action="{{ $editing ? route('users.update', $user) : route('users.store') }}" class="sw-form">
         @csrf @if($editing) @method('PUT') @endif
+        @if($canAssignResponsible)
+            <input type="hidden" name="assign_as_responsible" value="1">
+            <input type="hidden" name="responsible_branch_id" value="{{ $prefillBranchId }}">
+            <input type="hidden" name="return_url" value="{{ $returnUrl }}">
+            <div class="sw-alert sw-alert--info">سيتم إنشاء الحساب بدور مسؤول الفرع وتعيينه رسميًا لهذا الفرع بعد الحفظ.</div>
+        @endif
         <div class="sw-form-grid">
             <x-form.input name="name" label="الاسم" :value="old('name', $user->name)" required />
             <x-form.input name="email" type="email" label="البريد الإلكتروني" :value="old('email', $user->email)" required />
@@ -20,7 +33,7 @@
             <x-form.input name="password_confirmation" type="password" label="تأكيد كلمة المرور" :required="!$editing" />
             <x-form.select name="branch_id" label="الفرع الافتراضي" id="default-branch">
                 <option value="">بدون فرع افتراضي</option>
-                @foreach($branches as $branch)<option value="{{ $branch->id }}" @selected((int) old('branch_id', $user->branch_id) === $branch->id)>{{ $branch->name }}</option>@endforeach
+                @foreach($branches as $branch)<option value="{{ $branch->id }}" @selected((int) $defaultBranchId === $branch->id)>{{ $branch->name }}</option>@endforeach
             </x-form.select>
         </div>
         <fieldset class="sw-option-group" aria-describedby="branches-help">

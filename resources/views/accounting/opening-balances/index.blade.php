@@ -3,6 +3,24 @@
 @section('content')
 <div class="configuration-page">
 <div class="sw-alert">Ready for Posting يعني أن المستند اجتاز الاعتماد ويمكن ترحيله إلى قيد افتتاحي.</div>
+<div class="sw-card sw-stack">
+<h3>قرار الأرصدة الافتتاحية</h3>
+<p>
+@if($company->opening_balances_decision === 'start_from_zero')
+البدء من أرصدة صفرية
+@elseif($company->opening_balances_decision === 'entered')
+تم إدخال الأرصدة الافتتاحية
+@else
+لم يتم اتخاذ قرار بعد
+@endif
+</p>
+@if(auth()->user()->isCompanyAdministrator() && auth()->user()->hasPermission('companies.update') && $company->opening_balances_decision !== 'start_from_zero')
+<form method="POST" action="{{ route('accounting.opening-balances.start-from-zero') }}" onsubmit="return confirm('استخدم هذا الخيار فقط إذا كانت الشركة تبدأ على النظام بدون أرصدة سابقة للعملاء أو الموردين أو الخزائن أو البنوك أو المخزون.')">
+@csrf
+<button class="sw-btn" type="submit">البدء بدون أرصدة افتتاحية</button>
+</form>
+@endif
+</div>
 @if(auth()->user()->hasPermission('accounting.opening_balances.create'))<form class="sw-card sw-form" method="POST" action="{{ route('accounting.opening-balances.store') }}">@csrf<div class="sw-form-grid">
 <label>السنة<select name="fiscal_year_id">@foreach($years as $year)<option value="{{ $year->id }}">{{ $year->name }}</option>@endforeach</select></label>
 <label>الفرع<select name="branch_id"><option value="">كل الشركة</option>@foreach($branches as $branch)<option value="{{ $branch->id }}">{{ $branch->name }}</option>@endforeach</select></label>

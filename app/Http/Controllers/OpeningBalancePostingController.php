@@ -16,7 +16,11 @@ class OpeningBalancePostingController extends Controller
 
     public function post(OpeningBalancePostingRequest $request, OpeningBalanceDocument $openingBalance): RedirectResponse
     {
-        abort_unless($request->user()->hasPermission('accounting.opening_balances.post'), 403);
+        abort_unless(
+            $request->user()->isCompanyAdministrator()
+            && $request->user()->hasPermission('accounting.opening_balances.post'),
+            403
+        );
         $entry = $this->service->post($openingBalance, $request->validated());
 
         return redirect()->route('accounting.journals.show', $entry)->with('success', 'Opening balance posted.');

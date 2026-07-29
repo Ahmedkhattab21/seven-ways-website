@@ -33,9 +33,16 @@ class VehicleController extends Controller
         return view('vehicles.index', compact('vehicles'));
     }
 
-    public function create(TenantContext $tenant): View
+    public function create(Request $request, TenantContext $tenant): View
     {
-        return view('vehicles.form', ['vehicle' => new Vehicle(), ...$this->options($tenant)]);
+        $options = $this->options($tenant);
+        $vehicle = new Vehicle();
+        $customerId = $request->integer('customer_id');
+        if ($customerId && $options['customers']->contains('id', $customerId)) {
+            $vehicle->customer_id = $customerId;
+        }
+
+        return view('vehicles.form', ['vehicle' => $vehicle, ...$options]);
     }
 
     public function store(VehicleRequest $request, VehicleService $service): RedirectResponse

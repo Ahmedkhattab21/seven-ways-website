@@ -41,6 +41,7 @@ class CompanyUpdateRequest extends FormRequest
                         ->where('is_active', true)
                 ),
             ],
+            'is_taxable' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
             'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
         ];

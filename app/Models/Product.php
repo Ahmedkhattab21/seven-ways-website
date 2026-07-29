@@ -18,12 +18,16 @@ class Product extends BaseModel
         'tracking_type', 'purchase_unit_id', 'stock_unit_id', 'sale_unit_id', 'default_tax_id',
         'costing_method', 'standard_cost', 'default_sale_price', 'minimum_stock', 'maximum_stock',
         'reorder_quantity', 'warranty_months', 'is_sellable', 'is_purchasable', 'is_consumable', 'is_active',
+        'requires_warranty', 'default_warranty_film_type', 'default_warranty_duration_value',
+        'default_warranty_duration_unit', 'default_warranty_application_area',
+        'default_warranty_terms', 'default_warranty_notes',
     ];
 
     protected $casts = [
         'standard_cost' => 'decimal:4', 'default_sale_price' => 'decimal:4',
         'minimum_stock' => 'decimal:6', 'maximum_stock' => 'decimal:6', 'reorder_quantity' => 'decimal:6',
         'is_sellable' => 'boolean', 'is_purchasable' => 'boolean', 'is_consumable' => 'boolean', 'is_active' => 'boolean',
+        'requires_warranty' => 'boolean', 'default_warranty_duration_value' => 'integer',
     ];
 
     public function company(): BelongsTo

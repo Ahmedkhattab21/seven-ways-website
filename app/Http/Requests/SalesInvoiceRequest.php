@@ -25,6 +25,16 @@ class SalesInvoiceRequest extends FormRequest
             'items.*.warehouse_id' => ['nullable', 'integer'], 'items.*.description' => ['nullable', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'numeric', 'gt:0'], 'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.discount_type' => ['nullable', 'in:fixed,percentage'], 'items.*.discount_value' => ['nullable', 'numeric', 'min:0'],
+            'items.*.warranty' => ['nullable', 'array'],
+            'items.*.warranty.applies' => ['nullable', 'boolean'],
+            'items.*.warranty.film_type' => ['nullable', 'string', 'max:255'],
+            'items.*.warranty.film_code' => ['nullable', 'string', 'max:255'],
+            'items.*.warranty.application_area' => ['nullable', 'string', 'max:255'],
+            'items.*.warranty.start_date' => ['nullable', 'date'],
+            'items.*.warranty.duration_value' => ['nullable', 'integer', 'min:1'],
+            'items.*.warranty.duration_unit' => ['nullable', 'in:days,months,years,lifetime'],
+            'items.*.warranty.terms' => ['nullable', 'string', 'max:10000'],
+            'items.*.warranty.notes' => ['nullable', 'string', 'max:5000'],
         ];
     }
 }

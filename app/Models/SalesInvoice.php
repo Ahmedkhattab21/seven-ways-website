@@ -83,4 +83,9 @@ class SalesInvoice extends BaseModel
     {
         return $this->hasMany(SalesCreditNote::class);
     }
+
+    public function shares(): HasMany
+    {
+        return $this->hasMany(InvoiceShare::class);
+    }
 }

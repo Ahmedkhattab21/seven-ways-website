@@ -21,6 +21,11 @@
                 <option value="">بدون</option>
                 @foreach($taxes as $tax)<option value="{{ $tax->id }}" @selected(old('default_tax_id', $company->default_tax_id) == $tax->id)>{{ $tax->name }}</option>@endforeach
             </x-form.select>
+            <x-form.select name="is_taxable" label="حالة الخضوع للضريبة" required>
+                <option value="">لم يتم اتخاذ قرار</option>
+                <option value="1" @selected(old('is_taxable', $company->is_taxable) === true || old('is_taxable') === '1')>الشركة خاضعة للضريبة</option>
+                <option value="0" @selected(old('is_taxable', $company->is_taxable) === false || old('is_taxable') === '0')>الشركة غير خاضعة للضريبة</option>
+            </x-form.select>
             <x-form.input name="timezone" label="المنطقة الزمنية" :value="$company->timezone" required />
             <x-form.input name="fiscal_year_start_month" type="number" label="شهر بداية السنة المالية" :value="$company->fiscal_year_start_month" min="1" max="12" required />
             <x-form.select name="date_format" label="صيغة التاريخ" required>@foreach(['Y-m-d','d/m/Y','d-m-Y'] as $format)<option value="{{ $format }}" @selected(old('date_format', $company->date_format) === $format)>{{ $format }}</option>@endforeach</x-form.select>

@@ -15,6 +15,7 @@ class WorkOrderToInvoiceService
         private TenantContext $tenant,
         private SalesInvoicePricingService $pricing,
         private SalesInvoiceService $invoices,
+        private InvoiceWarrantySnapshotService $warranties,
         private AuditService $audit
     ) {
     }
@@ -30,13 +31,13 @@ class WorkOrderToInvoiceService
             if (SalesInvoice::where('work_order_id', $order->id)->whereNotIn('status', ['draft', 'cancelled', 'void'])->exists()) {
                 throw new BusinessRuleException('This work order already has a final invoice.');
             }
-            $rows = $order->services->where('status', 'completed')->map(fn ($line) => [
+            $rows = $order->services->where('status', 'completed')->map(fn ($line) => $this->warranties->applyToRow([
                 'item_type' => 'service', 'work_order_service_id' => $line->id, 'service_id' => $line->service_id,
                 'service_package_id' => $line->service_package_id, 'description' => $line->description,
                 'quantity' => $line->quantity, 'unit_price' => $line->unit_price_snapshot,
                 'tax_id' => $line->service?->default_tax_id, 'tax_rate' => $line->service?->defaultTax?->rate ?? 0,
                 'cost_snapshot' => $line->actual_total_cost,
-            ])->values();
+            ], $data['invoice_date'] ?? now()))->values();
             $order->reworkOrders->where('is_customer_chargeable', true)->where('customer_charge_amount', '>', 0)->each(
                 fn ($rework) => $rows->push([
                     'item_type' => 'custom', 'description' => "Rework {$rework->rework_number}",

@@ -14,6 +14,7 @@ class QuotationToSalesInvoiceService
     public function __construct(
         private TenantContext $tenant,
         private DocumentNumberService $numbers,
+        private InvoiceWarrantySnapshotService $warranties,
         private AuditService $audit
     ) {
     }
@@ -86,7 +87,7 @@ class QuotationToSalesInvoiceService
 
             foreach ($locked->items as $source) {
                 $item = $invoice->items()->make();
-                $item->forceFill([
+                $row = [
                     'item_type' => $source->item_type,
                     'quotation_item_id' => $source->id,
                     'service_id' => $source->service_id,
@@ -111,7 +112,8 @@ class QuotationToSalesInvoiceService
                     'promotion_id' => $source->promotion_id,
                     'sort_order' => $source->sort_order,
                     'metadata' => $source->metadata,
-                ])->save();
+                ];
+                $item->forceFill($this->warranties->applyToRow($row, $invoice->invoice_date))->save();
             }
 
             $locked->forceFill(['status' => 'converted', 'converted_at' => now()])->save();

@@ -17,6 +17,9 @@ class Service extends BaseModel
         'pricing_type', 'default_duration_minutes', 'default_tax_id', 'pricing_unit_id',
         'default_warranty_months', 'requires_vehicle', 'requires_inspection', 'requires_quality_check',
         'allows_multiple_technicians', 'is_package_only', 'is_active',
+        'requires_warranty', 'default_warranty_film_type', 'default_warranty_duration_value',
+        'default_warranty_duration_unit', 'default_warranty_application_area',
+        'default_warranty_terms', 'default_warranty_notes',
     ];
 
     protected $casts = [
@@ -24,6 +27,7 @@ class Service extends BaseModel
         'requires_vehicle' => 'boolean', 'requires_inspection' => 'boolean',
         'requires_quality_check' => 'boolean', 'allows_multiple_technicians' => 'boolean',
         'is_package_only' => 'boolean', 'is_active' => 'boolean',
+        'requires_warranty' => 'boolean', 'default_warranty_duration_value' => 'integer',
     ];
 
     public function company(): BelongsTo

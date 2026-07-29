@@ -15,7 +15,24 @@
     <div><dt>الفرع المسؤول</dt><dd>{{ $customer->assignedBranch?->name ?? '—' }}</dd></div><div><dt>المصدر</dt><dd>{{ $customer->source?->name ?? '—' }}</dd></div>
     <div><dt>الرقم الضريبي</dt><dd>{{ $customer->tax_number ?? '—' }}</dd></div><div><dt>الحالة</dt><dd><x-status-badge :status="$customer->status" /></dd></div>
 </dl></x-card>
-<x-card title="السيارات التابعة"><x-table-shell><thead><tr><th>اللوحة</th><th>الماركة</th><th>الموديل</th><th>السنة</th></tr></thead><tbody>@forelse($customer->vehicles as $vehicle)<tr><td><a href="{{ route('vehicles.show',$vehicle) }}">{{ $vehicle->plate_number ?? 'بدون لوحة' }}</a></td><td>{{ $vehicle->brand->name_ar }}</td><td>{{ $vehicle->model->name_ar }}</td><td>{{ $vehicle->manufacturing_year ?? '—' }}</td></tr>@empty<tr><td colspan="4">لا توجد سيارات.</td></tr>@endforelse</tbody></x-table-shell></x-card>
+<x-card title="السيارات التابعة">
+    @if(auth()->user()->hasPermission('vehicles.create'))
+        <div class="sw-form-actions"><a class="sw-button sw-button--primary" href="{{ route('vehicles.create', ['customer_id' => $customer->id]) }}">إضافة سيارة للعميل</a></div>
+    @endif
+    <x-table-shell><thead><tr><th>اللوحة</th><th>الماركة</th><th>الموديل</th><th>السنة</th><th>الإجراءات</th></tr></thead><tbody>
+    @forelse($customer->vehicles as $vehicle)
+        <tr>
+            <td><a href="{{ route('vehicles.show', $vehicle) }}">{{ $vehicle->plate_number ?? 'بدون لوحة' }}</a></td>
+            <td>{{ $vehicle->brand?->name_ar ?? '—' }}</td>
+            <td>{{ $vehicle->model?->name_ar ?? '—' }}</td>
+            <td>{{ $vehicle->manufacturing_year ?? '—' }}</td>
+            <td>@can('update', $vehicle)<a href="{{ route('vehicles.edit', $vehicle) }}">تعديل</a>@endcan</td>
+        </tr>
+    @empty
+        <tr><td colspan="5">لا توجد سيارات.</td></tr>
+    @endforelse
+    </tbody></x-table-shell>
+</x-card>
 <x-card title="جهات الاتصال">
     <x-table-shell><thead><tr><th>الاسم</th><th>الوظيفة</th><th>الهاتف</th><th>رئيسية</th><th>الإجراءات</th></tr></thead><tbody>@forelse($customer->contacts as $contact)<tr><td>{{ $contact->name }}</td><td>{{ $contact->job_title ?? '—' }}</td><td>{{ $contact->phone ?? '—' }}</td><td>{{ $contact->is_primary ? 'نعم' : 'لا' }}</td><td>@if(auth()->user()->hasPermission('customers.manage_contacts'))<form method="POST" action="{{ route('customers.contacts.destroy',$contact) }}">@csrf @method('DELETE')<button type="submit">حذف</button></form>@endif</td></tr>@empty<tr><td colspan="5">لا توجد جهات اتصال.</td></tr>@endforelse</tbody></x-table-shell>
     @if(auth()->user()->hasPermission('customers.manage_contacts'))<form method="POST" action="{{ route('customers.contacts.store',$customer) }}" class="sw-form">@csrf<div class="sw-form-grid"><x-form.input name="name" label="الاسم" required /><x-form.input name="job_title" label="الوظيفة" /><x-form.input name="phone" label="الهاتف" /><x-form.input name="email" type="email" label="البريد" /></div><label class="sw-check"><input type="checkbox" name="is_primary" value="1"> جهة رئيسية</label><x-button type="submit">إضافة جهة اتصال</x-button></form>@endif

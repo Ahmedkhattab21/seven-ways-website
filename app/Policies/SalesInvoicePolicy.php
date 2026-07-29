@@ -62,6 +62,11 @@ class SalesInvoicePolicy
         return $this->scoped($user, $invoice) && $user->hasPermission('sales_invoices.print');
     }
 
+    public function share(User $user, SalesInvoice $invoice): bool
+    {
+        return $this->scoped($user, $invoice) && $user->hasPermission('sales_invoices.share');
+    }
+
     public function viewCost(User $user, SalesInvoice $invoice): bool
     {
         return $this->scoped($user, $invoice) && $user->hasPermission('sales_invoices.view_cost');

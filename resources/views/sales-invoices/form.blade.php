@@ -148,6 +148,32 @@
                     <span class="sw-field__label">قيمة الخصم</span>
                     <input class="sw-input" type="number" min="0" step="0.0001" name="items[__INDEX__][discount_value]" value="0">
                 </label>
+                <section class="sw-card sales-invoice-item__warranty">
+                    <h3 class="sw-card__title">بيانات الضمان داخل الفاتورة</h3>
+                    <label class="sw-field">
+                        <span class="sw-field__label">يشمل ضمانًا</span>
+                        <select class="sw-input" name="items[__INDEX__][warranty][applies]">
+                            <option value="">حسب إعداد العنصر</option>
+                            <option value="1">نعم</option>
+                            <option value="0">لا</option>
+                        </select>
+                    </label>
+                    <label class="sw-field"><span class="sw-field__label">نوع الفيلم</span><input class="sw-input" name="items[__INDEX__][warranty][film_type]"></label>
+                    <label class="sw-field"><span class="sw-field__label">كود الفيلم</span><input class="sw-input" name="items[__INDEX__][warranty][film_code]"></label>
+                    <label class="sw-field"><span class="sw-field__label">منطقة التطبيق</span><input class="sw-input" name="items[__INDEX__][warranty][application_area]"></label>
+                    <label class="sw-field"><span class="sw-field__label">بداية الضمان</span><input class="sw-input" type="date" name="items[__INDEX__][warranty][start_date]"></label>
+                    <label class="sw-field"><span class="sw-field__label">مدة الضمان</span><input class="sw-input" type="number" min="1" name="items[__INDEX__][warranty][duration_value]"></label>
+                    <label class="sw-field">
+                        <span class="sw-field__label">وحدة المدة</span>
+                        <select class="sw-input" name="items[__INDEX__][warranty][duration_unit]">
+                            <option value="">من إعداد العنصر</option><option value="days">أيام</option>
+                            <option value="months">شهور</option><option value="years">سنوات</option>
+                            <option value="lifetime">مدى الحياة</option>
+                        </select>
+                    </label>
+                    <label class="sw-field"><span class="sw-field__label">شروط الضمان</span><textarea class="sw-input sw-textarea" name="items[__INDEX__][warranty][terms]"></textarea></label>
+                    <label class="sw-field"><span class="sw-field__label">ملاحظات الضمان</span><textarea class="sw-input sw-textarea" name="items[__INDEX__][warranty][notes]"></textarea></label>
+                </section>
             </div>
             <button class="sw-button sw-button--outline" type="button" data-remove-invoice-item>حذف العنصر</button>
         </fieldset>

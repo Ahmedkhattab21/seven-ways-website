@@ -71,6 +71,7 @@ use App\Http\Controllers\IncomeStatementController;
 use App\Http\Controllers\InventoryActionController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InventoryDocumentController;
+use App\Http\Controllers\InvoiceShareController;
 use App\Http\Controllers\JournalEntryActionController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\LeadController;
@@ -182,6 +183,10 @@ Route::get('warranty/verify/{token}', WarrantyVerificationController::class)
     ->middleware('throttle:30,1')
     ->where('token', '[A-Za-z0-9]{40,96}')
     ->name('warranties.verify');
+
+Route::get('shared/invoices/{invoiceShare}', [InvoiceShareController::class, 'show'])
+    ->middleware(['signed', 'throttle:60,1'])
+    ->name('public.sales-invoices.show');
 
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -411,6 +416,8 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
 
         Route::get('opening-balances', [OpeningBalanceController::class, 'index'])->middleware('permission:accounting.opening_balances.view')->name('opening-balances.index');
         Route::post('opening-balances', [OpeningBalanceController::class, 'store'])->middleware('permission:accounting.opening_balances.create')->name('opening-balances.store');
+        Route::post('opening-balances/start-from-zero', [OpeningBalanceController::class, 'startFromZero'])
+            ->middleware('permission:companies.update')->name('opening-balances.start-from-zero');
         Route::post('opening-balances/{openingBalance}/lines', [OpeningBalanceController::class, 'line'])->middleware('permission:accounting.opening_balances.update')->name('opening-balances.lines.store');
         Route::post('opening-balances/{openingBalance}/{action}', [OpeningBalanceController::class, 'action'])->whereIn('action', ['submit', 'approve', 'mark_ready'])->name('opening-balances.action');
         Route::post('opening-balances/{openingBalance}/post', [OpeningBalancePostingController::class, 'post'])->middleware('permission:accounting.opening_balances.post')->name('opening-balances.post');
@@ -507,7 +514,9 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
     Route::patch('branches/{branch}/disable', [BranchController::class, 'disable'])->middleware('permission:branches.disable')->name('branches.disable');
     Route::patch('branches/{branch}/main', [BranchController::class, 'makeMain'])->middleware('permission:branches.update')->name('branches.main');
     Route::put('branches/{branch}/responsible-user', [BranchController::class, 'assignResponsible'])
-        ->middleware('permission:branches.assign_responsible')->name('branches.responsible-user.update');
+        ->name('branches.responsible-user.update');
+    Route::delete('branches/{branch}/responsible-user', [BranchController::class, 'removeResponsible'])
+        ->name('branches.responsible-user.destroy');
 
     Route::get('users', [UserManagementController::class, 'index'])->middleware('permission:users.view')->name('users.index');
     Route::get('users/create', [UserManagementController::class, 'create'])->middleware('permission:users.create')->name('users.create');
@@ -715,6 +724,8 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
     Route::post('work-orders/{workOrder}/invoice', [SalesInvoiceController::class, 'fromWorkOrder'])->middleware('permission:sales_invoices.create')->name('work-orders.invoice');
     Route::get('sales-invoices/{salesInvoice}', [SalesInvoiceController::class, 'show'])->middleware('permission:sales_invoices.view')->name('sales-invoices.show');
     Route::get('sales-invoices/{salesInvoice}/print', [SalesInvoiceController::class, 'print'])->middleware('permission:sales_invoices.print')->name('sales-invoices.print');
+    Route::post('sales-invoices/{salesInvoice}/share', [InvoiceShareController::class, 'store'])
+        ->middleware('permission:sales_invoices.share')->name('sales-invoices.share');
     Route::post('sales-invoices/{salesInvoice}/{action}', [SalesInvoiceController::class, 'action'])->whereIn('action', ['submit', 'approve', 'issue', 'cancel', 'void'])->name('sales-invoices.action');
     Route::post('sales-invoice-items/{salesInvoiceItem}/return', [SalesInvoiceController::class, 'returnProduct'])->middleware('permission:sales_credit_notes.create')->name('sales-invoice-items.return');
 

@@ -2,8 +2,8 @@
 
 return [
     'types' => [
-        'customer' => ['label' => 'العملاء', 'scope' => 'branch', 'setup_required' => true],
-        'lead' => ['label' => 'العملاء المحتملون', 'scope' => 'branch', 'setup_required' => true],
+        'customer' => ['label' => 'العملاء', 'scope' => 'branch', 'setup_required' => true, 'module' => 'sales'],
+        'lead' => ['label' => 'العملاء المحتملون', 'scope' => 'branch', 'setup_required' => true, 'module' => 'leads'],
         'quotation' => ['label' => 'عروض الأسعار', 'scope' => 'branch'],
         'appointment' => ['label' => 'الحجوزات', 'scope' => 'branch'],
         'appointment_deposit' => ['label' => 'دفعات الحجوزات', 'scope' => 'branch'],

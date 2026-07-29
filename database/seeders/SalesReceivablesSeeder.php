@@ -17,6 +17,7 @@ class SalesReceivablesSeeder extends Seeder
             'sales_invoices.view', 'sales_invoices.create', 'sales_invoices.update', 'sales_invoices.submit',
             'sales_invoices.approve', 'sales_invoices.issue', 'sales_invoices.cancel', 'sales_invoices.void',
             'sales_invoices.view_cost', 'sales_invoices.print', 'sales_invoices.direct_sale', 'sales_invoices.override_price',
+            'sales_invoices.share', 'sales_invoices.view_shares', 'sales_invoices.manage_warranty_after_issue',
             'customer_payments.view', 'customer_payments.record', 'customer_payments.approve', 'customer_payments.allocate',
             'customer_payments.reverse_allocation', 'customer_payments.cancel', 'customer_payments.print',
             'sales_credit_notes.view', 'sales_credit_notes.create', 'sales_credit_notes.approve', 'sales_credit_notes.issue',
@@ -35,6 +36,20 @@ class SalesReceivablesSeeder extends Seeder
         $grant(['sales'], ['sales_invoices.view', 'sales_invoices.create', 'sales_invoices.update', 'sales_invoices.submit', 'sales_invoices.print', 'sales_invoices.direct_sale', 'sales_credit_notes.view', 'customer_statements.view']);
         $grant(['receptionist'], ['sales_invoices.view', 'customer_payments.view', 'customer_payments.record', 'customer_payments.print', 'customer_statements.view']);
         $grant(['warehouse_keeper'], ['sales_invoices.view']);
+
+        $restricted = Permission::whereIn('name', [
+            'sales_invoices.manage_warranty_after_issue',
+            'sales_invoices.view_shares',
+        ])->pluck('id', 'name');
+        Role::where('name', 'branch_manager')->get()->each(
+            fn (Role $role) => $role->permissions()->detach($restricted->values())
+        );
+        if ($manageWarrantyId = $restricted->get('sales_invoices.manage_warranty_after_issue')) {
+            Role::where('name', 'accountant')->get()->each(
+                fn (Role $role) => $role->permissions()->detach($manageWarrantyId)
+            );
+        }
+
         Branch::where('is_active', true)->each(function (Branch $branch) {
             foreach ([
                 'sales_invoice' => '{BRANCH}-INV-{YYYY}-', 'customer_payment' => '{BRANCH}-PAY-{YYYY}-',

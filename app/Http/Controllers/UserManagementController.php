@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Core\Tenancy\TenantContext;
 use App\Http\Requests\ManagedUserRequest;
+use App\Models\Branch;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\BranchResponsibleUserService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -31,9 +33,26 @@ class UserManagementController extends Controller
         return $this->form(new User(), $tenant);
     }
 
-    public function store(ManagedUserRequest $request, TenantContext $tenant): RedirectResponse
-    {
-        $this->save(new User(), $request, $tenant);
+    public function store(
+        ManagedUserRequest $request,
+        TenantContext $tenant,
+        BranchResponsibleUserService $responsibleUsers
+    ): RedirectResponse {
+        DB::transaction(function () use ($request, $tenant, $responsibleUsers) {
+            $user = $this->save(new User(), $request, $tenant);
+
+            if ($request->boolean('assign_as_responsible')) {
+                $branch = Branch::query()
+                    ->where('company_id', $tenant->companyId())
+                    ->findOrFail($request->integer('responsible_branch_id'));
+                $responsibleUsers->assign($branch, $user);
+            }
+        });
+
+        if ($request->boolean('assign_as_responsible')) {
+            return redirect()->route('branches.edit', $request->integer('responsible_branch_id'))
+                ->with('status', 'تم إنشاء الحساب وتعيينه مسؤولًا لتشغيل الفرع.');
+        }
 
         return redirect()->route('users.index')->with('status', 'تم إنشاء المستخدم.');
     }
@@ -77,14 +96,44 @@ class UserManagementController extends Controller
             ->sortBy(fn (Role $role) => $role->company_id === $tenant->companyId() ? 0 : 1)
             ->unique('name')->values();
         $user->loadMissing(['roles', 'accessibleBranches']);
+        $canAssignResponsible = ! $user->exists
+            && request()->user()->hasRole(['company_owner', 'general_manager', 'system_admin'])
+            && request()->boolean('assign_as_responsible');
+        $prefillBranchId = $canAssignResponsible ? request()->integer('branch_id') : null;
+        if ($prefillBranchId && ! $branches->contains('id', $prefillBranchId)) {
+            $prefillBranchId = null;
+            $canAssignResponsible = false;
+        }
+        $prefillRoleId = $canAssignResponsible && request()->input('role') === 'branch_manager'
+            ? $roles->firstWhere('name', 'branch_manager')?->id
+            : null;
+        $returnUrl = $canAssignResponsible && $prefillBranchId
+            ? route('branches.edit', $prefillBranchId)
+            : null;
 
-        return view('users.form', compact('user', 'branches', 'roles'));
+        return view('users.form', compact(
+            'user',
+            'branches',
+            'roles',
+            'canAssignResponsible',
+            'prefillBranchId',
+            'prefillRoleId',
+            'returnUrl',
+        ));
     }
 
-    private function save(User $user, ManagedUserRequest $request, TenantContext $tenant): void
+    private function save(User $user, ManagedUserRequest $request, TenantContext $tenant): User
     {
-        DB::transaction(function () use ($user, $request, $tenant) {
-            $data = $request->safe()->except(['password', 'password_confirmation', 'branch_ids', 'role_ids']);
+        return DB::transaction(function () use ($user, $request, $tenant) {
+            $data = $request->safe()->except([
+                'password',
+                'password_confirmation',
+                'branch_ids',
+                'role_ids',
+                'assign_as_responsible',
+                'responsible_branch_id',
+                'return_url',
+            ]);
             $data['company_id'] = $tenant->companyId();
             if ($request->filled('password')) {
                 $data['password'] = Hash::make($request->string('password'));
@@ -98,6 +147,8 @@ class UserManagementController extends Controller
                 ],
             ]);
             $user->accessibleBranches()->sync($access);
+
+            return $user->refresh();
         });
     }
 }

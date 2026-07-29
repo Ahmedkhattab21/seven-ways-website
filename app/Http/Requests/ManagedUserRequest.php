@@ -31,6 +31,11 @@ class ManagedUserRequest extends FormRequest
             'branch_ids.*' => [Rule::exists('branches', 'id')->where(fn ($query) => $query->where('company_id', $companyId)->where('is_active', true))],
             'role_ids' => ['required', 'array', 'min:1'],
             'role_ids.*' => [Rule::exists('roles', 'id')->where(fn ($query) => $query->where(fn ($inner) => $inner->whereNull('company_id')->orWhere('company_id', $companyId))->where('is_active', true))],
+            'assign_as_responsible' => ['nullable', 'boolean'],
+            'responsible_branch_id' => ['nullable', Rule::exists('branches', 'id')->where(
+                fn ($query) => $query->where('company_id', $companyId)->where('is_active', true)
+            )],
+            'return_url' => ['nullable', 'string', 'max:2048'],
         ];
     }
 
@@ -55,6 +60,25 @@ class ManagedUserRequest extends FormRequest
                     ->whereIn('name', ['system_admin', 'company_owner', 'general_manager'])->exists();
                 if ($forbiddenRole) {
                     $validator->errors()->add('role_ids', 'لا يمكنك تعيين دور إداري أعلى.');
+                }
+            }
+            if ($this->boolean('assign_as_responsible')) {
+                if (! $user->hasRole(['company_owner', 'general_manager', 'system_admin'])) {
+                    $validator->errors()->add('assign_as_responsible', 'لا تملك صلاحية تعيين مسؤول تشغيل الفرع.');
+                }
+
+                $responsibleBranchId = $this->integer('responsible_branch_id');
+                if (! $responsibleBranchId || ! $branchIds->contains($responsibleBranchId)
+                    || $defaultBranch !== $responsibleBranchId) {
+                    $validator->errors()->add('responsible_branch_id', 'يجب أن يكون فرع المسؤول هو الفرع الافتراضي والمتاح.');
+                }
+
+                $hasBranchManagerRole = \App\Models\Role::query()
+                    ->whereIn('id', $this->input('role_ids', []))
+                    ->where('name', 'branch_manager')
+                    ->exists();
+                if (! $hasBranchManagerRole) {
+                    $validator->errors()->add('role_ids', 'يجب اختيار دور مسؤول الفرع.');
                 }
             }
         });

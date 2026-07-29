@@ -50,7 +50,7 @@ class ThreeRoleOperatingModelSeeder extends Seeder
             'service_packages.view', 'quotations.view', 'quotations.create', 'quotations.update',
             'quotations.submit', 'quotations.send', 'sales_invoices.view', 'sales_invoices.create',
             'sales_invoices.update', 'sales_invoices.submit', 'sales_invoices.issue', 'sales_invoices.print',
-            'sales_invoices.direct_sale', 'customer_payments.view', 'customer_payments.record',
+            'sales_invoices.direct_sale', 'sales_invoices.share', 'customer_payments.view', 'customer_payments.record',
             'customer_payments.allocate', 'customer_payments.print', 'customer_statements.view',
             'sales_credit_notes.view', 'sales_credit_notes.create', 'sales_credit_notes.print',
             'treasury.cash_boxes.view', 'treasury.balances.view', 'treasury.cash_sessions.view',
@@ -77,7 +77,8 @@ class ThreeRoleOperatingModelSeeder extends Seeder
         ];
         $allowedExact = [
             'dashboard.view', 'branches.view', 'customers.view', 'sales_invoices.view',
-            'sales_invoices.print', 'customer_payments.view', 'customer_payments.allocate',
+            'sales_invoices.print', 'sales_invoices.share', 'sales_invoices.view_shares',
+            'customer_payments.view', 'customer_payments.allocate',
             'customer_statements.view', 'suppliers.view', 'suppliers.view_balance',
             'taxes.view', 'taxes.manage', 'fiscal_years.view', 'document_sequences.view',
         ];
@@ -85,6 +86,8 @@ class ThreeRoleOperatingModelSeeder extends Seeder
             'treasury.cash_sessions.open', 'treasury.cash_sessions.count', 'treasury.cash_sessions.submit',
             'treasury.cash_sessions.approve', 'treasury.cash_sessions.close', 'treasury.cash_sessions.reopen',
             'treasury.approval_limits.manage', 'treasury.approval_limits.unlimited',
+            'accounting.opening_balances.approve', 'accounting.opening_balances.mark_ready',
+            'accounting.opening_balances.post',
         ];
 
         return $permissions->filter(function ($id, string $name) use ($allowedPrefixes, $allowedExact, $denied) {

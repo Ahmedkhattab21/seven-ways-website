@@ -31,6 +31,12 @@ class BranchResponsibleUserService
                 ]);
             }
 
+            if (! $lockedUser->accessibleBranches()->whereKey($lockedBranch->id)->exists()) {
+                throw ValidationException::withMessages([
+                    'responsible_user_id' => 'المستخدم المحدد لا يملك وصولًا إلى هذا الفرع.',
+                ]);
+            }
+
             $otherBranch = Branch::query()
                 ->where('responsible_user_id', $lockedUser->id)
                 ->whereKeyNot($lockedBranch->id)
@@ -73,6 +79,37 @@ class BranchResponsibleUserService
             $this->audit->record('branch.responsible_user_assigned', $lockedBranch, [
                 'before_user_id' => $before,
                 'after_user_id' => $lockedUser->id,
+            ]);
+
+            return $lockedBranch->refresh();
+        });
+    }
+
+    public function remove(Branch $branch, string $reason): Branch
+    {
+        return DB::transaction(function () use ($branch, $reason) {
+            $lockedBranch = Branch::query()->whereKey($branch->id)->lockForUpdate()->firstOrFail();
+            $before = $lockedBranch->responsible_user_id;
+
+            if (! $before) {
+                return $lockedBranch;
+            }
+
+            $previousUser = User::query()->whereKey($before)->lockForUpdate()->first();
+            $lockedBranch->forceFill([
+                'responsible_user_id' => null,
+                'responsible_assigned_at' => null,
+            ])->save();
+
+            if ($previousUser && $previousUser->branch_id === $lockedBranch->id) {
+                $previousUser->forceFill(['branch_id' => null])->save();
+                $previousUser->accessibleBranches()->detach($lockedBranch->id);
+            }
+
+            $this->audit->record('branch.responsible_user_removed', $lockedBranch, [
+                'before_user_id' => $before,
+                'after_user_id' => null,
+                'reason' => $reason,
             ]);
 
             return $lockedBranch->refresh();

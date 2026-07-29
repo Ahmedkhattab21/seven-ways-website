@@ -11,6 +11,7 @@ use App\Models\CostCenter;
 use App\Models\Currency;
 use App\Models\FiscalYear;
 use App\Models\OpeningBalanceDocument;
+use App\Services\OpeningBalanceDecisionService;
 use App\Services\OpeningBalanceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -28,7 +29,19 @@ class OpeningBalanceController extends Controller
             'accounts' => Account::where('company_id', $tenant->companyId())->where('is_active', true)->where('is_posting', true)->get(),
             'costCenters' => CostCenter::where('company_id', $tenant->companyId())->where('is_active', true)->where('is_posting', true)->get(),
             'currencies' => Currency::where('is_active', true)->get(),
+            'company' => $tenant->company(),
         ]);
+    }
+
+    public function startFromZero(
+        TenantContext $tenant,
+        OpeningBalanceDecisionService $service
+    ): RedirectResponse {
+        $company = $tenant->company();
+        abort_unless($company, 404);
+        $service->startFromZero($company);
+
+        return back()->with('success', 'تم اعتماد البدء بدون أرصدة افتتاحية.');
     }
 
     public function store(OpeningBalanceRequest $request, OpeningBalanceService $service): RedirectResponse

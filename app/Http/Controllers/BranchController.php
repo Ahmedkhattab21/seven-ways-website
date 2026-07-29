@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Core\Tenancy\TenantContext;
 use App\Http\Requests\BranchRequest;
+use App\Http\Requests\BranchResponsibleRemovalRequest;
 use App\Http\Requests\BranchResponsibleUserRequest;
 use App\Models\Branch;
 use App\Models\User;
@@ -29,6 +30,7 @@ class BranchController extends Controller
         return view('branches.form', [
             'branch' => new Branch(),
             'responsibleCandidates' => collect(),
+            'canManageResponsible' => false,
         ]);
     }
 
@@ -54,8 +56,9 @@ class BranchController extends Controller
         $this->authorize('update', $branch);
 
         return view('branches.form', [
-            'branch' => $branch->load('responsibleUser'),
-            'responsibleCandidates' => $this->responsibleCandidates($tenant),
+            'branch' => $branch->load('responsibleUser.roles'),
+            'responsibleCandidates' => $this->responsibleCandidates($tenant, $branch),
+            'canManageResponsible' => $this->canManageResponsible(request()->user()),
         ]);
     }
 
@@ -96,7 +99,19 @@ class BranchController extends Controller
             ->findOrFail($request->integer('responsible_user_id'));
         $service->assign($branch, $user);
 
-        return back()->with('status', 'تم تعيين مسؤول تشغيل الفرع.');
+        return back()->with('status', 'تم تعيين مسؤول تشغيل الفرع بنجاح.');
+    }
+
+    public function removeResponsible(
+        BranchResponsibleRemovalRequest $request,
+        Branch $branch,
+        TenantContext $tenant,
+        BranchResponsibleUserService $service
+    ): RedirectResponse {
+        abort_unless($branch->company_id === $tenant->companyId(), 403);
+        $service->remove($branch, $request->string('reason')->toString());
+
+        return back()->with('status', 'تم إلغاء تعيين مسؤول تشغيل الفرع.');
     }
 
     private function data(BranchRequest $request): array
@@ -122,15 +137,21 @@ class BranchController extends Controller
         return $data;
     }
 
-    private function responsibleCandidates(TenantContext $tenant)
+    private function responsibleCandidates(TenantContext $tenant, Branch $branch)
     {
         return User::query()
             ->where('company_id', $tenant->companyId())
             ->where('status', 'active')
             ->whereHas('roles', fn ($query) => $query->where('name', 'branch_manager')->where('is_active', true))
+            ->whereHas('accessibleBranches', fn ($query) => $query->whereKey($branch->id))
             ->where(fn ($query) => $query->whereDoesntHave('responsibleBranch')
-                ->orWhereHas('responsibleBranch', fn ($branch) => $branch->whereKey(request()->route('branch')?->id)))
+                ->orWhereHas('responsibleBranch', fn ($query) => $query->whereKey($branch->id)))
             ->orderBy('name')
             ->get(['id', 'name', 'email', 'status', 'last_login_at']);
+    }
+
+    private function canManageResponsible(User $user): bool
+    {
+        return $user->hasRole(['company_owner', 'general_manager', 'system_admin']);
     }
 }

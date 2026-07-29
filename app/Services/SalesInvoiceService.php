@@ -23,6 +23,7 @@ class SalesInvoiceService
         private DocumentNumberService $numbers,
         private SalesInvoicePricingService $pricing,
         private ServicePricingService $servicePricing,
+        private InvoiceWarrantySnapshotService $warranties,
         private AuditService $audit
     ) {
     }
@@ -78,7 +79,7 @@ class SalesInvoiceService
                     $tax = $packageTax->first();
                 }
 
-                return array_merge($item, [
+                $row = array_merge($item, [
                     'service_id' => $service?->id,
                     'service_package_id' => $package?->id,
                     'product_id' => $product?->id, 'warehouse_id' => $warehouse?->id,
@@ -89,6 +90,8 @@ class SalesInvoiceService
                     'tax_id' => $tax?->id ?? ($item['tax_id'] ?? null),
                     'tax_rate' => $tax?->rate ?? ($item['tax_rate'] ?? 0),
                 ]);
+
+                return $this->warranties->applyToRow($row, $data['invoice_date'] ?? now());
             })->all();
             $calculated = $this->pricing->calculate($snapshots, $data, $currency->decimal_places);
             $invoice = new SalesInvoice($data);

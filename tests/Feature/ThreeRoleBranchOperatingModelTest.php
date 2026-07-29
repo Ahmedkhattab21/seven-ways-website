@@ -22,7 +22,7 @@ class ThreeRoleBranchOperatingModelTest extends TestCase
     public function test_branch_accepts_one_active_responsible_user_and_user_cannot_manage_two_branches(): void
     {
         [$owner, $company, $first, $second] = $this->context();
-        $operator = $this->operator($company, 'operator@example.test');
+        $operator = $this->operator($company, $first, 'operator@example.test');
         app(TenantContext::class)->initialize($owner);
 
         app(BranchResponsibleUserService::class)->assign($first, $operator);
@@ -38,8 +38,8 @@ class ThreeRoleBranchOperatingModelTest extends TestCase
     public function test_changing_responsible_revokes_previous_operational_branch_access_without_deleting_user(): void
     {
         [$owner, $company, $branch] = $this->context();
-        $first = $this->operator($company, 'first@example.test');
-        $second = $this->operator($company, 'second@example.test');
+        $first = $this->operator($company, $branch, 'first@example.test');
+        $second = $this->operator($company, $branch, 'second@example.test');
         app(TenantContext::class)->initialize($owner);
         $service = app(BranchResponsibleUserService::class);
 
@@ -59,7 +59,7 @@ class ThreeRoleBranchOperatingModelTest extends TestCase
     public function test_branch_responsible_has_one_branch_and_cannot_switch_to_another(): void
     {
         [$owner, $company, $branch, $other] = $this->context();
-        $operator = $this->operator($company, 'scope@example.test');
+        $operator = $this->operator($company, $branch, 'scope@example.test');
         app(TenantContext::class)->initialize($owner);
         app(BranchResponsibleUserService::class)->assign($branch, $operator);
         app(TenantContext::class)->initialize($operator->fresh());
@@ -118,12 +118,19 @@ class ThreeRoleBranchOperatingModelTest extends TestCase
         return [$owner, $company, $first, $second];
     }
 
-    private function operator(Company $company, string $email): User
+    private function operator(Company $company, Branch $branch, string $email): User
     {
         $user = User::factory()->create([
             'company_id' => $company->id, 'branch_id' => null, 'email' => $email, 'status' => 'active',
         ]);
         $user->roles()->attach(Role::query()->whereNull('company_id')->where('name', 'branch_manager')->firstOrFail());
+        $user->accessibleBranches()->attach($branch, [
+            'is_default' => true,
+            'can_view' => true,
+            'can_create' => true,
+            'can_update' => true,
+            'can_approve' => false,
+        ]);
 
         return $user;
     }

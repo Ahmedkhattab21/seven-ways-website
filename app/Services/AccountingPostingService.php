@@ -15,6 +15,7 @@ use App\Models\AccountingSetting;
 use App\Models\BankAdjustment;
 use App\Models\CustomerPayment;
 use App\Models\CustomerRefund;
+use App\Models\Company;
 use App\Models\EmployeeCommissionAccrual;
 use App\Models\EmployeeExpenseClaim;
 use App\Models\GoodsReceipt;
@@ -367,6 +368,15 @@ class AccountingPostingService
         ])->save();
         if ($source instanceof OpeningBalanceDocument && $entry) {
             $source->forceFill(['status' => 'posted', 'journal_entry_id' => $entry->id, 'posted_at' => now()])->save();
+            $company = Company::query()->whereKey($source->company_id)->lockForUpdate()->firstOrFail();
+            if ($company->opening_balances_decision === 'pending') {
+                $company->forceFill(['opening_balances_decision' => 'entered'])->save();
+                $this->audit->record('company.opening_balances_decision_changed', $company, [
+                    'before' => 'pending',
+                    'after' => 'entered',
+                    'opening_balance_document_id' => $source->id,
+                ]);
+            }
         }
 
         return $link;

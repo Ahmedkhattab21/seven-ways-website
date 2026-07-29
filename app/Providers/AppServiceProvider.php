@@ -30,7 +30,7 @@ class AppServiceProvider extends ServiceProvider
             $user = auth()->user();
             $view->with('sidebarNavigation', $user
                 ? app(SidebarNavigationService::class)->for($user)
-                : ['sections' => [], 'setup' => null]);
+                : ['sections' => [], 'setup' => null, 'financialAlert' => null]);
         });
     }
 }

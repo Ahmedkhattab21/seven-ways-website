@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class BranchResponsibleUserRequest extends FormRequest
+class BranchResponsibleRemovalRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -14,7 +14,7 @@ class BranchResponsibleUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'responsible_user_id' => ['required', 'integer', 'exists:users,id'],
+            'reason' => ['required', 'string', 'min:5', 'max:1000'],
         ];
     }
 }

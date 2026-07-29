@@ -32,6 +32,13 @@ class ServicePackageRequest extends FormRequest
             'package_type' => ['required', Rule::in(['fixed', 'vehicle_size', 'custom'])],
             'start_date' => ['nullable', 'date'], 'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'is_active' => ['sometimes', 'boolean'],
+            'requires_warranty' => ['sometimes', 'boolean'],
+            'default_warranty_film_type' => ['nullable', 'string', 'max:255'],
+            'default_warranty_duration_value' => ['nullable', 'integer', 'min:1'],
+            'default_warranty_duration_unit' => ['nullable', Rule::in(['days', 'months', 'years', 'lifetime'])],
+            'default_warranty_application_area' => ['nullable', 'string', 'max:255'],
+            'default_warranty_terms' => ['nullable', 'string', 'max:10000'],
+            'default_warranty_notes' => ['nullable', 'string', 'max:5000'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.service_id' => [
                 'required', 'integer', 'distinct',

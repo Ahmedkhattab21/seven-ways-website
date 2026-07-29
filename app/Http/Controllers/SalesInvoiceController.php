@@ -79,7 +79,7 @@ class SalesInvoiceController extends Controller
     {
         $this->authorize('view', $salesInvoice);
 
-        return view('sales-invoices.show', ['invoice' => $salesInvoice->load(['company', 'branch', 'customer', 'vehicle', 'workOrder', 'items.product', 'allocations.payment', 'creditNotes'])]);
+        return view('sales-invoices.show', ['invoice' => $salesInvoice->load(['company', 'branch', 'customer', 'vehicle', 'workOrder', 'currency', 'items.product', 'allocations.payment', 'creditNotes', 'shares.generatedBy'])]);
     }
 
     public function action(SalesInvoiceActionRequest $request, SalesInvoice $salesInvoice, string $action, SalesInvoiceApprovalService $approval, SalesInvoiceIssuanceService $issuance): RedirectResponse
@@ -100,7 +100,7 @@ class SalesInvoiceController extends Controller
     {
         $this->authorize('print', $salesInvoice);
 
-        return view('sales-invoices.print', ['invoice' => $salesInvoice->load(['company', 'branch', 'customer', 'vehicle', 'workOrder', 'items'])]);
+        return view('sales-invoices.print', ['invoice' => $salesInvoice->load(['company', 'branch', 'customer', 'vehicle', 'workOrder', 'currency', 'items'])]);
     }
 
     public function returnProduct(SalesProductReturnRequest $request, SalesInvoiceItem $salesInvoiceItem, SalesProductReturnService $service): RedirectResponse

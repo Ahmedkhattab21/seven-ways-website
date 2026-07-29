@@ -118,6 +118,7 @@ class DocumentSequenceConfigurationTest extends TestCase
 
     public function testCompanySetupProgressReportsMissingRequiredTypeAndBranch(): void
     {
+        config(['modules.leads.enabled' => true]);
         [, $branch, $company] = $this->context('CAI-MAIN', 'الفرع الرئيسي - القاهرة');
         $this->sequence($company, $branch, 'lead');
 

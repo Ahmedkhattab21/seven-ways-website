@@ -25,6 +25,19 @@
     <x-form.input name="reorder_quantity" type="number" step="0.000001" label="كمية إعادة الطلب" :value="old('reorder_quantity',$product->reorder_quantity)" />
 </div>
 @foreach(['is_sellable'=>'قابل للبيع','is_purchasable'=>'قابل للشراء','is_consumable'=>'قابل للاستهلاك','is_active'=>'نشط'] as $field=>$label)<input type="hidden" name="{{ $field }}" value="0"><label><input type="checkbox" name="{{ $field }}" value="1" @checked(old($field,$product->{$field} ?? true))> {{ $label }}</label>@endforeach
+<section class="sw-card">
+    <h3>إعدادات الضمان الافتراضية</h3>
+    <input type="hidden" name="requires_warranty" value="0">
+    <label><input type="checkbox" name="requires_warranty" value="1" @checked(old('requires_warranty', $product->requires_warranty))> يشمل ضمانًا</label>
+    <div class="sw-form-grid">
+        <x-form.input name="default_warranty_film_type" label="نوع الفيلم" :value="old('default_warranty_film_type', $product->default_warranty_film_type)" />
+        <x-form.input name="default_warranty_application_area" label="منطقة التطبيق" :value="old('default_warranty_application_area', $product->default_warranty_application_area)" />
+        <x-form.input type="number" name="default_warranty_duration_value" label="مدة الضمان" :value="old('default_warranty_duration_value', $product->default_warranty_duration_value)" min="1" />
+        <label>وحدة المدة<select class="sw-input" name="default_warranty_duration_unit"><option value="">اختر</option>@foreach(['days'=>'أيام','months'=>'شهور','years'=>'سنوات','lifetime'=>'مدى الحياة'] as $value=>$label)<option value="{{ $value }}" @selected(old('default_warranty_duration_unit', $product->default_warranty_duration_unit) === $value)>{{ $label }}</option>@endforeach</select></label>
+        <x-form.textarea name="default_warranty_terms" label="شروط الضمان">{{ $product->default_warranty_terms }}</x-form.textarea>
+        <x-form.textarea name="default_warranty_notes" label="ملاحظات الضمان">{{ $product->default_warranty_notes }}</x-form.textarea>
+    </div>
+</section>
 <div class="sw-form-actions"><x-button type="submit">حفظ</x-button><a class="sw-button sw-button--outline" href="{{ route('products.index') }}">إلغاء</a></div>
 </form>
 </x-card>
