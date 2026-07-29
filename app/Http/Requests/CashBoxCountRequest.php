@@ -8,13 +8,11 @@ class CashBoxCountRequest extends AccountingFormRequest
     {
         return $this->withProtected([
             'count_type' => ['required', 'in:opening,interim,closing,surprise'],
-            'zero_count' => ['sometimes', 'boolean'],
-            'counted_total' => ['prohibited'],
+            'count_input_mode' => ['required', 'in:match_book,manual_total,empty'],
+            'counted_total' => ['nullable', 'numeric'],
+            'zero_count' => ['prohibited'],
             'notes' => ['nullable', 'string', 'max:2000'],
-            'lines' => ['nullable', 'array'],
-            'lines.*.denomination' => ['required_with:lines', 'numeric', 'gt:0'],
-            'lines.*.quantity' => ['required_with:lines', 'integer', 'min:1'],
-            'lines.*.line_total' => ['prohibited'], 'book_total' => ['prohibited'],
+            'lines' => ['prohibited'], 'book_total' => ['prohibited'],
             'counted_by' => ['prohibited'], 'counted_at' => ['prohibited'],
         ]);
     }
@@ -22,13 +20,13 @@ class CashBoxCountRequest extends AccountingFormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator): void {
-            $zero = $this->boolean('zero_count');
-            $lines = $this->input('lines', []);
-            if ($zero && ! empty($lines)) {
-                $validator->errors()->add('lines', 'Zero count cannot include denomination lines.');
+            $mode = $this->input('count_input_mode');
+            if ($mode === 'manual_total' && (! is_numeric($this->input('counted_total'))
+                || (float) $this->input('counted_total') < 0.01)) {
+                $validator->errors()->add('counted_total', 'Enter a positive counted total.');
             }
-            if (! $zero && empty($lines)) {
-                $validator->errors()->add('lines', 'Add denomination lines or select zero cash count.');
+            if ($mode !== 'manual_total' && $this->filled('counted_total')) {
+                $validator->errors()->add('counted_total', 'Manual total is only valid for manual counting.');
             }
         });
     }

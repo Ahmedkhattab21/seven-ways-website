@@ -39,7 +39,7 @@ class CashBoxSessionController extends Controller
         abort_unless($request->user()->hasPermission('treasury.cash_sessions.open'), 403);
         $service->open($request->validated());
 
-        return back()->with('success', 'تم فتح جلسة الخزينة.');
+        return back()->with('success', 'تم فتح الجلسة بنجاح.');
     }
 
     public function action(
@@ -50,8 +50,15 @@ class CashBoxSessionController extends Controller
     ): RedirectResponse {
         abort_unless($request->user()->hasPermission('treasury.cash_sessions.'.str_replace('start_counting', 'count', $action)), 403);
         $service->action($cashBoxSession, $action, $request->validated('notes'));
+        $messages = [
+            'submit' => 'تم إرسال الجلسة للاعتماد.',
+            'approve' => 'تم اعتماد الجلسة.',
+            'close' => 'تم إغلاق الجلسة بنجاح.',
+            'reopen' => 'تمت إعادة فتح الجلسة.',
+            'cancel' => 'تم إلغاء الجلسة.',
+        ];
 
-        return back()->with('success', 'تم تحديث جلسة الخزينة.');
+        return back()->with('success', $messages[$action] ?? 'تم تحديث الجلسة.');
     }
 
     public function count(
@@ -60,9 +67,10 @@ class CashBoxSessionController extends Controller
         CashBoxCountService $service
     ): RedirectResponse {
         $this->authorize('count', $cashBoxSession);
-        $service->create($cashBoxSession, $request->validated());
+        $count = $service->create($cashBoxSession, $request->validated());
+        $service->action($count, 'submit');
 
-        return back()->with('success', 'تم تسجيل العد النقدي من السطور المحسوبة بالخادم.');
+        return back()->with('success', 'تم تسجيل العد وإرساله للمراجعة.');
     }
 
     public function countAction(
@@ -79,8 +87,16 @@ class CashBoxSessionController extends Controller
             abort_unless($request->user()->hasPermission('treasury.cash_sessions.count'), 403);
         }
         $service->action($cashBoxCount, $action);
+        $messages = [
+            'submit' => 'تم إرسال العد للمراجعة.',
+            'review' => 'تمت مراجعة العد بنجاح.',
+            'approve' => $cashBoxCount->count_type === 'opening'
+                ? 'تم اعتماد العد بنجاح وأصبحت الجلسة نشطة.'
+                : 'تم اعتماد العد بنجاح.',
+            'cancel' => 'تم إلغاء العد.',
+        ];
 
-        return back()->with('success', 'تم تحديث دورة اعتماد العد.');
+        return back()->with('success', $messages[$action] ?? 'تم تحديث العد.');
     }
 
     public function adjustment(

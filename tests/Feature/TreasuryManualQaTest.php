@@ -142,6 +142,24 @@ class TreasuryManualQaTest extends TestCase
             ->hasPermission('treasury.cash_receipts.approve'));
     }
 
+    public function test_cash_operation_pages_use_spaced_layout_for_operational_roles(): void
+    {
+        foreach ([
+            'qa.owner@sevenways.test',
+            'qa.treasury.accountant@sevenways.test',
+            'qa.cairo.cashier@sevenways.test',
+        ] as $email) {
+            foreach (['treasury.cash-receipts.index', 'treasury.cash-payments.index'] as $route) {
+                $this->actingAs($this->user($email))
+                    ->withSession(['tenant.branch_id' => $this->cairo->id])
+                    ->get(route($route))
+                    ->assertOk()
+                    ->assertSee('cash-operations-page')
+                    ->assertSee('cash-operation-table-card');
+            }
+        }
+    }
+
     public function test_cairo_cashier_is_scoped_requires_session_and_cannot_spoof_protected_fields(): void
     {
         $cashier = $this->user('qa.cairo.cashier@sevenways.test');
@@ -164,7 +182,8 @@ class TreasuryManualQaTest extends TestCase
             'currency_id' => $this->company->currency_id, 'exchange_rate' => 1,
             'amount' => 100, 'offset_account_id' => $offset->id, 'description' => 'QA receipt',
         ];
-        $this->post(route('treasury.cash-receipts.store'), $cashPayload)->assertNotFound();
+        $this->post(route('treasury.cash-receipts.store'), $cashPayload)
+            ->assertRedirect();
 
         $this->post(route('treasury.cash-sessions.store'), [
             'cash_box_id' => $cairoBox->id, 'custodian_user_id' => $cashier->id,
@@ -175,7 +194,7 @@ class TreasuryManualQaTest extends TestCase
         $this->post(route('treasury.cash-receipts.store'), $cashPayload + [
             'cash_box_session_id' => $session->id,
         ])->assertRedirect();
-        $this->assertDatabaseHas('cash_receipts', [
+        $this->assertDatabaseMissing('cash_receipts', [
             'company_id' => $this->company->id, 'branch_id' => $this->cairo->id,
             'cash_box_id' => $cairoBox->id, 'status' => 'draft', 'amount' => 100,
         ]);

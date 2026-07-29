@@ -33,7 +33,7 @@ class CashOperationController extends Controller
         abort_unless($request->user()->hasPermission('treasury.cash_receipts.create'), 403);
         $service->create('receipt', $request->validated());
 
-        return back()->with('success', 'تم إنشاء المقبوض النقدي.');
+        return back()->with('success', 'تم إنشاء المقبوض كمسودة.');
     }
 
     public function storePayment(CashPaymentRequest $request, CashOperationService $service): RedirectResponse
@@ -41,7 +41,7 @@ class CashOperationController extends Controller
         abort_unless($request->user()->hasPermission('treasury.cash_payments.create'), 403);
         $service->create('payment', $request->validated());
 
-        return back()->with('success', 'تم إنشاء المدفوع النقدي.');
+        return back()->with('success', 'تم إنشاء المدفوع كمسودة.');
     }
 
     public function receiptAction(
@@ -53,7 +53,7 @@ class CashOperationController extends Controller
         abort_unless($request->user()->hasPermission('treasury.cash_receipts.'.$action), 403);
         $service->action($cashReceipt, $action, $request->validated('reason'), $request->validated('date'));
 
-        return back()->with('success', 'تم تحديث المقبوض النقدي.');
+        return back()->with('success', $this->actionMessage('المقبوض', $action));
     }
 
     public function paymentAction(
@@ -65,7 +65,7 @@ class CashOperationController extends Controller
         abort_unless($request->user()->hasPermission('treasury.cash_payments.'.$action), 403);
         $service->action($cashPayment, $action, $request->validated('reason'), $request->validated('date'));
 
-        return back()->with('success', 'تم تحديث المدفوع النقدي.');
+        return back()->with('success', $this->actionMessage('المدفوع', $action));
     }
 
     private function index(TenantContext $tenant, string $direction): View
@@ -89,5 +89,17 @@ class CashOperationController extends Controller
             'company' => $tenant->company(),
             'branches' => $tenant->accessibleBranches(),
         ]);
+    }
+
+    private function actionMessage(string $document, string $action): string
+    {
+        return match ($action) {
+            'submit' => "تم إرسال {$document} للمراجعة.",
+            'approve' => "تم اعتماد {$document}.",
+            'post' => "تم ترحيل {$document}.",
+            'reverse' => "تم عكس {$document}.",
+            'cancel' => "تم إلغاء {$document}.",
+            default => "تم تحديث {$document}.",
+        };
     }
 }

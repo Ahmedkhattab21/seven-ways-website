@@ -9,6 +9,7 @@ use App\Models\AccountingSetting;
 use App\Models\CashBoxCount;
 use App\Models\CashBoxSession;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class CashBoxCountService
 {
@@ -30,40 +31,57 @@ class CashBoxCountService
             if (! in_array($session->status, ['opened', 'counting'], true)) {
                 throw new BusinessRuleException('Cash count requires an open counting session.');
             }
-            $lines = $data['lines'] ?? [];
-            $zeroCount = (bool) ($data['zero_count'] ?? false);
-            if ($zeroCount && $lines !== []) {
-                throw new BusinessRuleException('Zero count cannot include denomination lines.');
+            if (in_array($data['count_type'], ['opening', 'closing'], true)
+                && $session->counts()->where('count_type', $data['count_type'])
+                    ->where('status', '!=', 'cancelled')->exists()) {
+                throw new BusinessRuleException(
+                    $data['count_type'] === 'opening'
+                        ? 'لا يمكن تسجيل عد افتتاحي آخر لنفس الجلسة.'
+                        : 'لا يمكن تسجيل عد ختامي آخر لنفس الجلسة.'
+                );
             }
-            if (! $zeroCount && $lines === []) {
-                throw new BusinessRuleException('Add denomination lines or select zero cash count.');
-            }
-            $total = '0.0000';
-            foreach ($lines as $line) {
-                if (bccomp((string) $line['denomination'], '0', 4) !== 1 || (int) $line['quantity'] < 1) {
-                    throw new BusinessRuleException('Cash denomination and quantity must be positive.');
-                }
-                $total = bcadd($total, bcmul((string) $line['denomination'], (string) $line['quantity'], 4), 4);
-            }
-            if ($zeroCount) {
-                $total = '0.0000';
-            }
+            $legacyLines = $data['lines'] ?? [];
+            $mode = $data['count_input_mode'] ?? (($data['zero_count'] ?? false)
+                ? 'empty' : ($legacyLines !== [] ? 'legacy' : 'match_book'));
             $book = $data['count_type'] === 'opening'
                 ? (string) $session->opening_book_balance
                 : $this->balances->cashBox($session->cashBox)['book_balance'];
-            $count = new CashBoxCount([
+            if ($mode === 'match_book') {
+                $total = $book;
+            } elseif ($mode === 'empty') {
+                $total = '0.0000';
+            } elseif ($mode === 'manual_total') {
+                if (bccomp((string) ($data['counted_total'] ?? 0), '0.01', 4) < 0) {
+                    throw new BusinessRuleException('Counted total must be at least 0.01.');
+                }
+                $total = bcadd((string) $data['counted_total'], '0', 4);
+            } else {
+                $total = '0.0000';
+                foreach ($legacyLines as $line) {
+                    if (bccomp((string) $line['denomination'], '0', 4) !== 1 || (int) $line['quantity'] < 1) {
+                        throw new BusinessRuleException('Cash denomination and quantity must be positive.');
+                    }
+                    $total = bcadd($total, bcmul((string) $line['denomination'], (string) $line['quantity'], 4), 4);
+                }
+            }
+            $attributes = [
                 'cash_box_session_id' => $session->id, 'count_type' => $data['count_type'],
-                'notes' => $zeroCount
-                    ? trim(($data['notes'] ?? '').' [Zero cash count confirmed by operator.]')
+                'notes' => $mode === 'empty'
+                    ? trim(($data['notes'] ?? '').' ['.((bool) ($data['zero_count'] ?? false)
+                        ? 'Zero cash count confirmed by operator.' : 'Empty cash count confirmed by operator.').']')
                     : ($data['notes'] ?? null),
-            ]);
+            ];
+            if (Schema::hasColumn('cash_box_counts', 'count_input_mode')) {
+                $attributes['count_input_mode'] = $mode === 'legacy' ? null : $mode;
+            }
+            $count = new CashBoxCount($attributes);
             $count->forceFill([
                 'company_id' => $session->company_id, 'status' => 'draft',
                 'counted_total' => $total, 'book_total' => $book,
                 'difference' => bcsub($total, $book, 4),
                 'counted_by' => $this->tenant->user()->id, 'counted_at' => now(),
             ])->save();
-            foreach (array_values($lines) as $index => $line) {
+            foreach (array_values($legacyLines) as $index => $line) {
                 $countLine = $count->lines()->make([
                     'denomination' => $line['denomination'], 'quantity' => $line['quantity'],
                     'sort_order' => $index + 1,
