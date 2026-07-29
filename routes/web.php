@@ -219,6 +219,8 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
         Route::post('cash-boxes', [CashBoxController::class, 'store'])->name('cash-boxes.store');
         Route::put('cash-boxes/{cashBox}', [CashBoxController::class, 'update'])->name('cash-boxes.update');
         Route::post('cash-boxes/{cashBox}/custodians', [CashBoxController::class, 'custodian'])->name('cash-boxes.custodians');
+        Route::put('cash-box-custodians/{cashBoxCustodian}', [CashBoxController::class, 'updateCustodian'])
+            ->name('cash-box-custodians.update');
         Route::post('cash-box-custodians/{cashBoxCustodian}/revoke', [CashBoxController::class, 'revoke'])
             ->name('cash-box-custodians.revoke');
         Route::post('cash-boxes/{cashBox}/{action}', [CashBoxController::class, 'action'])

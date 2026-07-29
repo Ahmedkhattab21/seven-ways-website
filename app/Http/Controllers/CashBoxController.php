@@ -82,4 +82,15 @@ class CashBoxController extends Controller
 
         return back()->with('success', 'تم إلغاء تعيين أمين الخزينة مع حفظ التاريخ.');
     }
+
+    public function updateCustodian(
+        CashBoxCustodianRequest $request,
+        CashBoxCustodian $cashBoxCustodian,
+        CashBoxCustodianService $service
+    ): RedirectResponse {
+        abort_unless($request->user()->hasPermission('treasury.cash_boxes.manage_custodians'), 403);
+        $service->update($cashBoxCustodian, $request->validated());
+
+        return back()->with('success', 'تم تحديث صلاحيات أمين الخزينة.');
+    }
 }

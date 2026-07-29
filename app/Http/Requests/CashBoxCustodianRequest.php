@@ -10,7 +10,7 @@ class CashBoxCustodianRequest extends AccountingFormRequest
             return $this->withProtected(['reason' => ['required', 'string', 'min:5', 'max:2000']]);
         }
 
-        return $this->withProtected([
+        $rules = [
             'user_id' => ['required', 'integer', 'exists:users,id'],
             'employee_id' => ['nullable', 'integer', 'exists:employees,id'],
             'valid_from' => ['required', 'date'],
@@ -21,6 +21,13 @@ class CashBoxCustodianRequest extends AccountingFormRequest
             'payment_limit' => ['nullable', 'numeric', 'min:0'],
             'is_primary' => ['sometimes', 'boolean'],
             'is_active' => ['prohibited'],
-        ]);
+        ];
+
+        if ($this->routeIs('treasury.cash-box-custodians.update')) {
+            unset($rules['user_id'], $rules['employee_id'], $rules['valid_from']);
+            $rules['valid_to'] = ['nullable', 'date'];
+        }
+
+        return $this->withProtected($rules);
     }
 }

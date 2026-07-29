@@ -71,6 +71,9 @@ class CashBoxCustodianService
         return DB::transaction(function () use ($custodian, $reason) {
             $custodian = CashBoxCustodian::query()->where('company_id', $this->tenant->companyId())
                 ->whereKey($custodian->id)->lockForUpdate()->firstOrFail();
+            if (! $this->tenant->user()->canAccessBranch($custodian->cashBox->branch)) {
+                throw new BusinessRuleException('لا يمكن تعديل تكليف خارج نطاق الشركة أو الفرع المسموح.');
+            }
             if (! $custodian->is_active || blank($reason)) {
                 throw new BusinessRuleException('Active custodian and revocation reason are required.');
             }
@@ -96,12 +99,63 @@ class CashBoxCustodianService
             ->where('user_id', $this->tenant->user()->id)->where('is_active', true)
             ->whereDate('valid_from', '<=', now())->where(fn ($query) => $query->whereNull('valid_to')
                 ->orWhereDate('valid_to', '>=', now()))->first();
-        if (! $custodian || ! $custodian->{$ability}) {
-            throw new BusinessRuleException('Active cash box custodian assignment is required.');
+        if (! $custodian) {
+            throw new BusinessRuleException('المستخدم غير معيّن أمينًا نشطًا على الخزينة.');
+        }
+        if (! $custodian->{$ability}) {
+            $messages = [
+                'can_receive' => 'أمين الخزينة غير مخول بالقبض.',
+                'can_pay' => 'أمين الخزينة غير مخول بالصرف.',
+                'can_transfer' => 'أمين الخزينة غير مخول بالتحويل.',
+            ];
+            throw new BusinessRuleException($messages[$ability] ?? 'صلاحية أمين الخزينة غير كافية.');
         }
         if ($ability === 'can_pay' && $amount !== null && $custodian->payment_limit !== null
             && bccomp($amount, (string) $custodian->payment_limit, 4) === 1) {
-            throw new BusinessRuleException('Cash payment exceeds the custodian limit.');
+            throw new BusinessRuleException('مبلغ الصرف يتجاوز الحد المسموح لأمين الخزينة.');
         }
+    }
+
+    public function update(CashBoxCustodian $custodian, array $data): CashBoxCustodian
+    {
+        return DB::transaction(function () use ($custodian, $data) {
+            $custodian = CashBoxCustodian::query()->where('company_id', $this->tenant->companyId())
+                ->whereKey($custodian->id)->lockForUpdate()->firstOrFail();
+            if (! $this->tenant->user()->canAccessBranch($custodian->cashBox->branch)) {
+                throw new BusinessRuleException('لا يمكن تعديل تكليف خارج نطاق الشركة أو الفرع المسموح.');
+            }
+            if (! $custodian->is_active) {
+                throw new BusinessRuleException('لا يمكن تعديل تكليف أمين غير نشط.');
+            }
+            $validTo = $data['valid_to'] ?? null;
+            if ($validTo !== null && $validTo < $custodian->valid_from->toDateString()) {
+                throw new BusinessRuleException('تاريخ نهاية التكليف يجب أن يكون بعد تاريخ البداية.');
+            }
+            if (! empty($data['is_primary'])) {
+                $primaryOverlap = CashBoxCustodian::query()->where('cash_box_id', $custodian->cash_box_id)
+                    ->whereKeyNot($custodian->id)->where('is_primary', true)->where('is_active', true)
+                    ->whereDate('valid_from', '<=', $validTo ?: '9999-12-31')
+                    ->where(fn ($query) => $query->whereNull('valid_to')->orWhereDate('valid_to', '>=', $custodian->valid_from))
+                    ->lockForUpdate()->exists();
+                if ($primaryOverlap) {
+                    throw new BusinessRuleException('لا يجوز وجود أمين رئيسي آخر في نفس الفترة.');
+                }
+            }
+            $before = $custodian->only(['can_receive', 'can_pay', 'can_transfer', 'payment_limit', 'is_primary', 'valid_to']);
+            $custodian->forceFill([
+                'can_receive' => (bool) ($data['can_receive'] ?? false),
+                'can_pay' => (bool) ($data['can_pay'] ?? false),
+                'can_transfer' => (bool) ($data['can_transfer'] ?? false),
+                'payment_limit' => $data['payment_limit'] ?? null,
+                'is_primary' => (bool) ($data['is_primary'] ?? false),
+                'valid_to' => $validTo,
+            ])->save();
+            $this->audit->record('treasury.cash_box.custodian_updated', $custodian->cashBox, [
+                'custodian_id' => $custodian->id, 'before' => $before,
+                'after' => $custodian->only(['can_receive', 'can_pay', 'can_transfer', 'payment_limit', 'is_primary', 'valid_to']),
+            ]);
+
+            return $custodian;
+        });
     }
 }
