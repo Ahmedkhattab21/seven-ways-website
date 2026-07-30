@@ -35,7 +35,7 @@
                     </label>
                     <label class="sw-field treasury-field-wide">
                         <span class="sw-field__label">الموقع الإلكتروني</span>
-                        <input class="sw-input" name="website" type="url" dir="ltr">
+                        <input class="sw-input" name="website" dir="ltr">
                     </label>
                 </div>
 

@@ -5103,3 +5103,195 @@ svg {
         flex-direction: column;
     }
 }
+
+/* Accounting lists and financial reports */
+.accounting-page,
+.accounting-report-page {
+    display: grid;
+    gap: var(--sw-space-6);
+}
+
+.accounting-page-actions,
+.accounting-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sw-space-3);
+}
+
+.accounting-filter-card .sw-card__body,
+.accounting-form-card .sw-card__body,
+.accounting-report-filters .sw-card__body {
+    display: grid;
+    gap: var(--sw-space-5);
+}
+
+.accounting-form-actions {
+    justify-content: flex-end;
+    padding-top: var(--sw-space-2);
+    border-top: 1px solid var(--sw-border);
+}
+
+.accounting-table-card {
+    overflow: hidden;
+}
+
+.accounting-table-card .sw-table {
+    min-width: 46rem;
+}
+
+.accounting-empty-row {
+    padding: var(--sw-space-6) !important;
+    color: var(--sw-text-muted);
+    text-align: center;
+}
+
+.accounting-tree {
+    display: grid;
+    gap: var(--sw-space-3);
+}
+
+.accounting-tree__item {
+    padding: var(--sw-space-4);
+    background: var(--sw-white-faint);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+}
+
+.accounting-tree__branch {
+    padding: var(--sw-space-3);
+    margin-top: var(--sw-space-3);
+    margin-inline-start: var(--sw-space-5);
+    color: var(--sw-text-muted);
+    border-inline-start: 1px solid var(--sw-border);
+}
+
+.accounting-report-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sw-space-5);
+    padding: var(--sw-space-4);
+    background: var(--sw-white-faint);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+}
+
+.accounting-report-status {
+    margin: 0;
+}
+
+.accounting-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--sw-space-4);
+}
+
+.accounting-stat-card {
+    display: grid;
+    gap: var(--sw-space-2);
+    padding: var(--sw-space-5);
+    background: var(--sw-surface);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+    box-shadow: var(--sw-shadow-sm);
+}
+
+.accounting-stat-card span {
+    color: var(--sw-text-muted);
+    font-size: var(--sw-font-sm);
+}
+
+.accounting-stat-card strong {
+    font-size: var(--sw-font-xl);
+}
+
+.accounting-summary-table th {
+    width: 62%;
+    color: var(--sw-text-muted);
+}
+
+.accounting-summary-table td {
+    font-weight: var(--sw-weight-bold);
+}
+
+.accounting-account-form {
+    display: grid;
+    gap: var(--sw-space-6);
+}
+
+.accounting-account-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--sw-space-3);
+}
+
+.accounting-account-option {
+    min-height: 3.25rem;
+    padding: var(--sw-space-3) var(--sw-space-4);
+    background: var(--sw-white-faint);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+}
+
+.accounting-account-description {
+    min-height: 7rem;
+    resize: vertical;
+}
+
+.accounting-account-actions {
+    position: sticky;
+    bottom: var(--sw-space-4);
+    z-index: 5;
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--sw-space-3);
+    padding: var(--sw-space-4);
+    background: color-mix(in srgb, var(--sw-surface) 92%, transparent);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+    box-shadow: var(--sw-shadow-lg);
+    backdrop-filter: blur(12px);
+}
+
+@media (max-width: 900px) {
+    .accounting-stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .accounting-account-options {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .accounting-page-actions,
+    .accounting-form-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .accounting-page-actions .sw-button,
+    .accounting-form-actions .sw-button {
+        width: 100%;
+    }
+
+    .accounting-stat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .accounting-summary-table th {
+        width: auto;
+    }
+
+    .accounting-account-options {
+        grid-template-columns: 1fr;
+    }
+
+    .accounting-account-actions {
+        align-items: stretch;
+        flex-direction: column-reverse;
+    }
+
+    .accounting-account-actions .sw-button {
+        width: 100%;
+    }
+}
