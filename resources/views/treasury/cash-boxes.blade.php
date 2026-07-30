@@ -4,6 +4,14 @@
 @section('page-title', 'الخزائن النقدية وأمناؤها')
 
 @section('content')
+@php
+    $cashBoxStatuses = [
+        'draft' => 'مسودة',
+        'active' => 'نشطة',
+        'suspended' => 'معلقة',
+        'closed' => 'مغلقة',
+    ];
+@endphp
 <div class="cash-boxes-page">
     @if($errors->has('business'))
         <div class="sw-alert sw-alert--error">{{ $errors->first('business') }}</div>
@@ -23,7 +31,7 @@
                 <div class="sw-form-grid">
                     <label class="sw-field">
                         <span class="sw-field__label">الفرع</span>
-                        <select class="sw-input" name="branch_id" required>
+                        <select class="sw-input" id="cash-box-branch" name="branch_id" required>
                             @foreach($branches as $branch)
                                 <option value="{{ $branch->id }}">{{ $branch->name }}</option>
                             @endforeach
@@ -51,8 +59,9 @@
 
                     <label class="sw-field">
                         <span class="sw-field__label">حساب الخزينة</span>
-                        <select class="sw-input" name="gl_account_id" required>
-                            @foreach($glAccounts->where('is_cash_account', true) as $account)
+                        <select class="sw-input" id="cash-box-gl-account" name="gl_account_id" required>
+                            <option value="">اختر حساب الخزينة</option>
+                            @foreach($glAccounts as $account)
                                 <option value="{{ $account->id }}">{{ $account->account_code }} — {{ $account->name_ar }}</option>
                             @endforeach
                         </select>
@@ -85,12 +94,79 @@
                         <p class="sw-card__subtitle">{{ $box->branch->name }}</p>
                     </div>
                     <div class="cash-box-summary">
-                        <span class="sw-badge">{{ $box->status }}</span>
+                        <span class="sw-badge sw-badge--{{ $box->status }}">
+                            <span class="sw-badge__dot"></span>
+                            {{ $cashBoxStatuses[$box->status] ?? 'حالة غير معروفة' }}
+                        </span>
                         <span>الرصيد الدفتري: <strong>{{ $balances[$box->id]['book_balance'] }}</strong></span>
                     </div>
                 </header>
 
                 <div class="sw-card__body cash-box-card__body">
+                    <section class="cash-box-section cash-box-actions">
+                        <div class="cash-box-section__heading">
+                            <h4>إجراءات الخزينة</h4>
+                            <p>غيّر حالة الخزينة باستخدام الصلاحيات المعتمدة مع تسجيل سبب الإجراء.</p>
+                        </div>
+
+                        @if($box->status === 'closed')
+                            <div class="cash-box-closed-message">
+                                الخزينة مغلقة ولا يمكن إعادة تفعيلها.
+                            </div>
+                        @else
+                            <div class="cash-box-actions__forms">
+                                @if(in_array($box->status, ['draft', 'suspended'], true)
+                                    && auth()->user()->hasPermission('treasury.cash_boxes.activate'))
+                                    <form class="cash-box-action-form" method="POST"
+                                          action="{{ route('treasury.cash-boxes.action', [$box, 'activate']) }}">
+                                        @csrf
+                                        <label class="sw-field">
+                                            <span class="sw-field__label">السبب *</span>
+                                            <textarea class="sw-input" name="reason" rows="2"
+                                                      placeholder="اكتب سبب {{ $box->status === 'suspended' ? 'إعادة التفعيل' : 'التفعيل' }}"
+                                                      required></textarea>
+                                        </label>
+                                        <button class="sw-button sw-button--primary" type="submit">
+                                            {{ $box->status === 'suspended' ? 'إعادة تفعيل الخزينة' : 'تفعيل الخزينة' }}
+                                        </button>
+                                    </form>
+                                @endif
+
+                                @if($box->status === 'active'
+                                    && auth()->user()->hasPermission('treasury.cash_boxes.suspend'))
+                                    <form class="cash-box-action-form" method="POST"
+                                          action="{{ route('treasury.cash-boxes.action', [$box, 'suspend']) }}">
+                                        @csrf
+                                        <label class="sw-field">
+                                            <span class="sw-field__label">السبب *</span>
+                                            <textarea class="sw-input" name="reason" rows="2"
+                                                      placeholder="اكتب سبب تعليق الخزينة" required></textarea>
+                                        </label>
+                                        <button class="sw-button sw-button--secondary" type="submit">
+                                            تعليق الخزينة
+                                        </button>
+                                    </form>
+                                @endif
+
+                                @if(in_array($box->status, ['draft', 'active', 'suspended'], true)
+                                    && auth()->user()->hasPermission('treasury.cash_boxes.close'))
+                                    <form class="cash-box-action-form" method="POST"
+                                          action="{{ route('treasury.cash-boxes.action', [$box, 'close']) }}">
+                                        @csrf
+                                        <label class="sw-field">
+                                            <span class="sw-field__label">السبب *</span>
+                                            <textarea class="sw-input" name="reason" rows="2"
+                                                      placeholder="اكتب سبب إغلاق الخزينة" required></textarea>
+                                        </label>
+                                        <button class="sw-button sw-button--danger" type="submit">
+                                            إغلاق الخزينة
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        @endif
+                    </section>
+
                     @if(auth()->user()->hasPermission('treasury.cash_boxes.manage_custodians'))
                         <section class="cash-box-section">
                             <div class="cash-box-section__heading">
@@ -245,4 +321,14 @@
         @endforeach
     </div>
 </div>
+
+<script>
+    document.getElementById('cash-box-branch')?.addEventListener('change', () => {
+        const accountSelect = document.getElementById('cash-box-gl-account');
+
+        if (accountSelect) {
+            accountSelect.value = '';
+        }
+    });
+</script>
 @endsection

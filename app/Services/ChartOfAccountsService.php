@@ -55,8 +55,9 @@ class ChartOfAccountsService
                 throw new BusinessRuleException('Contra normal balance requires a documented reason.');
             }
             if (! empty($data['currency_id']) && ! $data['allows_multi_currency']) {
-                throw new BusinessRuleException('A specific account currency requires multi-currency support.');
+                throw new BusinessRuleException('اختيار عملة محددة للحساب يتطلب تفعيل خيار متعدد العملات.');
             }
+            $this->assertCashAccountRules($account, $data, $type);
             $event = $account->exists ? AccountUpdated::class : AccountCreated::class;
             $account->forceFill(array_diff_key($data, ['contra_reason' => true]) + [
                 'company_id' => $companyId, 'account_type_id' => $type->id,
@@ -120,6 +121,33 @@ class ChartOfAccountsService
     {
         if ($account->company_id !== $this->tenant->companyId()) {
             throw new BusinessRuleException('Account is outside the current company.');
+        }
+    }
+
+    private function assertCashAccountRules(Account $account, array $data, AccountType $type): void
+    {
+        if (! (bool) ($data['is_cash_account'] ?? false)) {
+            return;
+        }
+
+        $isActive = array_key_exists('is_active', $data)
+            ? (bool) $data['is_active']
+            : ($account->exists ? (bool) $account->is_active : true);
+
+        if (! (bool) $data['is_posting'] || (bool) $data['is_header']) {
+            throw new BusinessRuleException('الحساب النقدي يجب أن يكون حساب حركة وليس حسابًا رئيسيًا.');
+        }
+        if (! $isActive) {
+            throw new BusinessRuleException('الحساب النقدي يجب أن يكون نشطًا.');
+        }
+        if ($type->code !== 'ASSET') {
+            throw new BusinessRuleException('الحساب النقدي يجب أن يكون من نوع الأصول.');
+        }
+        if ((bool) ($data['is_control_account'] ?? false)) {
+            throw new BusinessRuleException('لا يمكن تعريف الحساب النقدي كحساب رقابي.');
+        }
+        if ((bool) ($data['is_bank_account'] ?? false)) {
+            throw new BusinessRuleException('لا يمكن تعريف الحساب نفسه كحساب نقدي وحساب بنكي.');
         }
     }
 

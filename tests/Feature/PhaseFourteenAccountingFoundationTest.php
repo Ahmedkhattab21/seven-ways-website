@@ -23,6 +23,7 @@ use App\Services\ChartOfAccountsService;
 use App\Services\CostCenterHierarchyService;
 use App\Services\FiscalPeriodGenerationService;
 use App\Services\FiscalYearService;
+use App\Services\JournalEntryValidationService;
 use App\Services\OpeningBalanceService;
 use App\Services\PostingProfileService;
 use Database\Seeders\AccountingFoundationSeeder;
@@ -250,6 +251,118 @@ class PhaseFourteenAccountingFoundationTest extends TestCase
         DB::rollBack();
         Event::assertNotDispatched(AccountCreated::class);
         $this->assertDatabaseMissing('accounts', ['company_id' => $context['company']->id, 'account_code' => '799000']);
+    }
+
+    public function test_account_usage_rule_cards_are_accessible_and_persist_boolean_values(): void
+    {
+        $context = $this->context();
+        $type = \App\Models\AccountType::where('code', 'ASSET')->firstOrFail();
+        $group = AccountGroup::where('company_id', $context['company']->id)->where('code', '111')->firstOrFail();
+
+        $create = $this->get(route('accounting.accounts.create'));
+        $create->assertOk()
+            ->assertSee('account-rule-requires-branch', false)
+            ->assertSee('account-rule-option', false)
+            ->assertSee('sw-check__box', false)
+            ->assertDontSee('class="sw-check__box" type="checkbox"', false);
+        $this->assertSame(13, substr_count($create->getContent(), 'class="sw-check account-rule-option"'));
+
+        $invalid = $this->accountData('', $type->id, $group->id, false);
+        $invalid['requires_branch'] = true;
+        $this->from(route('accounting.accounts.create'))
+            ->post(route('accounting.accounts.store'), $invalid)
+            ->assertRedirect(route('accounting.accounts.create'))
+            ->assertSessionHasErrors('account_code');
+        $this->get(route('accounting.accounts.create'))
+            ->assertSeeInOrder(['id="account-rule-requires-branch"', 'checked'], false);
+
+        $data = $this->accountData('CASH-ALEX-111', $type->id, $group->id, false);
+        $data['requires_branch'] = true;
+        $data['is_cash_account'] = true;
+        $this->post(route('accounting.accounts.store'), $data)
+            ->assertRedirect(route('accounting.accounts.index'));
+
+        $account = Account::where('company_id', $context['company']->id)
+            ->where('account_code', 'CASH-ALEX-111')
+            ->firstOrFail();
+        $this->assertTrue($account->requires_branch);
+        $this->assertTrue($account->is_cash_account);
+        $this->assertFalse($account->is_bank_account);
+        $this->get(route('accounting.accounts.edit', $account))
+            ->assertOk()
+            ->assertSeeInOrder(['id="account-rule-requires-branch"', 'checked'], false);
+    }
+
+    public function test_cash_account_and_specific_currency_business_rules_are_enforced(): void
+    {
+        $context = $this->context();
+        $service = app(ChartOfAccountsService::class);
+        $asset = \App\Models\AccountType::where('code', 'ASSET')->firstOrFail();
+        $liability = \App\Models\AccountType::where('code', 'LIABILITY')->firstOrFail();
+        $assetGroup = AccountGroup::where('company_id', $context['company']->id)->where('code', '111')->firstOrFail();
+        $liabilityGroup = AccountGroup::where('company_id', $context['company']->id)->where('code', '200')->firstOrFail();
+
+        $invalidCash = $this->accountData('INVALID-CASH', $liability->id, $liabilityGroup->id, false);
+        $invalidCash['is_cash_account'] = true;
+        try {
+            $service->save(new Account, $invalidCash);
+            $this->fail('A cash account must use the asset account type.');
+        } catch (BusinessRuleException $exception) {
+            $this->assertSame('الحساب النقدي يجب أن يكون من نوع الأصول.', $exception->getMessage());
+            $this->assertDatabaseMissing('accounts', [
+                'company_id' => $context['company']->id,
+                'account_code' => 'INVALID-CASH',
+            ]);
+        }
+
+        $invalidCurrency = $this->accountData('INVALID-CURRENCY', $asset->id, $assetGroup->id, false);
+        $invalidCurrency['currency_id'] = $context['currency']->id;
+        try {
+            $service->save(new Account, $invalidCurrency);
+            $this->fail('A specific currency requires multi-currency support.');
+        } catch (BusinessRuleException $exception) {
+            $this->assertSame(
+                'اختيار عملة محددة للحساب يتطلب تفعيل خيار متعدد العملات.',
+                $exception->getMessage()
+            );
+        }
+
+        $companyCurrency = $service->save(
+            new Account,
+            $this->accountData('COMPANY-CURRENCY', $asset->id, $assetGroup->id, false)
+        );
+        $this->assertNull($companyCurrency->currency_id);
+        $this->assertFalse($companyCurrency->allows_multi_currency);
+    }
+
+    public function test_branch_required_account_rejects_journal_line_without_branch(): void
+    {
+        $context = $this->context();
+        $type = \App\Models\AccountType::where('code', 'ASSET')->firstOrFail();
+        $group = AccountGroup::where('company_id', $context['company']->id)->where('code', '111')->firstOrFail();
+        $data = $this->accountData('BRANCH-REQUIRED', $type->id, $group->id, false);
+        $data['requires_branch'] = true;
+        $account = app(ChartOfAccountsService::class)->save(new Account, $data);
+
+        try {
+            app(JournalEntryValidationService::class)->assertAccount(
+                $account,
+                [],
+                $context['company']->id,
+                false
+            );
+            $this->fail('The branch dimension must be required.');
+        } catch (BusinessRuleException $exception) {
+            $this->assertSame('Account requires branch dimension.', $exception->getMessage());
+        }
+
+        app(JournalEntryValidationService::class)->assertAccount(
+            $account,
+            ['branch_id' => $context['branch']->id],
+            $context['company']->id,
+            false
+        );
+        $this->addToAssertionCount(1);
     }
 
     private function context(): array

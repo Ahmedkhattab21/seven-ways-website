@@ -81,7 +81,9 @@ class CashBoxService
                 || TreasuryTransfer::query()->whereIn('status', ['draft', 'pending_approval', 'approved', 'ready_for_processing'])
                     ->where(fn ($query) => $query->where('from_cash_box_id', $box->id)
                         ->orWhere('to_cash_box_id', $box->id))->exists())) {
-                throw new BusinessRuleException('Active custodians or pending transfers block cash box closure.');
+                throw new BusinessRuleException(
+                    'لا يمكن إغلاق الخزينة أثناء وجود أمناء نشطين أو تحويلات معلقة.'
+                );
             }
             if ($to === 'active' && $box->is_primary) {
                 CashBox::query()->where('company_id', $box->company_id)->where('branch_id', $box->branch_id)

@@ -32,7 +32,11 @@ class CashBoxController extends Controller
             'branches' => $tenant->accessibleBranches(),
             'currencies' => Currency::query()->where('is_active', true)->get(),
             'glAccounts' => Account::query()->where('company_id', $tenant->companyId())
-                ->where('is_active', true)->where('is_posting', true)->get(),
+                ->where('is_active', true)
+                ->where('is_posting', true)
+                ->where('is_cash_account', true)
+                ->orderBy('account_code')
+                ->get(),
             'users' => User::query()->where('company_id', $tenant->companyId())->where('status', 'active')->get(),
         ]);
     }
@@ -56,9 +60,18 @@ class CashBoxController extends Controller
     public function action(CashBoxActionRequest $request, CashBox $cashBox, string $action, CashBoxService $service): RedirectResponse
     {
         abort_unless($request->user()->hasPermission('treasury.cash_boxes.'.$action), 403);
+        $isReactivation = $action === 'activate' && $cashBox->status === 'suspended';
         $service->action($cashBox, $action, $request->validated('reason'));
 
-        return back()->with('success', 'تم تحديث حالة الخزينة.');
+        $message = match ($action) {
+            'activate' => $isReactivation
+                ? 'تمت إعادة تفعيل الخزينة بنجاح.'
+                : 'تم تفعيل الخزينة بنجاح.',
+            'suspend' => 'تم تعليق الخزينة بنجاح.',
+            'close' => 'تم إغلاق الخزينة بنجاح.',
+        };
+
+        return back()->with('success', $message);
     }
 
     public function custodian(

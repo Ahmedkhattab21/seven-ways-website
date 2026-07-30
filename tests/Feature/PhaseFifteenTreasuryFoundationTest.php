@@ -22,6 +22,7 @@ use App\Models\User;
 use App\Services\BankAccountAccessService;
 use App\Services\BankAccountService;
 use App\Services\CashBoxCustodianService;
+use App\Services\CashBoxService;
 use App\Services\FiscalPeriodGenerationService;
 use App\Services\TreasuryAccountResolver;
 use App\Services\TreasuryBalanceService;
@@ -117,6 +118,201 @@ class PhaseFifteenTreasuryFoundationTest extends TestCase
         $this->assertFalse(Schema::hasColumn('bank_accounts', 'balance'));
         $this->assertFalse(Schema::hasColumn('cash_boxes', 'balance'));
         $this->assertFalse(Schema::hasColumn('accounts', 'balance'));
+    }
+
+    public function test_cash_box_selector_only_receives_eligible_cash_posting_accounts(): void
+    {
+        $context = $this->context();
+        $eligible = $this->accountVariant($context, 'CASH-ELIGIBLE', [
+            'is_active' => true, 'is_header' => false, 'is_posting' => true, 'is_cash_account' => true,
+        ]);
+        $this->accountVariant($context, 'CASH-NOT-FLAGGED', ['is_cash_account' => false]);
+        $this->accountVariant($context, 'CASH-INACTIVE', ['is_active' => false, 'is_cash_account' => true]);
+        $this->accountVariant($context, 'CASH-HEADER', [
+            'is_active' => true, 'is_header' => true, 'is_posting' => false, 'is_cash_account' => true,
+        ]);
+        $deleted = $this->accountVariant($context, 'CASH-DELETED', ['is_cash_account' => true]);
+        $deleted->delete();
+        $otherCompany = Company::query()->create([
+            'name' => 'Other cash selector company', 'currency_id' => $context['currency']->id,
+        ]);
+        $this->accountVariant($context, 'CASH-OTHER-COMPANY', [
+            'company_id' => $otherCompany->id, 'is_cash_account' => true,
+        ]);
+
+        $response = $this->actingAs($context['user'])->get(route('treasury.cash-boxes.index'));
+
+        $response->assertOk()
+            ->assertViewHas('glAccounts', function ($accounts) use ($eligible): bool {
+                return $accounts->contains('id', $eligible->id)
+                    && $accounts->every(fn (Account $account): bool => $account->is_active
+                        && $account->is_posting && $account->is_cash_account)
+                    && $accounts->pluck('account_code')->values()->all()
+                        === $accounts->pluck('account_code')->sort()->values()->all();
+            })
+            ->assertSeeInOrder(['value=""', 'اختر حساب الخزينة', 'CASH-ELIGIBLE'], false)
+            ->assertDontSee('CASH-NOT-FLAGGED')
+            ->assertDontSee('CASH-INACTIVE')
+            ->assertDontSee('CASH-HEADER')
+            ->assertDontSee('CASH-DELETED')
+            ->assertDontSee('CASH-OTHER-COMPANY')
+            ->assertSee("accountSelect.value = ''", false);
+
+        $blade = file_get_contents(resource_path('views/treasury/cash-boxes.blade.php'));
+        $this->assertStringNotContainsString("where('is_cash_account'", $blade);
+    }
+
+    public function test_cash_box_request_rejects_ineligible_gl_accounts_with_arabic_message(): void
+    {
+        $context = $this->context();
+        $nonCash = $this->accountVariant($context, 'CASH-REQUEST-NON-CASH', ['is_cash_account' => false]);
+        $inactive = $this->accountVariant($context, 'CASH-REQUEST-INACTIVE', [
+            'is_active' => false, 'is_cash_account' => true,
+        ]);
+        $payload = [
+            'branch_id' => $context['branch']->id,
+            'code' => 'CASH-REQUEST-BOX',
+            'name' => 'Request validation box',
+            'currency_id' => $context['currency']->id,
+            'gl_account_id' => $nonCash->id,
+        ];
+
+        $this->actingAs($context['user'])
+            ->from(route('treasury.cash-boxes.index'))
+            ->post(route('treasury.cash-boxes.store'), $payload)
+            ->assertRedirect(route('treasury.cash-boxes.index'))
+            ->assertSessionHasErrors([
+                'gl_account_id' => 'يجب اختيار حساب نقدية فعال من نوع حساب حركة.',
+            ]);
+
+        $payload['gl_account_id'] = $inactive->id;
+        $this->post(route('treasury.cash-boxes.store'), $payload)
+            ->assertSessionHasErrors([
+                'gl_account_id' => 'يجب اختيار حساب نقدية فعال من نوع حساب حركة.',
+            ]);
+        $this->assertFalse(CashBox::query()->where('code', 'CASH-REQUEST-BOX')->exists());
+    }
+
+    public function test_cash_box_page_shows_translated_status_and_authorized_state_actions(): void
+    {
+        $context = $this->context();
+        $box = $this->draftCashBox($context, 'CASH-ACTIONS-DRAFT');
+
+        $response = $this->actingAs($context['user'])->get(route('treasury.cash-boxes.index'));
+
+        $response->assertOk()
+            ->assertSee('CASH-ACTIONS-DRAFT')
+            ->assertSee('مسودة')
+            ->assertSee('تفعيل الخزينة')
+            ->assertSee('إغلاق الخزينة')
+            ->assertDontSee('>draft<', false);
+
+        $this->switchActor($context['cashier']);
+        $this->get(route('treasury.cash-boxes.index'))
+            ->assertOk()
+            ->assertDontSee('تفعيل الخزينة')
+            ->assertDontSee('تعليق الخزينة')
+            ->assertDontSee('إعادة تفعيل الخزينة')
+            ->assertDontSee('إغلاق الخزينة');
+
+        $this->assertSame(1, CashBox::query()->where('code', 'CASH-ACTIONS-DRAFT')->count());
+        $this->assertSame('draft', $box->fresh()->status);
+    }
+
+    public function test_cash_box_action_workflow_requires_reason_and_returns_specific_arabic_messages(): void
+    {
+        $context = $this->context();
+        $box = $this->draftCashBox($context, 'CASH-ACTIONS-WORKFLOW');
+        $route = fn (string $action) => route('treasury.cash-boxes.action', [$box, $action]);
+
+        $this->actingAs($context['user'])->post($route('activate'), [])
+            ->assertSessionHasErrors(['reason' => 'سبب الإجراء مطلوب.']);
+        $this->assertSame('draft', $box->fresh()->status);
+
+        $this->post($route('activate'), ['reason' => 'تفعيل الخزينة للاختبار'])
+            ->assertSessionHas('success', 'تم تفعيل الخزينة بنجاح.');
+        $this->assertSame('active', $box->fresh()->status);
+
+        $this->get(route('treasury.cash-boxes.index'))
+            ->assertSee('نشطة')
+            ->assertSee('تعليق الخزينة');
+
+        $this->post($route('suspend'), ['reason' => 'تعليق الخزينة للاختبار'])
+            ->assertSessionHas('success', 'تم تعليق الخزينة بنجاح.');
+        $this->assertSame('suspended', $box->fresh()->status);
+
+        $this->get(route('treasury.cash-boxes.index'))
+            ->assertSee('معلقة')
+            ->assertSee('إعادة تفعيل الخزينة');
+
+        $this->post($route('activate'), ['reason' => 'إعادة تفعيل الخزينة للاختبار'])
+            ->assertSessionHas('success', 'تمت إعادة تفعيل الخزينة بنجاح.');
+        $this->assertSame('active', $box->fresh()->status);
+    }
+
+    public function test_closed_cash_box_has_no_state_actions_and_cannot_be_reactivated(): void
+    {
+        $context = $this->context();
+        $box = $this->draftCashBox($context, 'CASH-ACTIONS-CLOSED');
+
+        $this->actingAs($context['user'])
+            ->post(route('treasury.cash-boxes.action', [$box, 'close']), [
+                'reason' => 'إغلاق الخزينة للاختبار',
+            ])
+            ->assertSessionHas('success', 'تم إغلاق الخزينة بنجاح.');
+
+        $this->assertSame('closed', $box->fresh()->status);
+        $response = $this->get(route('treasury.cash-boxes.index'));
+        $response->assertSee('مغلقة')
+            ->assertSee('الخزينة مغلقة ولا يمكن إعادة تفعيلها.')
+            ->assertDontSee('>closed<', false);
+
+        $html = $response->getContent();
+        $cardStart = strpos($html, 'CASH-ACTIONS-CLOSED');
+        $cardEnd = strpos($html, '</article>', $cardStart);
+        $closedCard = substr($html, $cardStart, $cardEnd - $cardStart);
+        $this->assertStringNotContainsString('تفعيل الخزينة', $closedCard);
+        $this->assertStringNotContainsString('تعليق الخزينة', $closedCard);
+        $this->assertStringNotContainsString('إغلاق الخزينة', $closedCard);
+    }
+
+    public function test_active_custodian_blocks_cash_box_closure_with_arabic_error(): void
+    {
+        $context = $this->context();
+        $box = $this->draftCashBox($context, 'CASH-ACTIONS-BLOCKED');
+        app(CashBoxCustodianService::class)->assign($box, [
+            'user_id' => $context['cashier']->id,
+            'valid_from' => now()->toDateString(),
+            'can_receive' => true,
+            'can_pay' => true,
+            'can_transfer' => false,
+            'payment_limit' => 10000,
+            'is_primary' => true,
+        ]);
+
+        $this->actingAs($context['user'])
+            ->post(route('treasury.cash-boxes.action', [$box, 'close']), [
+                'reason' => 'محاولة إغلاق خزينة لها أمين نشط',
+            ])
+            ->assertSessionHasErrors([
+                'business' => 'لا يمكن إغلاق الخزينة أثناء وجود أمناء نشطين أو تحويلات معلقة.',
+            ]);
+
+        $this->assertSame('draft', $box->fresh()->status);
+        $this->assertSame(1, CashBox::query()->where('code', 'CASH-ACTIONS-BLOCKED')->count());
+    }
+
+    public function test_cash_box_action_endpoint_rejects_user_without_action_permission(): void
+    {
+        $context = $this->context();
+        $box = $this->draftCashBox($context, 'CASH-ACTIONS-FORBIDDEN');
+        $this->switchActor($context['cashier']);
+
+        $this->post(route('treasury.cash-boxes.action', [$box, 'activate']), [
+            'reason' => 'محاولة غير مصرح بها',
+        ])->assertForbidden();
+
+        $this->assertSame('draft', $box->fresh()->status);
     }
 
     public function test_bank_account_validates_gl_masks_iban_and_keeps_one_primary_per_currency(): void
@@ -383,10 +579,43 @@ class PhaseFifteenTreasuryFoundationTest extends TestCase
         return app(BankAccountService::class)->action($account, 'activate', 'Activate for treasury tests');
     }
 
+    private function draftCashBox(array $context, string $code): CashBox
+    {
+        return app(CashBoxService::class)->create([
+            'branch_id' => $context['branch']->id,
+            'code' => $code,
+            'name' => $code,
+            'currency_id' => $context['currency']->id,
+            'gl_account_id' => $this->account($context, '111000')->id,
+            'is_primary' => false,
+            'allows_receipts' => true,
+            'allows_payments' => true,
+            'requires_shift_opening' => false,
+        ]);
+    }
+
     private function account(array $context, string $code): Account
     {
         return Account::query()->where('company_id', $context['company']->id)
             ->where('account_code', $code)->firstOrFail();
+    }
+
+    private function accountVariant(array $context, string $code, array $overrides = []): Account
+    {
+        $account = $this->account($context, '111000')->replicate(['uuid']);
+        $account->forceFill($overrides + [
+            'company_id' => $context['company']->id,
+            'account_code' => $code,
+            'name_ar' => $code,
+            'name_en' => $code,
+            'is_active' => true,
+            'is_header' => false,
+            'is_posting' => true,
+            'is_cash_account' => false,
+            'created_by' => $context['user']->id,
+        ])->save();
+
+        return $account;
     }
 
     private function postBalanceJournal(array $context, int $accountId, string $amount): void

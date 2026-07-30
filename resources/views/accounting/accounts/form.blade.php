@@ -91,8 +91,19 @@
                     <span class="sw-field__label">نوع الحساب الرقابي</span>
                     <select class="sw-input" name="control_type">
                         <option value="">بدون</option>
-                        @foreach(['accounts_receivable', 'accounts_payable', 'inventory', 'vat_input', 'vat_output', 'customer_advances', 'supplier_advances', 'employee_advances', 'fixed_assets', 'accumulated_depreciation'] as $type)
-                            <option value="{{ $type }}" @selected(old('control_type', $account->control_type) === $type)>{{ $type }}</option>
+                        @foreach([
+                            'accounts_receivable' => 'حسابات العملاء',
+                            'accounts_payable' => 'حسابات الموردين',
+                            'inventory' => 'المخزون',
+                            'vat_input' => 'ضريبة مدخلات',
+                            'vat_output' => 'ضريبة مخرجات',
+                            'customer_advances' => 'دفعات مقدمة من العملاء',
+                            'supplier_advances' => 'دفعات مقدمة للموردين',
+                            'employee_advances' => 'عهد وسلف الموظفين',
+                            'fixed_assets' => 'الأصول الثابتة',
+                            'accumulated_depreciation' => 'مجمع الإهلاك',
+                        ] as $type => $label)
+                            <option value="{{ $type }}" @selected(old('control_type', $account->control_type) === $type)>{{ $label }}</option>
                         @endforeach
                     </select>
                 </label>
@@ -124,11 +135,11 @@
                     'is_tax_account' => 'حساب ضريبة',
                     'allow_manual_entry' => 'يسمح بإدخال يدوي',
                 ] as $field => $label)
-                    <label class="sw-check accounting-account-option">
-                        <input type="hidden" name="{{ $field }}" value="0">
-                        <input class="sw-check__box" type="checkbox" name="{{ $field }}" value="1" @checked(old($field, $account->$field))>
-                        <span>{{ $label }}</span>
-                    </label>
+                    <x-form.checkbox-card
+                        :name="$field"
+                        :label="$label"
+                        :checked="(bool) $account->{$field}"
+                    />
                 @endforeach
             </div>
         </div>

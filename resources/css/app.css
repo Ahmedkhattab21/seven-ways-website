@@ -2767,6 +2767,34 @@ svg {
     font-size: var(--sw-font-sm);
 }
 
+.cash-box-actions__forms {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: var(--sw-space-4);
+}
+
+.cash-box-action-form {
+    display: grid;
+    align-content: start;
+    gap: var(--sw-space-3);
+    padding: var(--sw-space-4);
+    background: var(--sw-bg);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+}
+
+.cash-box-action-form .sw-button {
+    justify-self: start;
+}
+
+.cash-box-closed-message {
+    padding: var(--sw-space-4);
+    color: var(--sw-text-secondary);
+    background: var(--sw-bg);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+}
+
 .cash-box-abilities {
     padding: var(--sw-space-2);
     background: var(--sw-bg);
@@ -5224,12 +5252,36 @@ svg {
     gap: var(--sw-space-3);
 }
 
-.accounting-account-option {
+.account-rule-option {
     min-height: 3.25rem;
     padding: var(--sw-space-3) var(--sw-space-4);
     background: var(--sw-white-faint);
     border: 1px solid var(--sw-border);
     border-radius: var(--sw-radius-md);
+    transition:
+        background-color var(--sw-transition-fast),
+        border-color var(--sw-transition-fast),
+        box-shadow var(--sw-transition-fast);
+}
+
+.account-rule-option:hover {
+    background: color-mix(in srgb, var(--sw-primary) 6%, var(--sw-surface));
+    border-color: color-mix(in srgb, var(--sw-primary) 45%, var(--sw-border));
+}
+
+.account-rule-option:has(input:checked) {
+    color: var(--sw-text);
+    background: color-mix(in srgb, var(--sw-primary) 13%, var(--sw-surface));
+    border-color: var(--sw-primary);
+}
+
+.account-rule-option:has(input:focus-visible) {
+    border-color: var(--sw-primary);
+    box-shadow: var(--sw-focus);
+}
+
+.account-rule-option .sw-check__label {
+    flex: 1;
 }
 
 .accounting-account-description {
