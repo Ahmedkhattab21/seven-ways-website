@@ -93,6 +93,7 @@ class PaymentAllocationService
         abort_unless(
             $payment->company_id === $this->tenant->companyId()
             && $invoice->company_id === $payment->company_id
+            && $invoice->branch_id === $payment->branch_id
             && $invoice->customer_id === $payment->customer_id
             && $invoice->currency_id === $payment->currency_id
             && $this->tenant->user()->canAccessBranch($invoice->branch),

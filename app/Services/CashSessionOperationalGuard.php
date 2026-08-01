@@ -18,13 +18,26 @@ class CashSessionOperationalGuard
         if (! $box->requires_shift_opening) {
             return null;
         }
-        $query = CashBoxSession::query()->where('company_id', $this->tenant->companyId())
-            ->where('cash_box_id', $box->id)->where('branch_id', $box->branch_id)
-            ->where('active_guard', 'active')->where('status', 'counting');
-        if ($sessionId) {
-            $query->whereKey($sessionId);
+
+        return $this->assertActiveSession($box, $sessionId);
+    }
+
+    public function assertActiveSession(CashBox $box, ?int $sessionId): CashBoxSession
+    {
+        if (! $sessionId) {
+            throw new BusinessRuleException('يجب تحديد جلسة خزينة نشطة.');
         }
-        $session = $query->latest('id')->first();
+
+        $session = CashBoxSession::query()
+            ->where('company_id', $this->tenant->companyId())
+            ->where('cash_box_id', $box->id)
+            ->where('branch_id', $box->branch_id)
+            ->where('active_guard', 'active')
+            ->where('status', 'counting')
+            ->whereKey($sessionId)
+            ->latest('id')
+            ->first();
+
         if (! $session || ! $session->counts()->where('count_type', 'opening')->where('status', 'approved')->exists()) {
             throw new BusinessRuleException('يجب تسجيل ومراجعة واعتماد العد الافتتاحي قبل تنفيذ حركات الخزينة.');
         }

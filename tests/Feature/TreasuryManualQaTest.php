@@ -26,6 +26,10 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
+use Database\Seeders\ProductionReferenceSeeder;
+use Database\Seeders\SevenWaysOperationalSeeder;
+use Database\Seeders\SevenWaysTenantSeeder;
+
 class TreasuryManualQaTest extends TestCase
 {
     use DatabaseTransactions;
@@ -44,11 +48,17 @@ class TreasuryManualQaTest extends TestCase
     private Branch $giza;
 
     protected function setUp(): void
-    {
-        parent::setUp();
+{
+    parent::setUp();
 
-        app(TreasuryManualQaSeeder::class)->run();
-        $this->company = Company::query()->where('name', 'Seven Ways')->firstOrFail();
+    app(ProductionReferenceSeeder::class)->run();
+    app(SevenWaysTenantSeeder::class)->run();
+    app(SevenWaysOperationalSeeder::class)->run();
+    app(TreasuryManualQaSeeder::class)->run();
+
+    $this->company = Company::query()
+        ->where('name', 'Seven Ways')
+        ->firstOrFail();
         $this->cairo = Branch::query()->where('company_id', $this->company->id)
             ->where('code', 'QA-CAI')->firstOrFail();
         $this->giza = Branch::query()->where('company_id', $this->company->id)

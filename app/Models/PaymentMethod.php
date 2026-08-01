@@ -20,6 +20,13 @@ class PaymentMethod extends BaseModel
         'is_active' => 'boolean', 'sort_order' => 'integer',
     ];
 
+    public function isCash(): bool
+    {
+        return $this->is_cash
+            || $this->type === 'cash'
+            || strtoupper((string) $this->code) === 'CASH';
+    }
+
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);

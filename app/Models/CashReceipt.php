@@ -13,7 +13,7 @@ class CashReceipt extends BaseModel
     protected $guarded = [
         'id', 'uuid', 'company_id', 'document_number', 'status', 'idempotency_key',
         'created_by', 'submitted_by', 'approved_by', 'posted_by', 'reversed_by',
-        'journal_entry_id', 'reversal_journal_entry_id',
+        'journal_entry_id', 'reversal_journal_entry_id', 'customer_payment_id',
     ];
 
     protected $casts = [
@@ -28,5 +28,10 @@ class CashReceipt extends BaseModel
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function customerPayment(): BelongsTo
+    {
+        return $this->belongsTo(CustomerPayment::class);
     }
 }

@@ -7,6 +7,7 @@ use App\Core\Exceptions\BusinessRuleException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class CustomerPayment extends BaseModel
 {
@@ -14,7 +15,15 @@ class CustomerPayment extends BaseModel
 
     protected $guarded = ['id', 'company_id', 'branch_id', 'payment_number', 'status', 'allocated_amount', 'unallocated_amount', 'received_by', 'approved_by', 'cancelled_by'];
 
-    protected $casts = ['payment_date' => 'date', 'approved_at' => 'datetime', 'cancelled_at' => 'datetime'];
+    protected $casts = [
+        'payment_date' => 'date',
+        'cash_box_id' => 'integer',
+        'cash_box_session_id' => 'integer',
+        'intended_sales_invoice_id' => 'integer',
+        'intended_allocation_amount' => 'decimal:4',
+        'approved_at' => 'datetime',
+        'cancelled_at' => 'datetime',
+    ];
 
     protected static function booted(): void
     {
@@ -39,6 +48,26 @@ class CustomerPayment extends BaseModel
     public function paymentMethod(): BelongsTo
     {
         return $this->belongsTo(PaymentMethod::class);
+    }
+
+    public function cashBox(): BelongsTo
+    {
+        return $this->belongsTo(CashBox::class);
+    }
+
+    public function cashBoxSession(): BelongsTo
+    {
+        return $this->belongsTo(CashBoxSession::class);
+    }
+
+    public function intendedInvoice(): BelongsTo
+    {
+        return $this->belongsTo(SalesInvoice::class, 'intended_sales_invoice_id');
+    }
+
+    public function cashReceipt(): HasOne
+    {
+        return $this->hasOne(CashReceipt::class);
     }
 
     public function appointmentDeposit(): BelongsTo

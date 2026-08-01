@@ -2717,6 +2717,11 @@ svg {
     font-weight: 700;
 }
 
+.customer-payment-page {
+    display: grid;
+    gap: var(--sw-space-6);
+}
+
 .cash-boxes-page,
 .cash-box-list,
 .cash-box-card__body,

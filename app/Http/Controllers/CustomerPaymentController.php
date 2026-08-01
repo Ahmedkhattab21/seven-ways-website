@@ -28,11 +28,33 @@ class CustomerPaymentController extends Controller
         return view('customer-payments.index', ['payments' => CustomerPayment::where('company_id', $tenant->companyId())->whereIn('branch_id', $tenant->accessibleBranches()->pluck('id'))->with('customer')->latest()->paginate(30)]);
     }
 
-    public function create(TenantContext $tenant): View
+    public function create(TenantContext $tenant, CustomerPaymentService $service): View
     {
         $this->authorize('create', CustomerPayment::class);
 
-        return view('customer-payments.form', ['customers' => Customer::forUser($tenant->user())->get(), 'methods' => PaymentMethod::where('company_id', $tenant->companyId())->where('is_active', true)->get()]);
+        $cashBoxes = $service->availableCashBoxes();
+        $cashSessions = $service->availableCashSessions($cashBoxes);
+
+        return view('customer-payments.form', [
+            'customers' => Customer::forUser($tenant->user())->orderBy('name')->get(),
+            'methods' => PaymentMethod::query()
+                ->where('company_id', $tenant->companyId())
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(),
+            'cashBoxes' => $cashBoxes,
+            'cashSessions' => $cashSessions,
+            'defaultPaymentDate' => $cashSessions->first()?->business_date->toDateString() ?? today()->toDateString(),
+            'invoices' => SalesInvoice::query()
+                ->where('company_id', $tenant->companyId())
+                ->where('branch_id', $tenant->branchId())
+                ->whereIn('status', ['issued', 'partially_paid', 'overdue', 'credited'])
+                ->where('balance_due', '>', 0)
+                ->with(['customer', 'currency'])
+                ->latest('invoice_date')
+                ->get(),
+        ]);
     }
 
     public function store(CustomerPaymentRequest $request, CustomerPaymentService $service): RedirectResponse
@@ -46,7 +68,21 @@ class CustomerPaymentController extends Controller
     {
         $this->authorize('view', $customerPayment);
 
-        return view('customer-payments.show', ['payment' => $customerPayment->load(['customer', 'paymentMethod', 'allocations.invoice'])]);
+        return view('customer-payments.show', [
+            'payment' => $customerPayment->load([
+                'customer', 'paymentMethod', 'cashBox', 'cashBoxSession', 'cashReceipt', 'intendedInvoice',
+                'allocations.invoice',
+            ]),
+            'invoices' => SalesInvoice::query()
+                ->where('company_id', $customerPayment->company_id)
+                ->where('branch_id', $customerPayment->branch_id)
+                ->where('customer_id', $customerPayment->customer_id)
+                ->where('currency_id', $customerPayment->currency_id)
+                ->whereIn('status', ['issued', 'partially_paid', 'overdue', 'credited'])
+                ->where('balance_due', '>', 0)
+                ->orderByDesc('invoice_date')
+                ->get(),
+        ]);
     }
 
     public function approve(CustomerPayment $customerPayment, CustomerPaymentService $service): RedirectResponse
@@ -54,7 +90,7 @@ class CustomerPaymentController extends Controller
         $this->authorize('approve', $customerPayment);
         $service->approve($customerPayment);
 
-        return back()->with('success', 'Payment approved.');
+        return back()->with('success', 'تم اعتماد الدفعة بنجاح.');
     }
 
     public function allocate(PaymentAllocationRequest $request, CustomerPayment $customerPayment, PaymentAllocationService $service): RedirectResponse
@@ -62,7 +98,7 @@ class CustomerPaymentController extends Controller
         abort_unless($request->user()->hasPermission('customer_payments.allocate'), 403);
         $service->allocate($customerPayment, SalesInvoice::findOrFail($request->validated('sales_invoice_id')), $request->validated('amount'));
 
-        return back()->with('success', 'Payment allocated.');
+        return back()->with('success', 'تم تخصيص الدفعة على الفاتورة بنجاح.');
     }
 
     public function reverse(PaymentAllocationReversalRequest $request, PaymentAllocation $paymentAllocation, PaymentAllocationService $service): RedirectResponse
