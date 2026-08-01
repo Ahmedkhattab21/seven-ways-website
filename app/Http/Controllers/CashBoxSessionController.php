@@ -9,6 +9,7 @@ use App\Http\Requests\CashBoxSessionRequest;
 use App\Http\Requests\CashOverShortActionRequest;
 use App\Models\CashBox;
 use App\Models\CashBoxCount;
+use App\Models\CashBoxCustodian;
 use App\Models\CashBoxSession;
 use App\Models\CashOverShortAdjustment;
 use App\Services\CashBoxCountService;
@@ -21,19 +22,51 @@ class CashBoxSessionController extends Controller
 {
     public function index(TenantContext $tenant): View
     {
-        abort_unless($tenant->user()->hasPermission('treasury.cash_sessions.view'), 403);
+        $user = $tenant->user();
+        abort_unless($user->hasPermission('treasury.cash_sessions.view'), 403);
+
+        $branchIds = $tenant->accessibleBranches()->pluck('id');
+        $isBranchManager = $user->hasRole('branch_manager')
+            && ! $user->isCompanyAdministrator()
+            && ! $user->hasRole('system_admin');
+        $today = now()->toDateString();
+        $cashBoxesQuery = CashBox::query()
+            ->where('company_id', $tenant->companyId())
+            ->whereIn('branch_id', $branchIds)
+            ->where('status', 'active')
+            ->with('branch');
+
+        if ($isBranchManager) {
+            $cashBoxesQuery->whereHas('custodians', fn ($query) => $query
+                ->where('user_id', $user->id)
+                ->where('is_active', true)
+                ->whereDate('valid_from', '<=', $today)
+                ->where(fn ($dates) => $dates->whereNull('valid_to')->orWhereDate('valid_to', '>=', $today)));
+        }
+
+        $cashBoxes = $cashBoxesQuery->get();
+        $custodianAssignments = CashBoxCustodian::query()
+            ->whereIn('cash_box_id', $cashBoxes->pluck('id'))
+            ->where('is_active', true)
+            ->whereDate('valid_from', '<=', $today)
+            ->where(fn ($query) => $query->whereNull('valid_to')->orWhereDate('valid_to', '>=', $today))
+            ->when($isBranchManager, fn ($query) => $query->where('user_id', $user->id))
+            ->whereHas('user', fn ($query) => $query
+                ->where('company_id', $tenant->companyId())
+                ->where('status', 'active'))
+            ->with('user:id,name,email')
+            ->get();
 
         return view('treasury.cash-sessions', [
             'sessions' => CashBoxSession::query()->where('company_id', $tenant->companyId())
-                ->whereIn('branch_id', $tenant->accessibleBranches()->pluck('id'))
+                ->whereIn('branch_id', $branchIds)
                 ->with([
                     'cashBox', 'custodian', 'counts.lines',
                     'counts.adjustment.journalEntry', 'counts.adjustment.reversalJournalEntry',
                 ])->latest('id')->paginate(30),
-            'cashBoxes' => CashBox::query()->where('company_id', $tenant->companyId())
-                ->whereIn('branch_id', $tenant->accessibleBranches()->pluck('id'))
-                ->where('status', 'active')->get(),
-            'custodians' => $tenant->company()->users()->where('status', 'active')->get(),
+            'cashBoxes' => $cashBoxes,
+            'custodianAssignments' => $custodianAssignments,
+            'isBranchManager' => $isBranchManager,
         ]);
     }
 

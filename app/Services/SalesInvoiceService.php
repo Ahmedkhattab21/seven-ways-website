@@ -23,6 +23,7 @@ class SalesInvoiceService
         private DocumentNumberService $numbers,
         private SalesInvoicePricingService $pricing,
         private ServicePricingService $servicePricing,
+        private ProductPricingService $productPricing,
         private InvoiceWarrantySnapshotService $warranties,
         private AuditService $audit
     ) {
@@ -70,6 +71,13 @@ class SalesInvoiceService
                     $vehicle?->vehicle_size_id,
                     $data['invoice_date'] ?? now()
                 ) : null;
+                $productPrice = $product ? $this->productPricing->resolvePrice(
+                    $product,
+                    $branch,
+                    $data['invoice_date'] ?? now(),
+                    null,
+                    $item['quantity']
+                ) : null;
                 $tax = $product?->defaultTax ?? $service?->defaultTax;
                 $packageTax = $package
                     ? $package->items->pluck('service.defaultTax')->filter()
@@ -85,7 +93,7 @@ class SalesInvoiceService
                     'product_id' => $product?->id, 'warehouse_id' => $warehouse?->id,
                     'description' => trim($item['description'] ?? '') ?: ($product?->name ?? $service?->name ?? $package?->name),
                     'unit_id' => $item['unit_id'] ?? $product?->sale_unit_id,
-                    'unit_price' => $item['unit_price'] ?? $product?->default_sale_price
+                    'unit_price' => $productPrice['final_price'] ?? $item['unit_price']
                         ?? $resolvedService['unit_price'] ?? $packagePrice?->price,
                     'tax_id' => $tax?->id ?? ($item['tax_id'] ?? null),
                     'tax_rate' => $tax?->rate ?? ($item['tax_rate'] ?? 0),

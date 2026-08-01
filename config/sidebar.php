@@ -46,13 +46,13 @@ return [
         'items' => [
             ['label' => 'العملاء', 'icon' => 'users', 'route' => 'customers.index', 'permission' => 'customers.view', 'module' => 'sales', 'profiles' => ['branch_manager', 'manager', 'system_admin']],
             [
-                'label' => 'المنتجات والخدمات',
+                'label' => 'المنتجات',
                 'icon' => 'box',
                 'route' => 'catalog.index',
-                'permissions_any' => ['products.view', 'services.view', 'service_packages.view'],
+                'permission' => 'products.view',
                 'module' => 'sales',
                 'profiles' => ['branch_manager', 'manager', 'system_admin'],
-                'active' => ['catalog.*', 'products.*', 'services.*', 'service-categories.*', 'service-packages.*', 'product-references.*'],
+                'active' => ['catalog.*', 'products.*', 'product-references.*'],
             ],
             ['label' => 'عروض الأسعار', 'icon' => 'sales', 'route' => 'quotations.index', 'permission' => 'quotations.view', 'module' => 'sales', 'profiles' => ['branch_manager', 'manager', 'system_admin']],
             ['label' => 'فواتير المبيعات', 'icon' => 'clipboard', 'route' => 'sales-invoices.index', 'permission' => 'sales_invoices.view', 'module' => 'sales'],

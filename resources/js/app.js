@@ -464,6 +464,23 @@ ready(() => {
             });
         };
 
+        const filterProducts = () => {
+            const branchId = form.elements.namedItem('branch_id')?.value;
+            itemsContainer.querySelectorAll('[data-item-field="product"] select').forEach((select) => {
+                let availableCount = 0;
+                [...select.querySelectorAll('option[data-product-branches]')].forEach((option) => {
+                    const branches = JSON.parse(option.dataset.productBranches || '[]');
+                    const visible = branches.some((id) => String(id) === String(branchId));
+                    option.hidden = !visible;
+                    option.disabled = !visible;
+                    if (visible) availableCount += 1;
+                });
+                if (select.selectedOptions[0]?.disabled) select.value = '';
+                const message = select.closest('[data-item-field="product"]')?.querySelector('[data-product-empty]');
+                message?.toggleAttribute('hidden', availableCount > 0);
+            });
+        };
+
         const canPreview = () => {
             const requiredHeader = ['branch_id', 'customer_id', 'vehicle_id', 'currency_id', 'quotation_date'];
             if (requiredHeader.some((name) => !form.elements.namedItem(name)?.value)) return false;
@@ -583,6 +600,7 @@ ready(() => {
 
         const schedulePreview = () => {
             filterPackages();
+            filterProducts();
             window.clearTimeout(previewTimer);
             previewTimer = window.setTimeout(requestPreview, 250);
         };
@@ -624,6 +642,7 @@ ready(() => {
             bindItem(item);
             reindexItems();
             filterPackages();
+            filterProducts();
             schedulePreview();
         });
 
@@ -653,6 +672,7 @@ ready(() => {
         itemsContainer.querySelectorAll('[data-quotation-item]').forEach(bindItem);
         reindexItems();
         filterPackages();
+        filterProducts();
         if (headerDiscountType) headerDiscountType.dispatchEvent(new Event('change'));
         schedulePreview();
     });

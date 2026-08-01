@@ -15,7 +15,7 @@ class UatDef018AUnifiedCatalogCenterTest extends TestCase
 {
     use DatabaseTransactions;
 
-    public function test_catalog_center_exposes_allowed_sections_and_creation_actions(): void
+    public function test_catalog_center_displays_products_only(): void
     {
         [$company, $branch] = $this->companyContext();
         $user = $this->userWithPermissions($company, $branch, [
@@ -26,13 +26,13 @@ class UatDef018AUnifiedCatalogCenterTest extends TestCase
 
         $this->actingAs($user)->get(route('catalog.index'))
             ->assertOk()
-            ->assertSee('المنتجات والخدمات')
+            ->assertSee('المنتجات')
             ->assertSee(route('products.create'), false)
-            ->assertSee(route('services.create'), false)
-            ->assertSee(route('service-packages.create'), false)
-            ->assertSee(route('service-categories.create'), false)
-            ->assertSee(route('product-references.index', 'categories'), false)
-            ->assertSee(route('product-references.index', 'brands'), false);
+            ->assertDontSee(route('services.create'), false)
+            ->assertDontSee(route('service-packages.create'), false)
+            ->assertDontSee(route('service-categories.create'), false)
+            ->assertDontSee(route('product-references.index', 'categories'), false)
+            ->assertDontSee(route('product-references.index', 'brands'), false);
     }
 
     public function test_catalog_hides_unauthorized_tabs_and_actions(): void
@@ -64,30 +64,22 @@ class UatDef018AUnifiedCatalogCenterTest extends TestCase
         $catalogItems = $items->where('route', 'catalog.index');
 
         $this->assertCount(1, $catalogItems);
-        $this->assertSame('المنتجات والخدمات', $catalogItems->first()['label']);
+        $this->assertSame('المنتجات', $catalogItems->first()['label']);
         $this->assertSame(
-            ['catalog.*', 'products.*', 'services.*', 'service-categories.*', 'service-packages.*', 'product-references.*'],
+            ['catalog.*', 'products.*', 'product-references.*'],
             $catalogItems->first()['active']
         );
         $this->assertFalse($items->contains('route', 'products.index'));
         $this->assertFalse($items->contains('route', 'services.index'));
     }
 
-    public function test_catalog_navigation_is_present_on_existing_catalog_pages(): void
+    public function test_product_pages_do_not_expose_other_catalog_sections(): void
     {
         foreach ([
             resource_path('views/inventory/products/index.blade.php'),
             resource_path('views/inventory/products/form.blade.php'),
-            resource_path('views/inventory/references.blade.php'),
-            resource_path('views/services/index.blade.php'),
-            resource_path('views/services/form.blade.php'),
-            resource_path('views/services/show.blade.php'),
-            resource_path('views/services/categories/index.blade.php'),
-            resource_path('views/services/categories/form.blade.php'),
-            resource_path('views/services/packages/index.blade.php'),
-            resource_path('views/services/packages/form.blade.php'),
         ] as $view) {
-            $this->assertStringContainsString('<x-catalog-navigation', file_get_contents($view), $view);
+            $this->assertStringNotContainsString('<x-catalog-navigation', file_get_contents($view), $view);
         }
     }
 

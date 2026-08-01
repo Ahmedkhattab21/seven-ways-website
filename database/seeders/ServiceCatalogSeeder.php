@@ -24,6 +24,7 @@ class ServiceCatalogSeeder extends Seeder
             'service_packages.view', 'service_packages.create', 'service_packages.update',
             'service_packages.disable', 'service_packages.manage_prices',
             'promotions.view', 'promotions.manage',
+            'products.manage_branch_availability', 'products.manage_branch_prices',
         ];
         foreach ($permissions as $permission) {
             Permission::query()->updateOrCreate(['name' => $permission], ['display_name' => $permission]);
@@ -39,6 +40,7 @@ class ServiceCatalogSeeder extends Seeder
             'service_categories.view', 'services.view', 'services.manage_branch_availability',
             'services.manage_prices', 'services.manage_skills', 'service_packages.view',
             'service_packages.manage_prices', 'promotions.view',
+            'products.manage_branch_availability', 'products.manage_branch_prices',
         ]);
         $grant(['sales', 'receptionist'], ['service_categories.view', 'services.view', 'service_packages.view', 'promotions.view']);
         $grant(['warehouse_keeper'], ['service_categories.view', 'services.view', 'services.manage_materials']);

@@ -30,7 +30,11 @@ class CashBoxSessionService
             $box = CashBox::query()->where('company_id', $this->tenant->companyId())
                 ->where('status', 'active')->whereKey($data['cash_box_id'])->lockForUpdate()->firstOrFail();
             if (! $this->tenant->user()->canAccessBranch($box->branch)) {
-                throw new AuthorizationException('Cash box branch is outside the actor scope.');
+                throw new AuthorizationException('الخزينة خارج نطاق الفرع المسموح للمستخدم.');
+            }
+            if ($this->isBranchManagerOperator()
+                && (int) $data['custodian_user_id'] !== (int) $this->tenant->user()->id) {
+                throw new AuthorizationException('مسؤول الفرع لا يمكنه فتح جلسة باسم أمين خزينة آخر.');
             }
             $custodian = CashBoxCustodian::query()->where('cash_box_id', $box->id)
                 ->where('user_id', $data['custodian_user_id'])->where('is_active', true)
@@ -38,14 +42,14 @@ class CashBoxSessionService
                 ->where(fn ($q) => $q->whereNull('valid_to')->orWhereDate('valid_to', '>=', $data['business_date']))
                 ->lockForUpdate()->first();
             if (! $custodian && ! $this->tenant->user()->hasPermission('treasury.cash_sessions.override_custodian')) {
-                throw new BusinessRuleException('A valid cash box custodian assignment is required.');
+                throw new BusinessRuleException('يجب وجود تكليف نشط وساري للمستخدم كأمين على الخزينة.');
             }
             $this->periods->resolve(
                 $box->company_id, $data['business_date'], 'treasury', $this->tenant->user()
             );
             if (CashBoxSession::query()->where('cash_box_id', $box->id)
                 ->where('active_guard', 'active')->lockForUpdate()->exists()) {
-                throw new BusinessRuleException('Cash box already has an active session.');
+                throw new BusinessRuleException('توجد جلسة نشطة بالفعل لهذه الخزينة.');
             }
             $book = $this->balances->cashBox($box)['book_balance'];
             $session = new CashBoxSession([
@@ -160,5 +164,14 @@ class CashBoxSessionService
     {
         return $session->counts()->where('count_type', 'closing')
             ->where('status', 'approved')->latest('id')->first();
+    }
+
+    private function isBranchManagerOperator(): bool
+    {
+        $user = $this->tenant->user();
+
+        return $user->hasRole('branch_manager')
+            && ! $user->isCompanyAdministrator()
+            && ! $user->hasRole('system_admin');
     }
 }

@@ -32,11 +32,22 @@
 @if(auth()->user()->hasPermission('treasury.cash_sessions.open'))
 <form class="sw-card cash-session-open-card" method="POST" action="{{ route('treasury.cash-sessions.store') }}">@csrf
     <div class="sw-form-grid">
-        <label class="sw-field"><span class="sw-field__label">الخزينة</span><select class="sw-input" name="cash_box_id" required><option value="">اختر الخزينة</option>@foreach($cashBoxes as $box)<option value="{{ $box->id }}">{{ $box->name }}</option>@endforeach</select></label>
-        <label class="sw-field"><span class="sw-field__label">أمين الخزينة</span><select class="sw-input" name="custodian_user_id" required><option value="">اختر الأمين</option>@foreach($custodians as $user)<option value="{{ $user->id }}">{{ $user->name }}</option>@endforeach</select></label>
+        <label class="sw-field"><span class="sw-field__label">الخزينة</span><select class="sw-input" name="cash_box_id" data-session-cash-box required><option value="">اختر الخزينة</option>@foreach($cashBoxes as $box)<option value="{{ $box->id }}" @selected(old('cash_box_id') == $box->id)>{{ $box->name }} — {{ $box->branch->name }}</option>@endforeach</select></label>
+        @if($isBranchManager)
+            <label class="sw-field">
+                <span class="sw-field__label">أمين الخزينة</span>
+                <input class="sw-input" value="{{ auth()->user()->name }}" readonly>
+                <input type="hidden" name="custodian_user_id" value="{{ auth()->id() }}">
+            </label>
+        @else
+            <label class="sw-field"><span class="sw-field__label">أمين الخزينة</span><select class="sw-input" name="custodian_user_id" data-session-custodian required><option value="">اختر الخزينة أولًا</option>@foreach($custodianAssignments as $assignment)<option value="{{ $assignment->user_id }}" data-cash-box="{{ $assignment->cash_box_id }}" @selected(old('custodian_user_id') == $assignment->user_id)>{{ $assignment->user->name }} — {{ $assignment->user->email }}</option>@endforeach</select></label>
+        @endif
         <label class="sw-field"><span class="sw-field__label">تاريخ العمل</span><input class="sw-input" name="business_date" type="date" value="{{ now()->toDateString() }}" required></label>
         <label class="sw-field"><span class="sw-field__label">ملاحظات الفتح</span><input class="sw-input" name="opening_notes"></label>
     </div>
+    @if($cashBoxes->isEmpty())
+        <div class="sw-alert sw-alert--warning">لا توجد خزينة نشطة مرتبطة بك بتكليف أمين ساري في فرعك.</div>
+    @endif
     <div class="cash-session-actions"><button class="sw-button sw-button--primary">فتح جلسة</button></div>
 </form>
 @endif
@@ -188,5 +199,23 @@
 @endforeach
 {{ $sessions->links() }}
 </div>
-<script>document.querySelectorAll('[data-count-mode]').forEach(function(mode){const form=mode.closest('form'),manual=form.querySelector('[data-manual-total]'),input=form.querySelector('[data-counted-total]');function sync(){const active=mode.value==='manual_total';manual.hidden=!active;input.required=active;input.disabled=!active;if(!active)input.value='';}mode.addEventListener('change',sync);sync();});</script>
+<script>
+document.querySelectorAll('[data-count-mode]').forEach(function(mode){const form=mode.closest('form'),manual=form.querySelector('[data-manual-total]'),input=form.querySelector('[data-counted-total]');function sync(){const active=mode.value==='manual_total';manual.hidden=!active;input.required=active;input.disabled=!active;if(!active)input.value='';}mode.addEventListener('change',sync);sync();});
+const cashBox = document.querySelector('[data-session-cash-box]');
+const custodian = document.querySelector('[data-session-custodian]');
+if (cashBox && custodian) {
+    const options = Array.from(custodian.querySelectorAll('option[data-cash-box]'));
+    function filterCustodians() {
+        const selected = cashBox.value;
+        options.forEach(function(option) {
+            option.hidden = option.dataset.cashBox !== selected;
+            option.disabled = option.hidden;
+        });
+        if (custodian.selectedOptions[0]?.disabled) custodian.value = '';
+        custodian.options[0].textContent = selected ? 'اختر أمين الخزينة' : 'اختر الخزينة أولًا';
+    }
+    cashBox.addEventListener('change', filterCustodians);
+    filterCustodians();
+}
+</script>
 @endsection

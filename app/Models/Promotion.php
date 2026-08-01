@@ -37,6 +37,11 @@ class Promotion extends BaseModel
         return $this->belongsToMany(ServicePackage::class, 'promotion_packages');
     }
 
+    public function products(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'promotion_products');
+    }
+
     public function branches(): BelongsToMany
     {
         return $this->belongsToMany(Branch::class, 'promotion_branches');

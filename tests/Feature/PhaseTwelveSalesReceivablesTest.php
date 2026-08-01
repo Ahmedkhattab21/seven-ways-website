@@ -7,6 +7,8 @@ use App\Core\Tenancy\TenantContext;
 use App\Models\Appointment;
 use App\Models\AppointmentDeposit;
 use App\Models\Branch;
+use App\Models\BranchProduct;
+use App\Models\BranchProductPrice;
 use App\Models\BranchService;
 use App\Models\BranchServicePackage;
 use App\Models\Company;
@@ -445,6 +447,8 @@ class PhaseTwelveSalesReceivablesTest extends TestCase
         $unit = Unit::query()->forceCreate(['company_id' => $company->id, 'code' => 'U'.uniqid(), 'name' => 'Piece', 'symbol' => 'pc', 'unit_type' => 'quantity', 'decimal_places' => 6, 'is_active' => true]);
         $productCategory = ProductCategory::query()->forceCreate(['company_id' => $company->id, 'code' => 'P'.uniqid(), 'name' => 'Products', 'is_active' => true]);
         $product = Product::query()->forceCreate(['company_id' => $company->id, 'category_id' => $productCategory->id, 'sku' => 'SKU'.uniqid(), 'name' => 'Product', 'product_type' => 'consumable', 'tracking_type' => 'quantity', 'purchase_unit_id' => $unit->id, 'stock_unit_id' => $unit->id, 'sale_unit_id' => $unit->id, 'default_tax_id' => $tax->id, 'costing_method' => 'weighted_average', 'default_sale_price' => 100, 'is_sellable' => true, 'is_consumable' => true, 'is_active' => true]);
+        BranchProduct::query()->forceCreate(['company_id' => $company->id, 'branch_id' => $branch->id, 'product_id' => $product->id, 'default_sales_warehouse_id' => $warehouse->id, 'is_available' => true, 'is_sellable' => true, 'created_by' => $user->id, 'updated_by' => $user->id]);
+        BranchProductPrice::query()->forceCreate(['company_id' => $company->id, 'branch_id' => $branch->id, 'product_id' => $product->id, 'price' => 100, 'minimum_price' => 80, 'effective_from' => now()->subDay()->toDateString(), 'priority' => 0, 'is_active' => true, 'created_by' => $user->id, 'updated_by' => $user->id]);
         $serviceCategory = ServiceCategory::query()->forceCreate(['company_id' => $company->id, 'code' => 'S'.uniqid(), 'name' => 'Services', 'is_active' => true]);
         $service = Service::query()->forceCreate(['company_id' => $company->id, 'service_category_id' => $serviceCategory->id, 'code' => 'SV'.uniqid(), 'name' => 'Service', 'service_type' => 'ppf', 'pricing_type' => 'fixed', 'default_duration_minutes' => 60, 'default_tax_id' => $tax->id, 'requires_vehicle' => true, 'is_active' => true]);
         $paymentMethod = PaymentMethod::query()->forceCreate(['company_id' => $company->id, 'code' => 'CASH'.uniqid(), 'name' => 'Cash', 'type' => 'cash', 'is_cash' => true, 'is_active' => true]);

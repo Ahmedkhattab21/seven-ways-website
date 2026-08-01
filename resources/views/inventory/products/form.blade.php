@@ -3,7 +3,6 @@
 @section('page-title', $product->exists ? 'تعديل منتج' : 'إضافة منتج')
 @section('breadcrumb', 'المخزون / المنتجات')
 @section('content')
-<x-catalog-navigation active="products" />
 <x-card title="بيانات المنتج">
 <form class="sw-form" method="POST" action="{{ $product->exists ? route('products.update', $product) : route('products.store') }}">
 @csrf @if($product->exists) @method('PUT') @endif

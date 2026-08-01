@@ -46,7 +46,8 @@ class ThreeRoleOperatingModelSeeder extends Seeder
             'dashboard.view', 'branches.view', 'customers.view', 'customers.create', 'customers.update',
             'customers.manage_contacts', 'customers.manage_addresses', 'customers.manage_notes',
             'customers.manage_attachments', 'vehicles.view', 'vehicles.create', 'vehicles.update',
-            'vehicles.transfer_ownership', 'vehicles.manage_attachments', 'products.view', 'services.view',
+            'vehicles.transfer_ownership', 'vehicles.manage_attachments', 'products.view',
+            'products.manage_branch_availability', 'products.manage_branch_prices', 'services.view',
             'service_packages.view', 'quotations.view', 'quotations.create', 'quotations.update',
             'quotations.submit', 'quotations.send', 'sales_invoices.view', 'sales_invoices.create',
             'sales_invoices.update', 'sales_invoices.submit', 'sales_invoices.issue', 'sales_invoices.print',
@@ -76,7 +77,7 @@ class ThreeRoleOperatingModelSeeder extends Seeder
             'accounts_receivable.', 'treasury.', 'banks.', 'bank_accounts.',
         ];
         $allowedExact = [
-            'dashboard.view', 'branches.view', 'customers.view', 'sales_invoices.view',
+            'dashboard.view', 'branches.view', 'customers.view', 'products.view', 'sales_invoices.view',
             'sales_invoices.print', 'sales_invoices.share', 'sales_invoices.view_shares',
             'customer_payments.view', 'customer_payments.allocate',
             'customer_statements.view', 'suppliers.view', 'suppliers.view_balance',

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Core\Tenancy\TenantContext;
 use App\Models\Branch;
+use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\Service;
 use App\Models\ServicePackage;
@@ -20,7 +21,8 @@ class PromotionResolver
         ?Service $service = null,
         ?ServicePackage $package = null,
         ?Branch $branch = null,
-        CarbonInterface|string|null $date = null
+        CarbonInterface|string|null $date = null,
+        ?Product $product = null
     ): ?Promotion {
         $date = $date instanceof CarbonInterface ? $date : Carbon::parse($date ?: now());
 
@@ -31,6 +33,8 @@ class PromotionResolver
                 ->orWhereHas('services', fn ($q) => $q->whereKey($service->id))))
             ->when($package, fn ($q) => $q->where(fn ($q) => $q->where('promotion_type', 'general')
                 ->orWhereHas('packages', fn ($q) => $q->whereKey($package->id))))
+            ->when($product, fn ($q) => $q->where(fn ($q) => $q->where('promotion_type', 'general')
+                ->orWhereHas('products', fn ($q) => $q->whereKey($product->id))))
             ->orderByDesc('discount_value')->first();
     }
 }

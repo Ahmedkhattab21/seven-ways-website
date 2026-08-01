@@ -6,7 +6,6 @@
 @if(auth()->user()->hasPermission('products.create'))<a class="sw-button sw-button--primary" href="{{ route('products.create') }}">إضافة منتج</a>@endif
 @endsection
 @section('content')
-<x-catalog-navigation active="products" />
 <x-card title="البحث والفلاتر">
     <form method="GET" class="sw-form"><div class="sw-form-grid">
         <x-form.input name="search" label="بحث" :value="request('search')" placeholder="الاسم أو SKU" />

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Core\Database\BaseModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -98,5 +99,25 @@ class Product extends BaseModel
     public function serviceRollProfiles(): HasMany
     {
         return $this->hasMany(ServiceRollConsumptionProfile::class, 'film_product_id');
+    }
+
+    public function branchProducts(): HasMany
+    {
+        return $this->hasMany(BranchProduct::class);
+    }
+
+    public function branchPrices(): HasMany
+    {
+        return $this->hasMany(BranchProductPrice::class);
+    }
+
+    public function promotions(): BelongsToMany
+    {
+        return $this->belongsToMany(Promotion::class, 'promotion_products');
+    }
+
+    public function stockBalances(): HasMany
+    {
+        return $this->hasMany(StockBalance::class);
     }
 }

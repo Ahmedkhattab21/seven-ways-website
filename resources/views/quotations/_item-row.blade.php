@@ -51,9 +51,12 @@
             <select name="items[{{ $i }}][product_id]" data-item-reference>
                 <option value="">اختر المنتج</option>
                 @foreach($products as $product)
-                    <option value="{{ $product->id }}" @selected(($row['product_id'] ?? null) == $product->id)>{{ $product->name }}</option>
+                    <option value="{{ $product->id }}"
+                            data-product-branches='@json($product->branchProducts->pluck('branch_id')->values())'
+                            @selected(($row['product_id'] ?? null) == $product->id)>{{ $product->name }}</option>
                 @endforeach
             </select>
+            <small class="sw-field__help quotation-product-empty" data-product-empty hidden>لا توجد منتجات متاحة للبيع في الفرع المحدد.</small>
         </label>
 
         <label>الوصف

@@ -19,6 +19,7 @@ use App\Services\FiscalYearService;
 use App\Services\TaxService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,8 +49,11 @@ class ReferenceDataController extends Controller
         }
 
         $items = $query->orderBy($config['order'])->paginate(20)->withQueryString();
+        $sequenceWarnings = $section === 'document-sequences'
+            ? $this->documentSequenceWarnings($items->getCollection())
+            : collect();
 
-        return view('reference.index', compact('items', 'section', 'config'));
+        return view('reference.index', compact('items', 'section', 'config', 'sequenceWarnings'));
     }
 
     public function create(string $section, TenantContext $tenant): View|RedirectResponse
@@ -145,27 +149,40 @@ class ReferenceDataController extends Controller
             return;
         }
 
-        DB::transaction(function () use ($model, $section, $data, $tenant) {
-            if (in_array($section, ['units', 'payment-methods', 'vehicle-sizes', 'vehicle-types', 'document-sequences'], true)) {
-                $data['company_id'] = $tenant->companyId();
+        try {
+            DB::transaction(function () use ($model, $section, $data, $tenant) {
+                if (in_array($section, ['units', 'payment-methods', 'vehicle-sizes', 'vehicle-types', 'document-sequences'], true)) {
+                    $data['company_id'] = $tenant->companyId();
+                }
+                if ($section === 'document-sequences') {
+                    $this->assertBranchAccess($data['branch_id'] ?? null, $tenant);
+                    $this->assertNoActiveDocumentSequenceDuplicate($model, $data, $tenant->companyId());
+                    $periodKey = match ($data['reset_period']) {
+                        'yearly' => now()->format('Y'),
+                        'monthly' => now()->format('Ym'),
+                        default => null,
+                    };
+                    $data['period_key'] = $periodKey;
+                    $data['scope_key'] = DocumentNumberService::scopeKey(
+                        $tenant->companyId(),
+                        $data['branch_id'] ?? null,
+                        $data['document_type'],
+                        $periodKey
+                    );
+                }
+                $model->forceFill($data)->save();
+            });
+        } catch (QueryException $exception) {
+            if ($section === 'document-sequences'
+                && $exception->getCode() === '23000'
+                && str_contains($exception->getMessage(), 'document_sequences_scope_key_unique')) {
+                throw ValidationException::withMessages([
+                    'document_type' => 'يوجد تسلسل فعال بالفعل لهذا النوع في الفرع المحدد.',
+                ]);
             }
-            if ($section === 'document-sequences') {
-                $this->assertBranchAccess($data['branch_id'] ?? null, $tenant);
-                $periodKey = match ($data['reset_period']) {
-                    'yearly' => now()->format('Y'),
-                    'monthly' => now()->format('Ym'),
-                    default => null,
-                };
-                $data['period_key'] = $periodKey;
-                $data['scope_key'] = DocumentNumberService::scopeKey(
-                    $tenant->companyId(),
-                    $data['branch_id'] ?? null,
-                    $data['document_type'],
-                    $periodKey
-                );
-            }
-            $model->forceFill($data)->save();
-        });
+
+            throw $exception;
+        }
     }
 
     private function data(ReferenceDataRequest $request, string $section): array
@@ -223,6 +240,52 @@ class ReferenceDataController extends Controller
         if ($branchId && ! $tenant->accessibleBranches()->contains('id', $branchId)) {
             throw ValidationException::withMessages(['branch_id' => 'الفرع خارج السياق المسموح.']);
         }
+    }
+
+    private function assertNoActiveDocumentSequenceDuplicate(Model $model, array $data, int $companyId): void
+    {
+        if (! ($data['is_active'] ?? false)) {
+            return;
+        }
+
+        $duplicate = DocumentSequence::query()
+            ->where('company_id', $companyId)
+            ->where('document_type', $data['document_type'])
+            ->where('is_active', true)
+            ->when(
+                $data['branch_id'] ?? null,
+                fn (Builder $query, int $branchId) => $query->where('branch_id', $branchId),
+                fn (Builder $query) => $query->whereNull('branch_id')
+            )
+            ->when($model->exists, fn (Builder $query) => $query->whereKeyNot($model->getKey()))
+            ->lockForUpdate()
+            ->exists();
+
+        if ($duplicate) {
+            throw ValidationException::withMessages([
+                'document_type' => 'يوجد تسلسل فعال بالفعل لهذا النوع في الفرع المحدد.',
+            ]);
+        }
+    }
+
+    private function documentSequenceWarnings($items)
+    {
+        $types = config('document_sequences.types', []);
+
+        return $items->flatMap(function (DocumentSequence $sequence) use ($types) {
+            $warnings = [];
+            if (! isset($types[$sequence->document_type])) {
+                $warnings[] = "التسلسل #{$sequence->id} يستخدم نوع مستند قديم أو غير معروف: {$sequence->document_type}.";
+            }
+            if ($sequence->branch_id && ! $sequence->branch) {
+                $warnings[] = "التسلسل #{$sequence->id} مرتبط بفرع غير موجود (#{$sequence->branch_id}).";
+            }
+            if (! in_array($sequence->reset_period, ['never', 'yearly', 'monthly'], true)) {
+                $warnings[] = "التسلسل #{$sequence->id} يستخدم فترة تصفير غير مدعومة: {$sequence->reset_period}.";
+            }
+
+            return $warnings;
+        })->unique()->values();
     }
 
     private function authorizeManageSection(string $section): void

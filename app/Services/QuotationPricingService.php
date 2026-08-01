@@ -19,6 +19,7 @@ class QuotationPricingService
     public function __construct(
         private TenantContext $tenant,
         private ServicePricingService $servicePricing,
+        private ProductPricingService $productPricing,
         private ServiceCostEstimator $costEstimator,
         private PromotionResolver $promotions,
         private MoneyRoundingService $rounding
@@ -86,6 +87,7 @@ class QuotationPricingService
         $product = null;
         $packageServices = [];
         $standaloneServicesTotal = null;
+        $resolvedProductPrice = null;
 
         if ($type === 'service') {
             $service = Service::query()->whereKey($item['service_id'])->where('company_id', $branch->company_id)
@@ -158,17 +160,24 @@ class QuotationPricingService
             $priceSource = 'package_price';
         } elseif ($type === 'product') {
             $product = Product::query()->whereKey($item['product_id'])->where('company_id', $branch->company_id)
-                ->where('is_active', true)->where('is_sellable', true)->firstOrFail();
-            $unitPrice = $product->default_sale_price;
+                ->where('is_active', true)->where('is_sellable', true)->with('defaultTax')->firstOrFail();
+            $resolvedProductPrice = $this->productPricing->resolvePrice(
+                $product,
+                $branch,
+                $item['price_date'] ?? now(),
+                quantity: $quantity
+            );
+            $unitPrice = $resolvedProductPrice['final_price'];
+            $minimumPrice = $resolvedProductPrice['minimum_price'];
             $taxId = $product->default_tax_id;
             $taxRate = (string) ($product->defaultTax?->rate ?? 0);
             $description = $description ?: $product->name;
-            $priceSource = 'product_price';
+            $priceSource = $resolvedProductPrice['price_source'];
         } elseif ($type !== 'custom') {
             throw new BusinessRuleException('Unsupported quotation item type.');
         }
 
-        $baseUnitPrice = $unitPrice;
+        $baseUnitPrice = $resolvedProductPrice['base_price'] ?? $unitPrice;
         if (array_key_exists('manual_unit_price', $item) && $item['manual_unit_price'] !== null) {
             if (! $this->tenant->user()?->hasPermission('quotations.manual_price')) {
                 throw new BusinessRuleException('Manual pricing requires permission.', status: 403);
@@ -176,16 +185,24 @@ class QuotationPricingService
             $unitPrice = (string) $item['manual_unit_price'];
             $priceSource = in_array($priceSource, ['custom_quote', 'manual'], true) ? 'custom_quote' : 'manual';
         }
-        $promotionId = null;
+        $promotionId = $resolvedProductPrice['promotion_id'] ?? null;
         if (! empty($item['promotion_id'])) {
-            $promotion = $this->promotions->resolve($service, $package, $branch, $item['price_date'] ?? now());
+            $promotion = $this->promotions->resolve(
+                $service,
+                $package,
+                $branch,
+                $item['price_date'] ?? now(),
+                $product
+            );
             if (! $promotion || (int) $promotion->id !== (int) $item['promotion_id']) {
                 throw new BusinessRuleException('Selected promotion is not eligible for this item.');
             }
             $promotionId = $promotion->id;
-            $item['discount_type'] = $promotion->discount_type;
-            $item['discount_value'] = $promotion->discount_value;
-            $priceSource = 'promotion';
+            if ($type !== 'product') {
+                $item['discount_type'] = $promotion->discount_type;
+                $item['discount_value'] = $promotion->discount_value;
+                $priceSource = 'promotion';
+            }
         }
         if ($unitPrice === null || bccomp((string) $unitPrice, '0', 4) === -1) {
             throw new BusinessRuleException('A valid price is required for this item.');
@@ -224,6 +241,10 @@ class QuotationPricingService
                 'requires_approval' => $requiresApproval,
                 'header_discount_allocation' => '0.00',
                 'base_unit_price' => $this->rounding->round($baseUnitPrice, $decimals),
+                'branch_product_price_id' => $resolvedProductPrice['branch_product_price_id'] ?? null,
+                'branch_product_id' => $resolvedProductPrice['branch_product_id'] ?? null,
+                'warehouse_id' => $resolvedProductPrice['warehouse_id'] ?? null,
+                'promotion_discount_amount' => $resolvedProductPrice['discount_amount'] ?? null,
                 'package_services' => $packageServices,
                 'standalone_services_total' => $standaloneServicesTotal,
                 'package_savings' => $standaloneServicesTotal === null

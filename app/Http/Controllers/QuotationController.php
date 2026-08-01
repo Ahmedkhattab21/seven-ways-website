@@ -203,7 +203,13 @@ class QuotationController extends Controller
                     'branchPrices' => fn ($query) => $query->whereIn('branch_id', $branchIds)
                         ->where('is_available', true),
                 ])->orderBy('name')->get(),
-            'products' => Product::query()->where('company_id', $tenant->companyId())->where('is_active', true)->where('is_sellable', true)->orderBy('name')->get(),
+            'products' => Product::query()->where('company_id', $tenant->companyId())
+                ->where('is_active', true)->where('is_sellable', true)
+                ->whereHas('branchProducts', fn ($query) => $query->whereIn('branch_id', $branchIds)
+                    ->where('is_available', true)->where('is_sellable', true))
+                ->with(['branchProducts' => fn ($query) => $query->whereIn('branch_id', $branchIds)
+                    ->where('is_available', true)->where('is_sellable', true)])
+                ->orderBy('name')->get(),
             'currencies' => Currency::query()->where('is_active', true)->orderBy('code')->get(),
             'companyCurrencyId' => $tenant->company()?->currency_id,
         ];

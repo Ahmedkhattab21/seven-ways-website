@@ -42,6 +42,7 @@ use App\Http\Controllers\BranchContextController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BranchDashboardController;
 use App\Http\Controllers\BranchFinancialReportController;
+use App\Http\Controllers\BranchProductController;
 use App\Http\Controllers\BranchSettingsController;
 use App\Http\Controllers\CashBoxController;
 use App\Http\Controllers\CashBoxSessionController;
@@ -548,6 +549,10 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
     Route::get('products/{product}/edit', [ProductController::class, 'edit'])->middleware('permission:products.update')->name('products.edit');
     Route::put('products/{product}', [ProductController::class, 'update'])->middleware('permission:products.update')->name('products.update');
     Route::patch('products/{product}/disable', [ProductController::class, 'disable'])->middleware('permission:products.disable')->name('products.disable');
+    Route::get('products/{product}/branches/{branch}', [BranchProductController::class, 'edit'])
+        ->middleware('permission:products.manage_branch_availability')->name('products.branch-settings.edit');
+    Route::put('products/{product}/branches/{branch}', [BranchProductController::class, 'update'])
+        ->middleware('permission:products.manage_branch_availability')->name('products.branch-settings.update');
     Route::get('product-references/{section}', [ProductReferenceController::class, 'index'])->whereIn('section', ['categories', 'brands'])->middleware('permission:products.view')->name('product-references.index');
     Route::post('product-references/{section}', [ProductReferenceController::class, 'store'])->whereIn('section', ['categories', 'brands'])->middleware('permission:products.view')->name('product-references.store');
 

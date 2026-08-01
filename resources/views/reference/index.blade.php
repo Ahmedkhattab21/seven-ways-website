@@ -10,6 +10,13 @@
 @if($canManage)<a class="sw-button sw-button--primary" href="{{ route('reference.create', $section) }}">إضافة سجل</a>@endif
 @endsection
 @section('content')
+@if($section === 'document-sequences' && $sequenceWarnings->isNotEmpty())
+    <x-alert type="warning" title="تنبيه بيانات التسلسل">
+        <ul>
+            @foreach($sequenceWarnings as $warning)<li>{{ $warning }}</li>@endforeach
+        </ul>
+    </x-alert>
+@endif
 <x-table-shell>
     <x-slot:tools>
         <form method="GET" class="sw-filter-bar">
@@ -28,7 +35,9 @@
         @php
             $documentTypeLabel = config("document_sequences.types.{$item->document_type}.label");
             $primary = $item->code ?? $item->name ?? $item->name_ar
-                ?? ($documentTypeLabel ? $item->document_type.' — '.$documentTypeLabel : $item->document_type);
+                ?? ($documentTypeLabel
+                    ? $item->document_type.' — '.$documentTypeLabel
+                    : 'نوع مستند غير معروف — '.$item->document_type);
             $details = match($section) {
                 'currencies' => $item->name_ar.' — '.$item->symbol,
                 'taxes' => $item->name.' — '.rtrim(rtrim($item->rate, '0'), '.').'%',
@@ -47,7 +56,13 @@
         <tr>
             <td>{{ $primary }}</td>
             <td>{{ $details }}</td>
-            <td>{{ ($item->is_system ?? false) || $systemOnly ? 'نظامي' : ($item->branch?->name ?? 'الشركة') }}</td>
+            <td>
+                @if($section === 'document-sequences' && $item->branch_id && !$item->branch)
+                    فرع غير موجود #{{ $item->branch_id }}
+                @else
+                    {{ ($item->is_system ?? false) || $systemOnly ? 'نظامي' : ($item->branch?->name ?? 'الشركة') }}
+                @endif
+            </td>
             <td><x-status-badge :status="$active ? 'active' : 'inactive'" /></td>
             <td>@if($editable)<a href="{{ route('reference.edit', [$section, $item->id]) }}">تعديل</a>@else — @endif</td>
         </tr>

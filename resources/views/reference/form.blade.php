@@ -36,7 +36,7 @@
             @elseif($section === 'document-sequences')
                 <x-form.select name="branch_id" label="النطاق">
                     <option value="">كل الشركة</option>
-                    @foreach($branches as $branch)<option value="{{ $branch->id }}" @selected(old('branch_id', $item->branch_id) == $branch->id)>{{ $branch->name }}</option>@endforeach
+                    @foreach($branches as $branch)<option value="{{ $branch->id }}" @selected(old('branch_id', $item->branch_id) == $branch->id)>{{ $branch->code }} — {{ $branch->name }}</option>@endforeach
                 </x-form.select>
                 <x-form.select name="document_type" label="نوع المستند" required>
                     @foreach($documentTypes as $type => $definition)
