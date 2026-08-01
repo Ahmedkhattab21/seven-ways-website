@@ -32,7 +32,7 @@ class SalesReceivablesSeeder extends Seeder
             Role::whereIn('name', $roles)->get()->each(fn (Role $role) => $role->permissions()->syncWithoutDetaching($ids));
         };
         $grant(['company_owner', 'general_manager', 'branch_manager'], $permissions);
-        $grant(['accountant'], $permissions);
+        $grant(['accountant'], array_values(array_diff($permissions, ['sales_invoices.approve'])));
         $grant(['sales'], ['sales_invoices.view', 'sales_invoices.create', 'sales_invoices.update', 'sales_invoices.submit', 'sales_invoices.print', 'sales_invoices.direct_sale', 'sales_credit_notes.view', 'customer_statements.view']);
         $grant(['receptionist'], ['sales_invoices.view', 'customer_payments.view', 'customer_payments.record', 'customer_payments.print', 'customer_statements.view']);
         $grant(['warehouse_keeper'], ['sales_invoices.view']);

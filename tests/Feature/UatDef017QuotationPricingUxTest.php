@@ -3,18 +3,19 @@
 namespace Tests\Feature;
 
 use App\Models\Branch;
-use App\Models\BranchService;
+use App\Models\BranchProduct;
+use App\Models\BranchProductPrice;
 use App\Models\Company;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\DocumentSequence;
 use App\Models\Permission;
+use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\Quotation;
 use App\Models\Role;
-use App\Models\Service;
-use App\Models\ServiceCategory;
-use App\Models\ServicePrice;
 use App\Models\Tax;
+use App\Models\Unit;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleBrand;
@@ -37,7 +38,13 @@ class UatDef017QuotationPricingUxTest extends TestCase
 
     private Vehicle $vehicle;
 
-    private Service $service;
+    private Product $product;
+
+    private ProductCategory $category;
+
+    private Unit $unit;
+
+    private Tax $tax;
 
     private User $pricingUser;
 
@@ -50,7 +57,7 @@ class UatDef017QuotationPricingUxTest extends TestCase
         parent::setUp();
 
         $this->currency = Currency::query()->firstOrCreate(['code' => 'EGP'], [
-            'name_ar' => 'جنيه مصري', 'name_en' => 'Egyptian Pound', 'symbol' => 'ج.م',
+            'name_ar' => 'Egyptian Pound', 'name_en' => 'Egyptian Pound', 'symbol' => 'EGP',
             'decimal_places' => 2, 'is_active' => true,
         ]);
         $this->company = Company::query()->create([
@@ -58,7 +65,7 @@ class UatDef017QuotationPricingUxTest extends TestCase
         ]);
         $this->branch = Branch::query()->create([
             'company_id' => $this->company->id, 'code' => 'UAT17-'.uniqid(),
-            'name' => 'الفرع الرئيسي - القاهرة', 'is_main' => true, 'is_active' => true,
+            'name' => 'Cairo branch', 'is_main' => true, 'is_active' => true,
         ]);
         $this->pricingUser = $this->userWithPermissions([
             'quotations.view', 'quotations.create', 'quotations.manual_price',
@@ -71,9 +78,9 @@ class UatDef017QuotationPricingUxTest extends TestCase
             'company_id' => $this->company->id, 'created_branch_id' => $this->branch->id,
             'assigned_branch_id' => $this->branch->id, 'status' => 'active',
         ]);
-        $brand = VehicleBrand::query()->create(['name_ar' => 'علامة UAT', 'is_active' => true]);
+        $brand = VehicleBrand::query()->create(['name_ar' => 'UAT Brand', 'is_active' => true]);
         $model = VehicleModel::query()->create([
-            'vehicle_brand_id' => $brand->id, 'name_ar' => 'موديل UAT', 'is_active' => true,
+            'vehicle_brand_id' => $brand->id, 'name_ar' => 'UAT Model', 'is_active' => true,
         ]);
         $this->vehicle = Vehicle::query()->forceCreate([
             'company_id' => $this->company->id, 'customer_id' => $this->customer->id,
@@ -81,30 +88,20 @@ class UatDef017QuotationPricingUxTest extends TestCase
             'vehicle_model_id' => $model->id, 'plate_number' => 'UAT-017',
             'normalized_plate_number' => 'UAT017', 'status' => 'active',
         ]);
-        $category = ServiceCategory::query()->forceCreate([
-            'company_id' => $this->company->id, 'code' => 'CAT-'.uniqid(),
-            'name' => 'خدمات UAT', 'is_active' => true,
+        $this->unit = Unit::query()->forceCreate([
+            'company_id' => $this->company->id, 'code' => 'PCS-'.uniqid(), 'name' => 'Piece',
+            'symbol' => 'pc', 'unit_type' => 'quantity', 'decimal_places' => 6,
+            'is_system' => false, 'is_active' => true,
         ]);
-        $tax = Tax::query()->forceCreate([
+        $this->category = ProductCategory::query()->forceCreate([
+            'company_id' => $this->company->id, 'code' => 'CAT-'.uniqid(),
+            'name' => 'UAT Products', 'is_active' => true,
+        ]);
+        $this->tax = Tax::query()->forceCreate([
             'company_id' => $this->company->id, 'code' => 'VAT14-'.uniqid(),
             'name' => 'VAT 14', 'rate' => 14, 'tax_type' => 'vat', 'is_active' => true,
         ]);
-        $this->service = Service::query()->forceCreate([
-            'company_id' => $this->company->id, 'service_category_id' => $category->id,
-            'code' => 'SRV-'.uniqid(), 'name' => 'إزالة فيلم قديم', 'service_type' => 'ppf',
-            'pricing_type' => 'fixed', 'default_duration_minutes' => 60,
-            'default_tax_id' => $tax->id, 'requires_vehicle' => true, 'is_active' => true,
-        ]);
-        BranchService::query()->forceCreate([
-            'company_id' => $this->company->id, 'branch_id' => $this->branch->id,
-            'service_id' => $this->service->id, 'is_available' => true, 'is_active' => true,
-            'default_price' => 120, 'minimum_price' => 80, 'default_duration_minutes' => 60,
-        ]);
-        ServicePrice::query()->forceCreate([
-            'company_id' => $this->company->id, 'branch_id' => $this->branch->id,
-            'service_id' => $this->service->id, 'price' => 100, 'minimum_price' => 80,
-            'effective_from' => today()->subDay(), 'priority' => 0, 'is_active' => true,
-        ]);
+        $this->product = $this->makeProduct('PRD-'.uniqid(), 100);
         $this->sequence = DocumentSequence::query()->forceCreate([
             'company_id' => $this->company->id, 'branch_id' => $this->branch->id,
             'document_type' => 'quotation', 'prefix' => 'UAT17-', 'current_number' => 7,
@@ -116,60 +113,46 @@ class UatDef017QuotationPricingUxTest extends TestCase
         ]);
     }
 
-    public function test_form_has_conditional_item_fields_server_preview_and_clear_discount_sections(): void
+    public function test_form_has_product_fields_server_preview_and_clear_discount_sections(): void
     {
         $response = $this->actingAs($this->pricingUser)->get(route('quotations.create'))->assertOk();
 
         $response->assertSee('data-quotation-builder', false)
             ->assertSee('data-preview-url="'.route('quotations.preview').'"', false)
-            ->assertSee('data-item-field="service"', false)
-            ->assertSee('data-item-field="package"', false)
-            ->assertSee('data-item-field="product"', false)
-            ->assertSee('تعديل سعر الوحدة')
-            ->assertSee('خصم هذه الخدمة')
-            ->assertSee('خصم إضافي على إجمالي عرض السعر')
-            ->assertSee('+ إضافة عنصر جديد')
-            ->assertSee('حذف العنصر')
-            ->assertSee('حفظ عرض السعر كمسودة');
+            ->assertSee('name="items[0][product_id]"', false)
+            ->assertDontSee('item_type', false)
+            ->assertDontSee('service_package_id', false)
+            ->assertDontSee('manual_unit_price', false);
 
         $javascript = file_get_contents(resource_path('js/app.js'));
-        $this->assertStringContainsString('field.disabled = !visible', $javascript);
-        $this->assertStringContainsString("field.value = ''", $javascript);
         $this->assertStringContainsString('reindexItems', $javascript);
         $this->assertStringContainsString("method: 'POST'", $javascript);
         $this->assertStringContainsString('window.confirm', $javascript);
         $this->assertStringContainsString('data-summary-plain', file_get_contents(resource_path('views/quotations/form.blade.php')));
     }
 
-    public function test_basic_user_cannot_see_or_submit_manual_price(): void
+    public function test_every_user_is_blocked_from_submitting_manual_price(): void
     {
-        $this->actingAs($this->basicUser)->get(route('quotations.create'))
-            ->assertOk()->assertDontSee('تعديل السعر يدويًا');
-
         $payload = $this->payload();
         $payload['items'][0]['manual_unit_price'] = 90;
+
         $this->actingAs($this->basicUser)->postJson(route('quotations.preview'), $payload)
-            ->assertForbidden();
+            ->assertUnprocessable()->assertJsonValidationErrors('items.0.manual_unit_price');
     }
 
-    public function test_preview_uses_authoritative_service_price_and_writes_nothing(): void
+    public function test_preview_uses_authoritative_product_price_and_writes_nothing(): void
     {
         $beforeQuotationCount = Quotation::query()->count();
         $beforeSequence = $this->sequence->current_number;
 
-        $response = $this->actingAs($this->pricingUser)
-            ->postJson(route('quotations.preview'), $this->payload())
+        $this->actingAs($this->pricingUser)->postJson(route('quotations.preview'), $this->payload())
             ->assertOk()
             ->assertJsonPath('items.0.unit_price', '100.00')
             ->assertJsonPath('items.0.base_unit_price', '100.00')
-            ->assertJsonPath('items.0.price_source', 'service_price')
-            ->assertJsonPath('items.0.estimated_duration_minutes', 60)
+            ->assertJsonPath('items.0.price_source', 'branch_product_price')
             ->assertJsonPath('summary.item_count', 1)
-            ->assertJsonPath('summary.estimated_duration_minutes', 60)
             ->assertJsonPath('summary.currency_code', 'EGP');
 
-        $response->assertJsonMissingPath('items.0.estimated_material_cost')
-            ->assertJsonMissingPath('items.0.estimated_margin');
         $this->assertSame($beforeQuotationCount, Quotation::query()->count());
         $this->assertSame($beforeSequence, $this->sequence->fresh()->current_number);
     }
@@ -192,38 +175,14 @@ class UatDef017QuotationPricingUxTest extends TestCase
             ->assertJsonPath('summary.grand_total', '194.94');
     }
 
-    public function test_multiple_items_are_priced_independently_in_one_preview(): void
+    public function test_multiple_products_are_priced_independently_in_one_preview(): void
     {
-        $secondService = Service::query()->forceCreate([
-            'company_id' => $this->company->id,
-            'service_category_id' => $this->service->service_category_id,
-            'code' => 'SRV-SECOND-'.uniqid(),
-            'name' => 'خدمة UAT ثانية',
-            'service_type' => 'ppf',
-            'pricing_type' => 'fixed',
-            'default_duration_minutes' => 30,
-            'default_tax_id' => $this->service->default_tax_id,
-            'requires_vehicle' => true,
-            'is_active' => true,
-        ]);
-        BranchService::query()->forceCreate([
-            'company_id' => $this->company->id,
-            'branch_id' => $this->branch->id,
-            'service_id' => $secondService->id,
-            'is_available' => true,
-            'is_active' => true,
-            'default_price' => 50,
-            'minimum_price' => 40,
-            'default_duration_minutes' => 30,
-        ]);
+        $secondProduct = $this->makeProduct('PRD-SECOND-'.uniqid(), 50);
         $payload = $this->payload();
         $payload['items'][0]['quantity'] = 1;
         $payload['items'][] = [
-            'item_type' => 'service',
-            'service_id' => $secondService->id,
-            'quantity' => 1,
-            'discount_type' => 'percentage',
-            'discount_value' => 10,
+            'product_id' => $secondProduct->id, 'quantity' => 1,
+            'discount_type' => 'percentage', 'discount_value' => 10,
         ];
 
         $this->actingAs($this->pricingUser)->postJson(route('quotations.preview'), $payload)
@@ -234,7 +193,6 @@ class UatDef017QuotationPricingUxTest extends TestCase
             ->assertJsonPath('items.1.unit_price', '50.00')
             ->assertJsonPath('items.1.item_discount_amount', '5.00')
             ->assertJsonPath('summary.item_count', 2)
-            ->assertJsonPath('summary.estimated_duration_minutes', 90)
             ->assertJsonPath('summary.subtotal_after_item_discounts', '145.00');
     }
 
@@ -259,54 +217,31 @@ class UatDef017QuotationPricingUxTest extends TestCase
             ->assertUnprocessable();
     }
 
-    public function test_manual_price_replaces_catalog_price_for_authorized_user(): void
+    public function test_request_prohibits_legacy_references_and_browser_totals(): void
     {
         $payload = $this->payload();
-        $payload['items'][0]['manual_unit_price'] = 90;
-
-        $this->actingAs($this->pricingUser)->postJson(route('quotations.preview'), $payload)
-            ->assertOk()
-            ->assertJsonPath('items.0.unit_price', '90.00')
-            ->assertJsonPath('items.0.base_unit_price', '100.00')
-            ->assertJsonPath('items.0.price_source', 'manual');
-    }
-
-    public function test_request_prohibits_stale_references_for_selected_item_type(): void
-    {
-        $product = $this->payload();
-        $product['items'][0]['item_type'] = 'product';
-        $this->actingAs($this->pricingUser)->postJson(route('quotations.preview'), $product)
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['items.0.service_id', 'items.0.product_id']);
-
-        $service = $this->payload();
-        $service['items'][0]['product_id'] = 999999;
-        $this->actingAs($this->pricingUser)->postJson(route('quotations.preview'), $service)
-            ->assertUnprocessable()->assertJsonValidationErrors('items.0.product_id');
-    }
-
-    public function test_browser_calculated_totals_are_rejected(): void
-    {
-        $payload = $this->payload();
-        $payload['total'] = 1;
+        $payload['items'][0]['item_type'] = 'custom';
+        $payload['items'][0]['service_id'] = 999999;
+        $payload['items'][0]['service_package_id'] = 999999;
         $payload['items'][0]['unit_price'] = 1;
+        $payload['total'] = 1;
 
         $this->actingAs($this->pricingUser)->postJson(route('quotations.preview'), $payload)
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['total', 'items.0.unit_price']);
+            ->assertUnprocessable()->assertJsonValidationErrors([
+                'items.0.item_type', 'items.0.service_id', 'items.0.service_package_id',
+                'items.0.unit_price', 'total',
+            ]);
     }
 
-    public function test_validation_error_preserves_multiple_item_input(): void
+    public function test_validation_error_preserves_multiple_product_input(): void
     {
         $payload = $this->payload();
-        $payload['items'][] = [
-            'item_type' => 'custom', 'description' => '', 'quantity' => 1, 'manual_unit_price' => '',
-        ];
+        $payload['items'][] = ['product_id' => 999999, 'quantity' => 1, 'discount_value' => 0];
 
-        $response = $this->actingAs($this->pricingUser)->from(route('quotations.create'))
+        $this->actingAs($this->pricingUser)->from(route('quotations.create'))
             ->post(route('quotations.store'), $payload)
             ->assertRedirect(route('quotations.create'))
-            ->assertSessionHasErrors(['items.1.description', 'items.1.manual_unit_price']);
+            ->assertSessionHasErrors('items.1.product_id');
 
         $this->assertCount(2, session()->getOldInput('items'));
     }
@@ -316,13 +251,8 @@ class UatDef017QuotationPricingUxTest extends TestCase
         $payload = $this->payload();
         $payload['lead_id'] = 0;
 
-        $response = $this->actingAs($this->pricingUser)
-            ->post(route('quotations.store'), $payload);
-
-        $quotation = Quotation::query()
-            ->where('company_id', $this->company->id)
-            ->latest('id')
-            ->firstOrFail();
+        $response = $this->actingAs($this->pricingUser)->post(route('quotations.store'), $payload);
+        $quotation = Quotation::query()->where('company_id', $this->company->id)->latest('id')->firstOrFail();
 
         $response->assertRedirect(route('quotations.show', $quotation));
         $this->assertNull($quotation->lead_id);
@@ -331,18 +261,37 @@ class UatDef017QuotationPricingUxTest extends TestCase
     private function payload(): array
     {
         return [
-            'branch_id' => $this->branch->id,
-            'customer_id' => $this->customer->id,
-            'vehicle_id' => $this->vehicle->id,
-            'currency_id' => $this->currency->id,
+            'branch_id' => $this->branch->id, 'customer_id' => $this->customer->id,
+            'vehicle_id' => $this->vehicle->id, 'currency_id' => $this->currency->id,
             'quotation_date' => today()->toDateString(),
-            'valid_until' => today()->addDays(7)->toDateString(),
-            'discount_value' => 0,
+            'valid_until' => today()->addDays(7)->toDateString(), 'discount_value' => 0,
             'items' => [[
-                'item_type' => 'service', 'service_id' => $this->service->id,
-                'quantity' => 2, 'discount_value' => 0,
+                'product_id' => $this->product->id, 'quantity' => 2, 'discount_value' => 0,
             ]],
         ];
+    }
+
+    private function makeProduct(string $sku, int $price): Product
+    {
+        $product = Product::query()->forceCreate([
+            'company_id' => $this->company->id, 'category_id' => $this->category->id,
+            'sku' => $sku, 'name' => $sku, 'product_type' => 'stock', 'tracking_type' => 'quantity',
+            'purchase_unit_id' => $this->unit->id, 'stock_unit_id' => $this->unit->id,
+            'sale_unit_id' => $this->unit->id, 'default_tax_id' => $this->tax->id,
+            'default_sale_price' => $price, 'costing_method' => 'weighted_average',
+            'is_sellable' => true, 'is_purchasable' => true, 'is_active' => true,
+        ]);
+        BranchProduct::query()->forceCreate([
+            'company_id' => $this->company->id, 'branch_id' => $this->branch->id,
+            'product_id' => $product->id, 'is_available' => true, 'is_sellable' => true,
+        ]);
+        BranchProductPrice::query()->forceCreate([
+            'company_id' => $this->company->id, 'branch_id' => $this->branch->id,
+            'product_id' => $product->id, 'price' => $price,
+            'effective_from' => today()->subDay(), 'is_active' => true,
+        ]);
+
+        return $product;
     }
 
     private function userWithPermissions(array $permissions, string $roleName): User
@@ -359,9 +308,7 @@ class UatDef017QuotationPricingUxTest extends TestCase
             $role->permissions()->syncWithoutDetaching($permission);
         }
         $user->roles()->attach($role);
-        $user->accessibleBranches()->attach($this->branch->id, [
-            'is_default' => true, 'can_view' => true,
-        ]);
+        $user->accessibleBranches()->attach($this->branch->id, ['is_default' => true, 'can_view' => true]);
 
         return $user;
     }

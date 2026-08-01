@@ -8,11 +8,14 @@
         'currency_id',
         $quotation->exists ? $quotation->currency_id : $companyCurrencyId
     );
-    $canManualPrice = auth()->user()->hasPermission('quotations.manual_price');
     $canViewCost = auth()->user()->hasPermission('quotations.view_cost');
+    $legacyRows = $quotation->exists
+        ? $quotation->items->where('item_type', '!=', 'product')
+        : collect();
     $rows = old('items', $quotation->exists
-        ? $quotation->items->toArray()
-        : [['item_type' => 'service', 'quantity' => 1]]);
+        ? $quotation->items->where('item_type', 'product')->values()->toArray()
+        : [['quantity' => 1]]);
+    if ($rows === []) $rows = [['quantity' => 1]];
 @endphp
 <div class="configuration-page quotation-form-layout">
     <div class="sw-page-header quotations-index-header">
@@ -24,7 +27,8 @@
 
     <form class="sw-card sw-form quotation-form" method="POST"
           action="{{ $quotation->exists ? route('quotations.update', $quotation) : route('quotations.store') }}"
-          data-quotation-builder data-preview-url="{{ route('quotations.preview') }}">
+          data-quotation-builder data-preview-url="{{ route('quotations.preview') }}"
+          data-products-url="{{ route('quotations.products') }}">
         @csrf
         @if($quotation->exists) @method('PUT') @endif
 
@@ -34,7 +38,7 @@
                 <label>الفرع
                     <select name="branch_id" required data-preview-trigger>
                         @foreach($branches as $branch)
-                            <option value="{{ $branch->id }}" @selected(old('branch_id', $quotation->branch_id) == $branch->id)>{{ $branch->name }}</option>
+                            <option value="{{ $branch->id }}" @selected(old('branch_id', $quotation->branch_id ?: $selectedBranchId) == $branch->id)>{{ $branch->name }}</option>
                         @endforeach
                     </select>
                 </label>
@@ -73,9 +77,30 @@
 
         <section class="quotation-section">
             <div class="quotation-section-heading">
-                <div><h2>عناصر عرض السعر</h2><p>اختر نوع العنصر؛ سيظهر الحقل المناسب فقط ويُجلب السعر تلقائيًا.</p></div>
-                <button type="button" class="sw-btn sw-btn--primary" data-add-quotation-item>+ إضافة عنصر جديد</button>
+                <div><h2>منتجات عرض السعر</h2><p>اختر المنتج؛ السعر والخصم الترويجي والضريبة تُجلب من الخادم تلقائيًا.</p></div>
+                <button type="button" class="sw-btn sw-btn--primary" data-add-quotation-item>+ إضافة منتج جديد</button>
             </div>
+            @if($legacyRows->isNotEmpty())
+                <div class="sw-alert sw-alert--warning">
+                    البنود التاريخية غير المنتجية محفوظة للقراءة فقط ولن يتم حذفها أو إعادة تسعيرها.
+                </div>
+                <div class="sw-table-scroll">
+                    <table class="sw-table">
+                        <thead><tr><th>النوع التاريخي</th><th>الوصف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead>
+                        <tbody>
+                            @foreach($legacyRows as $legacyItem)
+                                <tr>
+                                    <td>{{ ['service' => 'خدمة', 'package' => 'باقة', 'custom' => 'عنصر مخصص'][$legacyItem->item_type] ?? $legacyItem->item_type }}</td>
+                                    <td>{{ $legacyItem->description }}</td>
+                                    <td>{{ number_format((float) $legacyItem->quantity, 2) }}</td>
+                                    <td>{{ number_format((float) $legacyItem->unit_price, 2) }}</td>
+                                    <td>{{ number_format((float) $legacyItem->total, 2) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
             <div class="quotation-items" data-quotation-items>
                 @foreach($rows as $i => $row)
                     @include('quotations._item-row', ['i' => $i, 'row' => $row])
@@ -135,7 +160,7 @@
     </form>
 
     <template data-quotation-item-template>
-        @include('quotations._item-row', ['i' => '__INDEX__', 'row' => ['item_type' => 'service', 'quantity' => 1]])
+        @include('quotations._item-row', ['i' => '__INDEX__', 'row' => ['quantity' => 1]])
     </template>
 </div>
 @endsection

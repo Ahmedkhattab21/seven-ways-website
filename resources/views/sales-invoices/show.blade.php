@@ -2,16 +2,34 @@
 @section('title', $invoice->invoice_number)
 @section('page-title', $invoice->invoice_number)
 @section('content')
+@php
+    $statusLabels = [
+        'draft' => 'مسودة',
+        'pending_approval' => 'بانتظار الاعتماد',
+        'approved' => 'معتمدة',
+        'issued' => 'صادرة',
+        'partially_paid' => 'مدفوعة جزئيًا',
+        'paid' => 'مدفوعة',
+        'overdue' => 'متأخرة',
+        'cancelled' => 'ملغاة',
+        'void' => 'مفرغة',
+    ];
+    $actionLabels = [
+        'submit' => 'إرسال للاعتماد',
+        'approve' => 'اعتماد الفاتورة',
+        'issue' => 'إصدار الفاتورة',
+    ];
+@endphp
 <section class="sw-card">
     <header class="sw-card__header">
         <div>
             <h2 class="sw-card__title">{{ $invoice->invoice_number }}</h2>
-            <p class="sw-card__subtitle">{{ $invoice->customer_name_snapshot }} — {{ $invoice->branch->name }} — {{ $invoice->status }}</p>
+            <p class="sw-card__subtitle">{{ $invoice->customer_name_snapshot }} — {{ $invoice->branch->name }} — {{ $statusLabels[$invoice->status] ?? $invoice->status }}</p>
         </div>
         <div class="sw-form-actions">
             <a class="sw-button sw-button--outline" href="{{ route('sales-invoices.print', $invoice) }}">طباعة</a>
             @if(auth()->user()->hasPermission('sales_invoices.share'))
-                <form method="POST" action="{{ route('sales-invoices.share', $invoice) }}">@csrf<button class="sw-button sw-button--primary">مشاركة عبر واتساب</button></form>
+                <form method="POST" action="{{ route('sales-invoices.share', $invoice) }}">@csrf<button class="sw-button sw-button--primary">إرسال الفاتورة عبر واتساب</button></form>
             @endif
         </div>
     </header>
@@ -42,7 +60,9 @@
 
 @foreach(['draft'=>'submit','pending_approval'=>'approve','approved'=>'issue'] as $status=>$action)
     @if($invoice->status === $status)
-        <form class="sw-card" method="POST" action="{{ route('sales-invoices.action', [$invoice, $action]) }}">@csrf<button class="sw-button sw-button--primary">{{ $action }}</button></form>
+        @can($action, $invoice)
+            <form class="sw-card" method="POST" action="{{ route('sales-invoices.action', [$invoice, $action]) }}">@csrf<button class="sw-button sw-button--primary">{{ $actionLabels[$action] }}</button></form>
+        @endcan
     @endif
 @endforeach
 @if(in_array($invoice->status, ['issued','partially_paid','paid','overdue']))

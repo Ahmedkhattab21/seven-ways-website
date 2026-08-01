@@ -351,13 +351,9 @@ ready(() => {
         const headerDiscountType = form.querySelector('[data-header-discount-type]');
         const headerDiscountValue = form.querySelector('[data-header-discount-value]');
         const priceSourceLabels = {
-            service_price: 'سعر حسب الفرع وبيانات السيارة',
-            branch_default: 'سعر الفرع',
-            package_price: 'سعر الباقة',
-            product_price: 'سعر المنتج',
-            promotion: 'سعر بعد عرض ترويجي',
-            manual: 'سعر يدوي',
-            custom_quote: 'سعر عنصر مخصص',
+            branch_product_price: 'سعر الفرع',
+            unified_product_price: 'السعر الموحد لكل الفروع',
+            product_promotion: 'سعر بعد عرض ترويجي',
         };
         let previewTimer;
         let previewRequest;
@@ -392,92 +388,38 @@ ready(() => {
             }
         };
 
-        const syncManualPrice = (item, clear = false) => {
-            const type = item.querySelector('[data-item-type]')?.value;
-            const toggle = item.querySelector('[data-manual-price-toggle]');
-            const toggleLabel = item.querySelector('[data-manual-price-toggle-label]');
-            const fieldLabel = item.querySelector('[data-manual-price-field]');
-            const input = fieldLabel?.querySelector('input');
-            if (!input) return;
-
-            const custom = type === 'custom';
-            toggleLabel?.toggleAttribute('hidden', custom);
-            const enabled = custom || Boolean(toggle?.checked);
-            fieldLabel.toggleAttribute('hidden', !enabled);
-            input.disabled = !enabled;
-            input.required = custom;
-            if (!enabled && clear) input.value = '';
+        const syncProduct = (item) => {
+            const option = item.querySelector('[data-item-reference]')?.selectedOptions[0];
+            const unit = item.querySelector('[data-item-unit]');
+            if (unit) unit.textContent = option?.dataset.saleUnit || '—';
         };
 
-        const syncItemType = (item, clear = false) => {
-            const type = item.querySelector('[data-item-type]')?.value ?? 'service';
-            const labels = {
-                service: ['الخدمة', 'خصم هذه الخدمة'],
-                package: ['الباقة', 'خصم هذه الباقة'],
-                product: ['المنتج', 'خصم هذا المنتج'],
-                custom: ['البند المخصص', 'خصم البند المخصص'],
-            };
-            item.querySelector('[data-item-title]').textContent = labels[type][0];
-            item.querySelector('[data-item-discount-title]').textContent = labels[type][1];
-            item.querySelectorAll('[data-item-field]').forEach((label) => {
-                const visible = label.dataset.itemField === type;
-                const field = label.querySelector('select, input');
-                label.toggleAttribute('hidden', !visible);
-                if (field) {
-                    field.disabled = !visible;
-                    field.required = visible;
-                    if (!visible && clear) field.value = '';
-                }
-            });
-            const description = item.querySelector('[data-item-description]');
-            if (description) description.required = type === 'custom';
-            item.querySelector('[data-package-details]')?.toggleAttribute('hidden', type !== 'package');
-            syncManualPrice(item, clear);
-        };
-
-        const filterPackages = () => {
+        const refreshProducts = async () => {
             const branchId = form.elements.namedItem('branch_id')?.value;
-            const vehicleSizeId = form.querySelector('[data-quotation-vehicle]')?.selectedOptions[0]?.dataset.vehicleSizeId || '';
-            const priceDate = form.elements.namedItem('quotation_date')?.value;
-            itemsContainer.querySelectorAll('[data-item-field="package"] select').forEach((select) => {
-                let availableCount = 0;
-                [...select.querySelectorAll('option[data-package-availability]')].forEach((option) => {
-                    const prices = JSON.parse(option.dataset.packageAvailability || '[]');
-                    const visible = prices.some((price) =>
-                        String(price.branch_id) === String(branchId)
-                        && (!price.vehicle_size_id || String(price.vehicle_size_id) === String(vehicleSizeId))
-                        && (!price.effective_from || price.effective_from <= priceDate)
-                        && (!price.effective_to || price.effective_to >= priceDate)
+            const quotationDate = form.elements.namedItem('quotation_date')?.value;
+            if (!form.dataset.productsUrl || !branchId || !quotationDate) return;
+            const url = new URL(form.dataset.productsUrl, window.location.origin);
+            url.searchParams.set('branch_id', branchId);
+            url.searchParams.set('quotation_date', quotationDate);
+            const response = await fetch(url, { headers: { Accept: 'application/json' } });
+            if (!response.ok) return;
+            const payload = await response.json();
+            itemsContainer.querySelectorAll('[data-item-reference]').forEach((select) => {
+                const selected = select.value;
+                select.replaceChildren(new Option('اختر المنتج', ''));
+                payload.products.forEach((product) => {
+                    const option = new Option(
+                        `${product.sku} — ${product.name} — المتاح ${Number(product.available_stock).toFixed(2)}`,
+                        product.id
                     );
-                    option.hidden = !visible;
-                    option.disabled = !visible;
-                    if (visible) availableCount += 1;
+                    option.dataset.saleUnit = product.sale_unit || '';
+                    option.dataset.availableStock = product.available_stock;
+                    select.add(option);
                 });
-                if (select.selectedOptions[0]?.disabled) select.value = '';
-                const message = select.closest('[data-item-field="package"]')?.querySelector('[data-package-empty]');
-                if (message) {
-                    message.textContent = vehicleSizeId
-                        ? 'لا توجد باقة متاحة بسعر ساري لهذا الفرع وحجم السيارة في تاريخ العرض.'
-                        : 'السيارة المحددة لا تحتوي على حجم، بينما الباقات الحالية مسعّرة حسب حجم السيارة. حدّث حجم السيارة أو أضف سعرًا للباقة يشمل كل الأحجام.';
-                    message.toggleAttribute('hidden', availableCount > 0);
-                }
-            });
-        };
-
-        const filterProducts = () => {
-            const branchId = form.elements.namedItem('branch_id')?.value;
-            itemsContainer.querySelectorAll('[data-item-field="product"] select').forEach((select) => {
-                let availableCount = 0;
-                [...select.querySelectorAll('option[data-product-branches]')].forEach((option) => {
-                    const branches = JSON.parse(option.dataset.productBranches || '[]');
-                    const visible = branches.some((id) => String(id) === String(branchId));
-                    option.hidden = !visible;
-                    option.disabled = !visible;
-                    if (visible) availableCount += 1;
-                });
-                if (select.selectedOptions[0]?.disabled) select.value = '';
-                const message = select.closest('[data-item-field="product"]')?.querySelector('[data-product-empty]');
-                message?.toggleAttribute('hidden', availableCount > 0);
+                select.value = [...select.options].some((option) => option.value === selected) ? selected : '';
+                select.closest('[data-quotation-item]')?.querySelector('[data-product-empty]')
+                    ?.toggleAttribute('hidden', payload.products.length > 0);
+                syncProduct(select.closest('[data-quotation-item]'));
             });
         };
 
@@ -486,13 +428,7 @@ ready(() => {
             if (requiredHeader.some((name) => !form.elements.namedItem(name)?.value)) return false;
 
             return [...itemsContainer.querySelectorAll('[data-quotation-item]')].every((item) => {
-                const type = item.querySelector('[data-item-type]')?.value;
-                const reference = item.querySelector(`[data-item-field="${type}"] [data-item-reference]`);
-                if (type === 'custom') {
-                    return Boolean(item.querySelector('[data-item-description]')?.value
-                        && item.querySelector('[data-manual-price-field] input')?.value);
-                }
-
+                const reference = item.querySelector('[data-item-reference]');
                 return Boolean(reference?.value && item.querySelector('[data-item-quantity]')?.value);
             });
         };
@@ -531,22 +467,11 @@ ready(() => {
                 item.querySelector('[data-item-unit-price]').textContent = money(row.unit_price, currency);
                 item.querySelector('[data-item-price-source]').textContent =
                     priceSourceLabels[row.price_source] ?? 'سعر محسوب من النظام';
-                item.querySelector('[data-item-gross]').textContent = money(row.gross_amount, currency);
                 item.querySelector('[data-item-discount]').textContent = money(row.item_discount_amount, currency);
                 item.querySelector('[data-item-net]').textContent = money(row.net_amount, currency);
                 item.querySelector('[data-item-tax]').textContent = money(row.tax_amount, currency);
                 item.querySelector('[data-item-total]').textContent = money(row.line_total, currency);
-                item.querySelector('[data-item-duration]').textContent = row.estimated_duration_minutes ?? '—';
-                const packageDetails = item.querySelector('[data-package-details]');
-                if (packageDetails) {
-                    packageDetails.querySelector('[data-package-services]').textContent = row.package_services?.length
-                        ? row.package_services.map((service) => `${service.name} × ${Number(service.quantity)}`).join('، ')
-                        : '—';
-                    packageDetails.querySelector('[data-package-standalone]').textContent =
-                        row.standalone_services_total === null ? 'غير متاح' : money(row.standalone_services_total, currency);
-                    packageDetails.querySelector('[data-package-saving]').textContent =
-                        row.package_savings === null ? 'غير متاح' : money(row.package_savings, currency);
-                }
+                if (item.querySelector('[data-item-unit]')) item.querySelector('[data-item-unit]').textContent = row.sale_unit || '—';
                 const warning = item.querySelector('[data-item-warning]');
                 warning.textContent = row.warnings?.join(' ') ?? '';
                 warning.toggleAttribute('hidden', !row.warnings?.length);
@@ -599,19 +524,13 @@ ready(() => {
         };
 
         const schedulePreview = () => {
-            filterPackages();
-            filterProducts();
             window.clearTimeout(previewTimer);
             previewTimer = window.setTimeout(requestPreview, 250);
         };
 
         const bindItem = (item) => {
-            item.querySelector('[data-item-type]')?.addEventListener('change', () => {
-                syncItemType(item, true);
-                schedulePreview();
-            });
-            item.querySelector('[data-manual-price-toggle]')?.addEventListener('change', () => {
-                syncManualPrice(item, true);
+            item.querySelector('[data-item-reference]')?.addEventListener('change', () => {
+                syncProduct(item);
                 schedulePreview();
             });
             item.querySelector('[data-item-discount-type]')?.addEventListener('change', () => {
@@ -621,15 +540,15 @@ ready(() => {
             item.querySelector('[data-remove-quotation-item]')?.addEventListener('click', () => {
                 if (itemsContainer.querySelectorAll('[data-quotation-item]').length <= 1) return;
                 const hasEnteredData = [...item.querySelectorAll('input, select')].some((field) => {
-                    if (field.matches('[data-item-type], [data-item-quantity]')) return false;
+                    if (field.matches('[data-item-quantity]')) return false;
                     return field.type === 'checkbox' ? field.checked : Boolean(field.value);
                 });
-                if (hasEnteredData && !window.confirm('هل تريد حذف هذا العنصر والبيانات المدخلة به؟')) return;
+                if (hasEnteredData && !window.confirm('هل تريد حذف هذا المنتج والبيانات المدخلة به؟')) return;
                 item.remove();
                 reindexItems();
                 schedulePreview();
             });
-            syncItemType(item, true);
+            syncProduct(item);
             syncDiscount(item);
         };
 
@@ -641,8 +560,6 @@ ready(() => {
             itemsContainer.append(item);
             bindItem(item);
             reindexItems();
-            filterPackages();
-            filterProducts();
             schedulePreview();
         });
 
@@ -663,6 +580,8 @@ ready(() => {
         form.addEventListener('change', (event) => {
             if (event.target.matches('input, select')) schedulePreview();
         });
+        form.elements.namedItem('branch_id')?.addEventListener('change', refreshProducts);
+        form.elements.namedItem('quotation_date')?.addEventListener('change', refreshProducts);
         form.addEventListener('submit', () => {
             if (submitButton.disabled) return;
             submitButton.disabled = true;
@@ -671,8 +590,6 @@ ready(() => {
 
         itemsContainer.querySelectorAll('[data-quotation-item]').forEach(bindItem);
         reindexItems();
-        filterPackages();
-        filterProducts();
         if (headerDiscountType) headerDiscountType.dispatchEvent(new Event('change'));
         schedulePreview();
     });

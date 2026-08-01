@@ -83,17 +83,12 @@ class ServicePackagesCoreModuleTest extends TestCase
         ]);
     }
 
-    public function test_catalog_shows_package_card_tab_metrics_and_create_action(): void
+    public function test_package_index_shows_create_action(): void
     {
-        $this->actingAs($this->user)->get(route('catalog.index'))
-            ->assertOk()
-            ->assertSee('باقات الخدمات')
-            ->assertSee('تجميع أكثر من خدمة داخل باقة واحدة بسعر ومدة وإتاحة خاصة بكل فرع.')
-            ->assertSee('الباقات غير المسعّرة')
-            ->assertSee(route('service-packages.create'), false);
-
         $this->actingAs($this->user)->get(route('service-packages.index'))
-            ->assertOk()->assertSee('إضافة باقة خدمات')->assertSee('لا توجد باقات خدمات حتى الآن.');
+            ->assertOk()
+            ->assertSee('إضافة باقة خدمات')
+            ->assertSee('لا توجد باقات خدمات حتى الآن.');
     }
 
     public function test_package_form_updates_approved_price_and_marks_missing_service_prices(): void
@@ -108,14 +103,13 @@ class ServicePackagesCoreModuleTest extends TestCase
         $this->assertStringContainsString('missingPricesMessage?.toggleAttribute', $javascript);
     }
 
-    public function test_quotation_form_explains_why_no_package_matches_the_vehicle(): void
+    public function test_quotation_form_does_not_expose_packages(): void
     {
         $view = file_get_contents(resource_path('views/quotations/_item-row.blade.php'));
-        $javascript = file_get_contents(resource_path('js/app.js'));
 
-        $this->assertStringContainsString('data-package-empty', $view);
-        $this->assertStringContainsString('السيارة المحددة لا تحتوي على حجم', $javascript);
-        $this->assertStringContainsString('availableCount > 0', $javascript);
+        $this->assertStringNotContainsString('data-package-empty', $view);
+        $this->assertStringNotContainsString('service_package_id', $view);
+        $this->assertStringNotContainsString('data-item-field="package"', $view);
     }
 
     public function test_package_service_can_be_scheduled_through_its_active_branch_package(): void
@@ -146,7 +140,7 @@ class ServicePackagesCoreModuleTest extends TestCase
     {
         $viewer = $this->userWithPermissions(['service_packages.view']);
 
-        $this->actingAs($viewer)->get(route('catalog.index'))
+        $this->actingAs($viewer)->get(route('service-packages.index'))
             ->assertOk()->assertDontSee(route('service-packages.create'), false);
         $this->actingAs($viewer)->get(route('service-packages.create'))->assertForbidden();
     }
@@ -216,7 +210,7 @@ class ServicePackagesCoreModuleTest extends TestCase
         $service->savePrice($package, $data + ['price' => 110]);
     }
 
-    public function test_quotation_uses_approved_package_price_and_returns_savings_and_services(): void
+    public function test_quotation_rejects_packages_even_when_they_have_an_approved_price(): void
     {
         $package = $this->package();
         BranchServicePackage::query()->forceCreate([
@@ -247,12 +241,10 @@ class ServicePackagesCoreModuleTest extends TestCase
                 'item_type' => 'package', 'service_package_id' => $package->id,
                 'quantity' => 1, 'discount_value' => 0,
             ]],
-        ])->assertOk()
-            ->assertJsonPath('items.0.unit_price', '120.00')
-            ->assertJsonPath('items.0.standalone_services_total', '160.00')
-            ->assertJsonPath('items.0.package_savings', '40.00')
-            ->assertJsonCount(2, 'items.0.package_services')
-            ->assertJsonPath('items.0.line_total', '136.80');
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'items.0.item_type', 'items.0.service_package_id', 'items.0.product_id',
+            ]);
     }
 
     private function service(ServiceCategory $category, Tax $tax, string $name, int $price, int $duration): Service

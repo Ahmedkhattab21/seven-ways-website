@@ -16,7 +16,7 @@ class InvoiceShareController extends Controller
         SalesInvoice $salesInvoice,
         PhoneNormalizer $phones,
         AuditService $audit
-    ): RedirectResponse {
+    ): RedirectResponse|View {
         $this->authorize('share', $salesInvoice);
         $number = $phones->normalize($salesInvoice->customer_phone_snapshot, $salesInvoice->company->country_code);
         if (! $number || ! preg_match('/^\d{8,15}$/', $number)) {
@@ -43,9 +43,17 @@ class InvoiceShareController extends Controller
             'invoice_share_id' => $share->id,
             'channel' => 'whatsapp',
         ]);
-        $message = rawurlencode("فاتورة Seven Ways رقم {$salesInvoice->invoice_number}\n{$url}");
+        $message = rawurlencode(implode("\n", [
+            'فاتورة Seven Ways',
+            "رقم الفاتورة: {$salesInvoice->invoice_number}",
+            "العميل: {$salesInvoice->customer_name_snapshot}",
+            "الإجمالي: {$salesInvoice->total} {$salesInvoice->currency?->code}",
+            "عرض الفاتورة: {$url}",
+        ]));
 
-        return redirect()->away("https://wa.me/{$number}?text={$message}");
+        return view('sales-invoices.whatsapp-redirect', [
+            'whatsappUrl' => "https://web.whatsapp.com/send?phone={$number}&text={$message}",
+        ]);
     }
 
     public function show(InvoiceShare $invoiceShare): View

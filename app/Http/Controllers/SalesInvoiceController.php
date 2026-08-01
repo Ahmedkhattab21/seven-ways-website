@@ -93,7 +93,7 @@ class SalesInvoiceController extends Controller
             'void' => $approval->voidInvoice($salesInvoice, $request->validated('reason')),
         };
 
-        return back()->with('success', 'Invoice action completed.');
+        return back()->with('success', 'تم تنفيذ إجراء الفاتورة بنجاح.');
     }
 
     public function print(SalesInvoice $salesInvoice): View

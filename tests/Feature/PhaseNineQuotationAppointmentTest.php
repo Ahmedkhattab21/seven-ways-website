@@ -34,7 +34,6 @@ use App\Services\AppointmentService;
 use App\Services\DocumentNumberService;
 use App\Services\QuotationAcceptanceService;
 use App\Services\QuotationApprovalService;
-use App\Services\QuotationService;
 use App\Services\QuotationToAppointmentService;
 use App\Services\QuotationVersionService;
 use Database\Seeders\QuotationAppointmentSeeder;
@@ -346,15 +345,29 @@ class PhaseNineQuotationAppointmentTest extends TestCase
 
     private function quotation(array $context): Quotation
     {
-        return app(QuotationService::class)->save([
-            'branch_id' => $context['branch']->id, 'customer_id' => $context['customer']->id,
+        $quotation = Quotation::query()->forceCreate([
+            'company_id' => $context['company']->id, 'branch_id' => $context['branch']->id,
+            'quotation_number' => app(DocumentNumberService::class)->next(
+                'quotation', $context['company']->id, $context['branch']->id, today()
+            ),
+            'version_number' => 1, 'status' => 'draft', 'customer_id' => $context['customer']->id,
             'vehicle_id' => $context['vehicle']->id, 'quotation_date' => today(),
             'valid_until' => today()->addDays(7), 'currency_id' => $context['currency']->id,
-            'discount_type' => 'percentage', 'discount_value' => 10,
-        ], [[
-            'item_type' => 'service', 'service_id' => $context['service']->id, 'quantity' => 2,
-            'discount_type' => 'percentage', 'discount_value' => 10,
-        ]]);
+            'price_includes_tax' => false, 'discount_type' => 'percentage', 'discount_value' => 10,
+            'subtotal' => 180, 'discount_amount' => 18, 'tax_amount' => 24.3, 'total' => 186.3,
+            'created_by' => $context['user']->id,
+        ]);
+        $quotation->items()->create([
+            'sort_order' => 0, 'item_type' => 'service', 'service_id' => $context['service']->id,
+            'description' => $context['service']->name, 'quantity' => 2, 'unit_price' => 100,
+            'gross_amount' => 200, 'price_source' => 'legacy_snapshot',
+            'discount_type' => 'percentage', 'discount_value' => 10, 'discount_amount' => 20,
+            'net_amount' => 180, 'tax_id' => $context['tax']->id, 'tax_rate' => 15,
+            'tax_amount' => 27, 'total' => 207,
+            'metadata' => ['header_discount_allocation' => '18.0000'],
+        ]);
+
+        return $quotation->fresh(['items']);
     }
 
     private function acceptedQuotation(array $context): Quotation

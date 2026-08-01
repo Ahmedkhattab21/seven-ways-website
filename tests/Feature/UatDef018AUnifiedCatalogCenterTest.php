@@ -15,7 +15,7 @@ class UatDef018AUnifiedCatalogCenterTest extends TestCase
 {
     use DatabaseTransactions;
 
-    public function test_catalog_center_displays_products_only(): void
+    public function test_products_page_is_the_only_product_center(): void
     {
         [$company, $branch] = $this->companyContext();
         $user = $this->userWithPermissions($company, $branch, [
@@ -24,7 +24,7 @@ class UatDef018AUnifiedCatalogCenterTest extends TestCase
             'service_packages.view', 'service_packages.create',
         ]);
 
-        $this->actingAs($user)->get(route('catalog.index'))
+        $this->actingAs($user)->get(route('products.index'))
             ->assertOk()
             ->assertSee('المنتجات')
             ->assertSee(route('products.create'), false)
@@ -35,12 +35,12 @@ class UatDef018AUnifiedCatalogCenterTest extends TestCase
             ->assertDontSee(route('product-references.index', 'brands'), false);
     }
 
-    public function test_catalog_hides_unauthorized_tabs_and_actions(): void
+    public function test_products_page_hides_unauthorized_actions(): void
     {
         [$company, $branch] = $this->companyContext();
         $user = $this->userWithPermissions($company, $branch, ['products.view']);
 
-        $this->actingAs($user)->get(route('catalog.index'))
+        $this->actingAs($user)->get(route('products.index'))
             ->assertOk()
             ->assertSee(route('products.index'), false)
             ->assertDontSee(route('services.index'), false)
@@ -48,29 +48,36 @@ class UatDef018AUnifiedCatalogCenterTest extends TestCase
             ->assertDontSee(route('products.create'), false);
     }
 
-    public function test_catalog_rejects_user_without_any_catalog_view_permission(): void
+    public function test_products_page_rejects_user_without_view_permission(): void
     {
         [$company, $branch] = $this->companyContext();
         $user = $this->userWithPermissions($company, $branch, ['dashboard.view']);
 
-        $this->actingAs($user)->get(route('catalog.index'))->assertForbidden();
         $this->actingAs($user)->get(route('products.index'))->assertForbidden();
         $this->actingAs($user)->get(route('services.index'))->assertForbidden();
     }
 
-    public function test_sidebar_uses_one_catalog_entry_and_keeps_all_catalog_routes_active(): void
+    public function test_sidebar_uses_products_as_the_canonical_entry(): void
     {
         $items = collect(config('sidebar'))->flatMap(fn (array $section) => $section['items']);
-        $catalogItems = $items->where('route', 'catalog.index');
+        $productItems = $items->where('route', 'products.index');
 
-        $this->assertCount(1, $catalogItems);
-        $this->assertSame('المنتجات', $catalogItems->first()['label']);
+        $this->assertCount(1, $productItems);
+        $this->assertSame('المنتجات', $productItems->first()['label']);
         $this->assertSame(
-            ['catalog.*', 'products.*', 'product-references.*'],
-            $catalogItems->first()['active']
+            ['products.*', 'product-references.*'],
+            $productItems->first()['active']
         );
-        $this->assertFalse($items->contains('route', 'products.index'));
+        $this->assertFalse($items->contains('route', 'catalog.index'));
         $this->assertFalse($items->contains('route', 'services.index'));
+    }
+
+    public function test_legacy_catalog_url_redirects_to_products(): void
+    {
+        [$company, $branch] = $this->companyContext();
+        $user = $this->userWithPermissions($company, $branch, ['products.view']);
+
+        $this->actingAs($user)->get('/catalog')->assertRedirect('/products');
     }
 
     public function test_product_pages_do_not_expose_other_catalog_sections(): void

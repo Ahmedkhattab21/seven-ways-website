@@ -48,7 +48,6 @@ use App\Http\Controllers\CashBoxController;
 use App\Http\Controllers\CashBoxSessionController;
 use App\Http\Controllers\CashFlowController;
 use App\Http\Controllers\CashOperationController;
-use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CentralWorkflowReportController;
 use App\Http\Controllers\ChequeController;
 use App\Http\Controllers\CompanyController;
@@ -542,7 +541,7 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
-    Route::get('catalog', [CatalogController::class, 'index'])->name('catalog.index');
+    Route::redirect('catalog', '/products');
     Route::get('products', [ProductController::class, 'index'])->middleware('permission:products.view')->name('products.index');
     Route::get('products/create', [ProductController::class, 'create'])->middleware('permission:products.create')->name('products.create');
     Route::post('products', [ProductController::class, 'store'])->middleware('permission:products.create')->name('products.store');
@@ -631,6 +630,7 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
 
     Route::get('quotations', [QuotationController::class, 'index'])->middleware('permission:quotations.view')->name('quotations.index');
     Route::get('quotations/create', [QuotationController::class, 'create'])->middleware('permission:quotations.create')->name('quotations.create');
+    Route::get('quotations/products', [QuotationController::class, 'products'])->middleware('permission:quotations.create')->name('quotations.products');
     Route::post('quotations/preview', [QuotationController::class, 'preview'])->middleware('permission:quotations.create')->name('quotations.preview');
     Route::post('quotations', [QuotationController::class, 'store'])->middleware('permission:quotations.create')->name('quotations.store');
     Route::get('quotations/{quotation}', [QuotationController::class, 'show'])->middleware('permission:quotations.view')->name('quotations.show');

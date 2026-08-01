@@ -4,8 +4,8 @@ namespace Tests\Feature\PhaseTwentyOne;
 
 use App\Core\Tenancy\TenantContext;
 use App\Models\Customer;
+use App\Models\Product;
 use App\Models\Quotation;
-use App\Models\Service;
 use App\Models\Vehicle;
 use App\Services\QuotationApprovalService;
 use App\Services\QuotationService;
@@ -25,8 +25,8 @@ class PhaseTwentyOneSalesWorkOrderCycleTest extends TestCase
             ->where('customer_code', 'UAT-CUS-CASH')->firstOrFail();
         $vehicle = Vehicle::query()->where('company_id', $this->uatCompany->id)
             ->where('customer_id', $customer->id)->firstOrFail();
-        $service = Service::query()->where('company_id', $this->uatCompany->id)
-            ->where('code', 'UAT-SVC-PARTIAL')->firstOrFail();
+        $product = Product::query()->where('company_id', $this->uatCompany->id)
+            ->where('sku', 'CLEANER-PPF-UAT-001')->firstOrFail();
 
         $quotation = app(QuotationService::class)->save([
             'branch_id' => $this->uatBranches['UAT-CAI']->id,
@@ -38,16 +38,13 @@ class PhaseTwentyOneSalesWorkOrderCycleTest extends TestCase
             'discount_type' => 'percentage',
             'discount_value' => 10,
         ], [[
-            'item_type' => 'service',
-            'service_id' => $service->id,
+            'product_id' => $product->id,
             'quantity' => 1,
-            'unit_price' => 1,
-            'tax_rate' => 1,
         ]]);
-        $this->assertSame('2500.0000', $quotation->subtotal);
-        $this->assertSame('250.0000', $quotation->discount_amount);
-        $this->assertSame('315.0000', $quotation->tax_amount);
-        $this->assertSame('2565.0000', $quotation->total);
+        $this->assertSame('250.0000', $quotation->subtotal);
+        $this->assertSame('25.0000', $quotation->discount_amount);
+        $this->assertSame('31.5000', $quotation->tax_amount);
+        $this->assertSame('256.5000', $quotation->total);
 
         app(QuotationApprovalService::class)->submit($quotation);
         $manager = $this->uatUser('uat.cairo.manager@sevenways.test');

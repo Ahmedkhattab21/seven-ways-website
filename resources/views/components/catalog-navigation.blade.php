@@ -1,4 +1,4 @@
-@props(['active' => 'overview', 'permissionNames' => null])
+@props(['active' => 'products', 'permissionNames' => null])
 
 @php
     $user = auth()->user();
@@ -11,7 +11,6 @@
         ->unique();
     $can = fn (string $permission) => $permissionNames->contains($permission);
     $items = [
-        ['key' => 'overview', 'label' => 'نظرة عامة', 'route' => 'catalog.index', 'allowed' => true],
         ['key' => 'products', 'label' => 'المنتجات', 'route' => 'products.index', 'allowed' => $can('products.view')],
         ['key' => 'services', 'label' => 'الخدمات', 'route' => 'services.index', 'allowed' => $can('services.view')],
         ['key' => 'packages', 'label' => 'باقات الخدمات', 'route' => 'service-packages.index', 'allowed' => $can('service_packages.view')],
@@ -21,7 +20,7 @@
     ];
 @endphp
 
-<nav class="catalog-navigation" aria-label="التنقل داخل مركز المنتجات والخدمات">
+<nav class="catalog-navigation" aria-label="التنقل بين المنتجات والخدمات">
     @foreach($items as $item)
         @if($item['allowed'])
             <a

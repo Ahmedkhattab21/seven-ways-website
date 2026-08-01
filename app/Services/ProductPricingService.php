@@ -52,8 +52,8 @@ class ProductPricingService
             ->orderByDesc('effective_from')
             ->orderByDesc('id')
             ->first();
-        if (! $price) {
-            throw new BusinessRuleException('لا يوجد سعر فرع ساري للمنتج المحدد.');
+        if (! $price && $product->default_sale_price === null) {
+            throw new BusinessRuleException('لا يوجد سعر فرع أو سعر موحد ساري للمنتج المحدد.');
         }
 
         $promotion = Promotion::query()
@@ -69,7 +69,7 @@ class ProductPricingService
             ->orderBy('id')
             ->first();
 
-        $basePrice = (string) $price->price;
+        $basePrice = (string) ($price?->price ?? $product->default_sale_price);
         $finalPrice = $basePrice;
         $discount = '0';
         if ($promotion) {
@@ -87,18 +87,20 @@ class ProductPricingService
 
         return [
             'branch_product_id' => $availability->id,
-            'branch_product_price_id' => $price->id,
+            'branch_product_price_id' => $price?->id,
             'warehouse_id' => $availability->default_sales_warehouse_id,
             'base_price' => number_format((float) $basePrice, 4, '.', ''),
-            'minimum_price' => $price->minimum_price,
+            'minimum_price' => $price?->minimum_price,
             'promotion_id' => $promotion?->id,
             'promotion_name' => $promotion?->name,
             'discount_amount' => number_format((float) $discount, 4, '.', ''),
             'final_price' => number_format((float) $finalPrice, 4, '.', ''),
-            'effective_from' => $price->effective_from?->toDateString(),
-            'effective_to' => $price->effective_to?->toDateString(),
-            'price_source' => $promotion ? 'product_promotion' : 'branch_product_price',
-            'requires_approval' => $price->minimum_price !== null
+            'effective_from' => $price?->effective_from?->toDateString(),
+            'effective_to' => $price?->effective_to?->toDateString(),
+            'price_source' => $promotion
+                ? 'product_promotion'
+                : ($price ? 'branch_product_price' : 'unified_product_price'),
+            'requires_approval' => $price?->minimum_price !== null
                 && (float) $finalPrice < (float) $price->minimum_price,
         ];
     }

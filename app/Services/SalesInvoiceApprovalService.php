@@ -23,10 +23,6 @@ class SalesInvoiceApprovalService
 
     public function approve(SalesInvoice $invoice): SalesInvoice
     {
-        if (config('sales.separation_of_duties', true) && $invoice->created_by === $this->tenant->user()->id) {
-            throw new BusinessRuleException('Invoice creator cannot approve the same invoice.', status: 403);
-        }
-
         return $this->transition($invoice, 'pending_approval', 'approved', 'approved');
     }
 
@@ -76,7 +72,20 @@ class SalesInvoiceApprovalService
             $invoice->forceFill([
                 'status' => $to, "{$action}_by" => $this->tenant->user()->id, "{$action}_at" => now(),
             ])->save();
-            $this->audit->record("sales_invoice.{$action}", $invoice);
+            $metadata = [];
+            if ($action === 'approved') {
+                $metadata = [
+                    'invoice_id' => $invoice->id,
+                    'invoice_number' => $invoice->invoice_number,
+                    'company_id' => $invoice->company_id,
+                    'branch_id' => $invoice->branch_id,
+                    'approved_by' => $invoice->approved_by,
+                    'approved_at' => $invoice->approved_at?->toIso8601String(),
+                    'previous_status' => $from,
+                    'new_status' => $to,
+                ];
+            }
+            $this->audit->record("sales_invoice.{$action}", $invoice, $metadata);
             DB::afterCommit(fn () => event(match ($action) {
                 'submitted' => new SalesInvoiceSubmitted($invoice->id),
                 'approved' => new SalesInvoiceApproved($invoice->id),

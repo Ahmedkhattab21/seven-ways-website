@@ -39,7 +39,9 @@ class SalesInvoicePolicy
 
     public function approve(User $user, SalesInvoice $invoice): bool
     {
-        return $this->scoped($user, $invoice) && $user->hasPermission('sales_invoices.approve');
+        return $invoice->status === 'pending_approval'
+            && $this->scoped($user, $invoice)
+            && $user->hasPermission('sales_invoices.approve');
     }
 
     public function issue(User $user, SalesInvoice $invoice): bool

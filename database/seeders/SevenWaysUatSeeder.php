@@ -9,6 +9,7 @@ use App\Models\Bank;
 use App\Models\BankAccount;
 use App\Models\BankAccountBranchAccess;
 use App\Models\Branch;
+use App\Models\BranchProduct;
 use App\Models\BranchService;
 use App\Models\CashBox;
 use App\Models\CashBoxCustodian;
@@ -90,6 +91,7 @@ class SevenWaysUatSeeder extends Seeder
             $this->seedWarehouses($company, $branches);
             $this->seedInventorySequences($company, $branches);
             $products = $this->seedProducts($company, $users['owner']);
+            $this->seedBranchProducts($company, $branches, $products, $users['owner']);
             $services = $this->seedServices($company, $branches, $users['owner']);
             $customers = $this->seedCustomers($company, $branches, $users['owner']);
             $this->seedVehicles($company, $branches['UAT-CAI'], $customers, $users['owner']);
@@ -447,6 +449,7 @@ class SevenWaysUatSeeder extends Seeder
             ['UAT-HEAT-FILM', 'عازل حراري UAT', 'film', $roll, $meter, $vat, 250, 550, 2, false],
             ['UAT-INSTALL-KIT', 'إكسسوارات تركيب UAT', 'stock', $piece, $piece, $vat, 75, 150, 10, false],
             ['UAT-CONSUMABLE', 'مواد استهلاكية UAT', 'stock', $piece, $piece, $exempt, 20, 45, 20, true],
+            ['CLEANER-PPF-UAT-001', 'منظف أفلام الحماية PPF UAT', 'stock', $piece, $piece, $vat, 100, 250, 5, true],
         ];
 
         $products = [];
@@ -479,6 +482,27 @@ class SevenWaysUatSeeder extends Seeder
         }
 
         return $products;
+    }
+
+    private function seedBranchProducts(Company $company, array $branches, array $products, User $actor): void
+    {
+        foreach ($branches as $branch) {
+            foreach ($products as $product) {
+                BranchProduct::query()->updateOrCreate([
+                    'branch_id' => $branch->id,
+                    'product_id' => $product->id,
+                ], [
+                    'company_id' => $company->id,
+                    'is_available' => true,
+                    'is_sellable' => true,
+                    'minimum_stock' => $product->minimum_stock,
+                    'maximum_stock' => $product->maximum_stock,
+                    'reorder_quantity' => $product->reorder_quantity,
+                    'updated_by' => $actor->id,
+                    'created_by' => $actor->id,
+                ]);
+            }
+        }
     }
 
     private function seedServices(Company $company, array $branches, User $actor): array

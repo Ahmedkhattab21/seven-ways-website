@@ -5,12 +5,11 @@ namespace App\Http\Controllers;
 use App\Core\Exceptions\BusinessRuleException;
 use App\Core\Tenancy\TenantContext;
 use App\Http\Requests\QuotationRequest;
+use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Quotation;
-use App\Models\Service;
-use App\Models\ServicePackage;
 use App\Models\Vehicle;
 use App\Services\QuotationPricingService;
 use App\Services\QuotationPrintService;
@@ -18,6 +17,7 @@ use App\Services\QuotationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class QuotationController extends Controller
@@ -42,7 +42,10 @@ class QuotationController extends Controller
             ? $request->integer('lead_id')
             : null;
 
-        return view('quotations.form', ['quotation' => new Quotation, 'leadId' => $leadId] + $this->references($tenant));
+        $branch = $this->selectedBranch($request, $tenant);
+
+        return view('quotations.form', ['quotation' => new Quotation, 'leadId' => $leadId]
+            + $this->references($tenant, $branch, $request->input('quotation_date', today()->toDateString())));
     }
 
     public function store(QuotationRequest $request, QuotationService $service): RedirectResponse
@@ -68,10 +71,11 @@ class QuotationController extends Controller
             ->with(['size', 'type'])->firstOrFail();
         $currency = Currency::query()->whereKey($data['currency_id'])->where('is_active', true)->firstOrFail();
         $items = collect($data['items'])->map(fn (array $item) => $item + [
+            'item_type' => 'product',
             'price_date' => $data['quotation_date'],
         ])->all();
         if (! empty($data['price_includes_tax'])) {
-            throw new BusinessRuleException('Current service catalog prices are tax-exclusive.');
+            throw new BusinessRuleException('أسعار المنتجات الحالية غير شاملة للضريبة.');
         }
         try {
             $calculated = $pricing->calculate($branch, $customer, $vehicle, $items, [
@@ -85,7 +89,7 @@ class QuotationController extends Controller
                     str_contains($exception->getMessage(), 'price'),
                     str_contains($exception->getMessage(), 'available') => 'لا يوجد سعر فعال لهذا العنصر في الفرع المحدد ولبيانات السيارة الحالية.',
                     str_contains($exception->getMessage(), 'discount') => 'قيمة الخصم غير صالحة أو تتجاوز المبلغ المتاح.',
-                    default => 'تعذر حساب عرض السعر بالبيانات الحالية.',
+                    default => 'تعذر حساب منتجات عرض السعر بالبيانات الحالية.',
                 },
                 'errors' => $exception->errors(),
             ], $exception->status());
@@ -100,6 +104,7 @@ class QuotationController extends Controller
                 'description' => $item['description'],
                 'base_unit_price' => $item['metadata']['base_unit_price'] ?? $item['unit_price'],
                 'unit_price' => $item['unit_price'],
+                'sale_unit' => $item['metadata']['sale_unit'] ?? null,
                 'price_source' => $item['price_source'],
                 'quantity' => $item['quantity'],
                 'gross_amount' => $item['gross_amount'],
@@ -165,9 +170,10 @@ class QuotationController extends Controller
     public function edit(Quotation $quotation, TenantContext $tenant): View
     {
         $this->authorize('update', $quotation);
-        $quotation->load('items');
+        $quotation->load(['items.product.saleUnit']);
 
-        return view('quotations.form', ['quotation' => $quotation, 'leadId' => $quotation->lead_id] + $this->references($tenant));
+        return view('quotations.form', ['quotation' => $quotation, 'leadId' => $quotation->lead_id]
+            + $this->references($tenant, $quotation->branch, $quotation->quotation_date));
     }
 
     public function update(QuotationRequest $request, Quotation $quotation, QuotationService $service): RedirectResponse
@@ -185,33 +191,72 @@ class QuotationController extends Controller
         return view('quotations.print', ['quotation' => $print->prepare($quotation)]);
     }
 
-    private function references(TenantContext $tenant): array
+    public function products(Request $request, TenantContext $tenant): JsonResponse
     {
-        $branchIds = $tenant->accessibleBranches()->pluck('id');
+        $data = $request->validate([
+            'branch_id' => ['required', 'integer'],
+            'quotation_date' => ['required', 'date'],
+        ]);
+        $branch = $tenant->accessibleBranches()->firstWhere('id', (int) $data['branch_id']);
+        abort_unless($branch, 403);
 
+        return response()->json([
+            'products' => $this->eligibleProducts($tenant, $branch, $data['quotation_date'])->map(fn (Product $product) => [
+                'id' => $product->id,
+                'sku' => $product->sku,
+                'name' => $product->name,
+                'sale_unit' => $product->saleUnit?->symbol ?: $product->saleUnit?->name,
+                'available_stock' => (string) ($product->branch_stock_available ?? 0),
+            ])->values(),
+        ]);
+    }
+
+    private function references(TenantContext $tenant, Branch $branch, mixed $date): array
+    {
         return [
             'branches' => $tenant->accessibleBranches(),
             'customers' => Customer::query()->where('company_id', $tenant->companyId())->where('status', 'active')->orderBy('name')->get(),
             'vehicles' => Vehicle::query()->where('company_id', $tenant->companyId())->where('status', 'active')
                 ->with(['customer', 'brand', 'model', 'size'])->orderByDesc('id')->get(),
-            'services' => Service::query()->where('company_id', $tenant->companyId())->where('is_active', true)->orderBy('name')->get(),
-            'packages' => ServicePackage::query()->where('company_id', $tenant->companyId())->where('is_active', true)
-                ->whereHas('branchPrices', fn ($query) => $query->whereIn('branch_id', $branchIds)
-                    ->where('is_available', true))
-                ->with([
-                    'items.service:id,name,default_duration_minutes',
-                    'branchPrices' => fn ($query) => $query->whereIn('branch_id', $branchIds)
-                        ->where('is_available', true),
-                ])->orderBy('name')->get(),
-            'products' => Product::query()->where('company_id', $tenant->companyId())
-                ->where('is_active', true)->where('is_sellable', true)
-                ->whereHas('branchProducts', fn ($query) => $query->whereIn('branch_id', $branchIds)
-                    ->where('is_available', true)->where('is_sellable', true))
-                ->with(['branchProducts' => fn ($query) => $query->whereIn('branch_id', $branchIds)
-                    ->where('is_available', true)->where('is_sellable', true)])
-                ->orderBy('name')->get(),
+            'products' => $this->eligibleProducts($tenant, $branch, $date),
+            'selectedBranchId' => $branch->id,
             'currencies' => Currency::query()->where('is_active', true)->orderBy('code')->get(),
             'companyCurrencyId' => $tenant->company()?->currency_id,
         ];
+    }
+
+    private function selectedBranch(Request $request, TenantContext $tenant): Branch
+    {
+        $branches = $tenant->accessibleBranches();
+
+        return $branches->firstWhere('id', $request->integer('branch_id'))
+            ?? $branches->firstWhere('id', (int) $tenant->user()?->branch_id)
+            ?? $branches->firstOrFail();
+    }
+
+    private function eligibleProducts(TenantContext $tenant, Branch $branch, mixed $date): Collection
+    {
+        $priceDate = $date instanceof \DateTimeInterface ? $date->format('Y-m-d') : (string) $date;
+
+        return Product::query()
+            ->where('company_id', $tenant->companyId())
+            ->where('is_active', true)
+            ->where('is_sellable', true)
+            ->whereHas('branchProducts', fn ($query) => $query
+                ->where('branch_id', $branch->id)
+                ->where('is_available', true)
+                ->where('is_sellable', true))
+            ->where(fn ($query) => $query->whereNotNull('default_sale_price')
+                ->orWhereHas('branchPrices', fn ($prices) => $prices
+                    ->where('branch_id', $branch->id)
+                    ->where('is_active', true)
+                    ->whereDate('effective_from', '<=', $priceDate)
+                    ->where(fn ($dates) => $dates->whereNull('effective_to')
+                        ->orWhereDate('effective_to', '>=', $priceDate))))
+            ->with('saleUnit:id,name,symbol')
+            ->withSum(['stockBalances as branch_stock_available' => fn ($query) => $query
+                ->where('branch_id', $branch->id)], 'available_quantity')
+            ->orderBy('name')
+            ->get();
     }
 }

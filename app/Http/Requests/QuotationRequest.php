@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Core\Tenancy\TenantContext;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -20,14 +19,7 @@ class QuotationRequest extends FormRequest
 
     public function authorize(): bool
     {
-        $hasManualPrice = collect($this->input('items', []))->contains(
-            fn ($item) => is_array($item)
-                && array_key_exists('manual_unit_price', $item)
-                && $item['manual_unit_price'] !== null
-                && $item['manual_unit_price'] !== ''
-        );
-
-        return ! $hasManualPrice || (bool) $this->user()?->hasPermission('quotations.manual_price');
+        return true;
     }
 
     public function rules(): array
@@ -59,40 +51,39 @@ class QuotationRequest extends FormRequest
             'tax_amount' => ['prohibited'], 'total' => ['prohibited'],
             'customer_notes' => ['nullable', 'string', 'max:5000'], 'internal_notes' => ['nullable', 'string', 'max:5000'],
             'terms_and_conditions' => ['nullable', 'string', 'max:10000'],
-            'items' => ['required', 'array', 'min:1'], 'items.*.item_type' => ['required', Rule::in(['service', 'package', 'product', 'custom'])],
-            'items.*.service_id' => [
-                'required_if:items.*.item_type,service', 'prohibited_unless:items.*.item_type,service', 'integer',
-                Rule::exists('services', 'id')->where(fn (Builder $query) => $query
-                    ->where('company_id', $companyId)->where('is_active', true)
-                    ->whereExists(fn (Builder $branchService) => $branchService->selectRaw('1')
-                        ->from('branch_services')->whereColumn('branch_services.service_id', 'services.id')
-                        ->where('branch_services.branch_id', $branchId)->where('branch_services.is_active', true)
-                        ->where('branch_services.is_available', true))),
-            ],
-            'items.*.service_package_id' => [
-                'required_if:items.*.item_type,package', 'prohibited_unless:items.*.item_type,package', 'integer',
-                Rule::exists('service_packages', 'id')->where(fn (Builder $query) => $query
-                    ->where('company_id', $companyId)->where('is_active', true)
-                    ->whereExists(fn (Builder $branchPackage) => $branchPackage->selectRaw('1')
-                        ->from('branch_service_packages')
-                        ->whereColumn('branch_service_packages.service_package_id', 'service_packages.id')
-                        ->where('branch_service_packages.branch_id', $branchId)
-                        ->where('branch_service_packages.is_available', true)
-                        ->whereDate('branch_service_packages.effective_from', '<=', $quotationDate)
-                        ->where(fn (Builder $dates) => $dates->whereNull('branch_service_packages.effective_to')
-                            ->orWhereDate('branch_service_packages.effective_to', '>=', $quotationDate)))),
-            ],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.item_type' => ['prohibited'],
+            'items.*.service_id' => ['prohibited'],
+            'items.*.service_package_id' => ['prohibited'],
             'items.*.product_id' => [
-                'required_if:items.*.item_type,product', 'prohibited_unless:items.*.item_type,product', 'integer',
+                'required', 'integer',
                 Rule::exists('products', 'id')->where(fn (Builder $query) => $query
-                    ->where('company_id', $companyId)->where('is_active', true)->where('is_sellable', true)),
+                    ->where('company_id', $companyId)->where('is_active', true)->where('is_sellable', true)
+                    ->whereExists(fn (Builder $availability) => $availability->selectRaw('1')
+                        ->from('branch_products')
+                        ->whereColumn('branch_products.product_id', 'products.id')
+                        ->where('branch_products.company_id', $companyId)
+                        ->where('branch_products.branch_id', $branchId)
+                        ->where('branch_products.is_available', true)
+                        ->where('branch_products.is_sellable', true))
+                    ->where(fn (Builder $prices) => $prices->whereNotNull('products.default_sale_price')
+                        ->orWhereExists(fn (Builder $branchPrice) => $branchPrice->selectRaw('1')
+                            ->from('branch_product_prices')
+                            ->whereColumn('branch_product_prices.product_id', 'products.id')
+                            ->where('branch_product_prices.company_id', $companyId)
+                            ->where('branch_product_prices.branch_id', $branchId)
+                            ->where('branch_product_prices.is_active', true)
+                            ->whereDate('branch_product_prices.effective_from', '<=', $quotationDate)
+                            ->where(fn (Builder $dates) => $dates->whereNull('branch_product_prices.effective_to')
+                                ->orWhereDate('branch_product_prices.effective_to', '>=', $quotationDate))))),
             ],
-            'items.*.description' => ['required_if:items.*.item_type,custom', 'nullable', 'string', 'max:500'],
-            'items.*.quantity' => ['required', 'numeric', 'gt:0'], 'items.*.unit_id' => ['nullable', 'integer'],
-            'items.*.manual_unit_price' => ['required_if:items.*.item_type,custom', 'nullable', 'numeric', 'min:0'],
+            'items.*.description' => ['nullable', 'string', 'max:500'],
+            'items.*.quantity' => ['required', 'numeric', 'gt:0'],
+            'items.*.unit_id' => ['prohibited'],
+            'items.*.manual_unit_price' => ['prohibited'],
             'items.*.discount_type' => ['nullable', Rule::in(['fixed', 'percentage'])],
             'items.*.discount_value' => ['nullable', 'numeric', 'min:0'],
-            'items.*.promotion_id' => ['nullable', 'integer'],
+            'items.*.promotion_id' => ['prohibited'],
             'items.*.unit_price' => ['prohibited'], 'items.*.gross_amount' => ['prohibited'],
             'items.*.discount_amount' => ['prohibited'], 'items.*.net_amount' => ['prohibited'],
             'items.*.tax_amount' => ['prohibited'], 'items.*.total' => ['prohibited'],
@@ -120,10 +111,5 @@ class QuotationRequest extends FormRequest
                 }
             }
         });
-    }
-
-    protected function failedAuthorization(): void
-    {
-        throw new AuthorizationException('تعديل السعر يدويًا يتطلب صلاحية quotations.manual_price.');
     }
 }

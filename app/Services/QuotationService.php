@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\Lead;
 use App\Models\Quotation;
 use App\Models\Vehicle;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class QuotationService
@@ -31,7 +32,7 @@ class QuotationService
             ->where('customer_id', $customer->id)->with(['size', 'type'])->firstOrFail();
         $currency = Currency::query()->whereKey($data['currency_id'])->where('is_active', true)->firstOrFail();
         if (! empty($data['price_includes_tax'])) {
-            throw new BusinessRuleException('Current service catalog prices are tax-exclusive.');
+            throw new BusinessRuleException('أسعار المنتجات الحالية غير شاملة للضريبة.');
         }
         if (! $this->tenant->user()?->canAccessBranch($branch)) {
             throw new BusinessRuleException('Branch is outside your access scope.', status: 403);
@@ -47,15 +48,20 @@ class QuotationService
             }
         }
         $items = collect($items)->map(fn (array $item) => $item + [
+            'item_type' => 'product',
             'price_date' => $data['quotation_date'],
         ])->all();
+        $historicalItems = $quotation?->exists
+            ? $quotation->items()->where('item_type', '!=', 'product')->get()
+            : collect();
         $calculated = $this->pricing->calculate($branch, $customer, $vehicle, $items, [
             'discount_type' => $data['discount_type'] ?? null,
             'discount_value' => $data['discount_value'] ?? 0,
             'currency_decimals' => $currency->decimal_places,
         ]);
+        $calculated = $this->withHistoricalSnapshots($calculated, $historicalItems, $currency->decimal_places);
 
-        return DB::transaction(function () use ($data, $calculated, $branch, $customer, $vehicle, $quotation) {
+        return DB::transaction(function () use ($data, $calculated, $branch, $customer, $vehicle, $quotation, $historicalItems) {
             $quotation ??= new Quotation;
             $new = ! $quotation->exists;
             $quotation->fill(collect($data)->except(['branch_id'])->all())->forceFill([
@@ -73,10 +79,12 @@ class QuotationService
                 'estimated_margin' => $calculated['estimated_margin'],
                 'created_by' => $quotation->created_by ?: $this->tenant->user()?->id,
             ])->save();
-            $quotation->items()->delete();
+            $quotation->items()->where('item_type', 'product')->delete();
+            $productSortOffset = (int) ($historicalItems->max('sort_order') ?? -1) + 1;
             foreach ($calculated['items'] as $row) {
                 $materials = $row['materials'];
                 unset($row['materials']);
+                $row['sort_order'] += $productSortOffset;
                 $item = $quotation->items()->create($row);
                 $item->materials()->createMany($materials);
             }
@@ -90,5 +98,47 @@ class QuotationService
 
             return $quotation->fresh(['items.materials']);
         });
+    }
+
+    private function withHistoricalSnapshots(array $calculated, Collection $historicalItems, int $decimals): array
+    {
+        if ($historicalItems->isEmpty()) {
+            return $calculated;
+        }
+
+        $sum = fn (string $field): string => $historicalItems->reduce(
+            fn (string $carry, $item) => bcadd($carry, (string) ($item->{$field} ?? 0), 8),
+            '0'
+        );
+        $historicalHeaderDiscount = $historicalItems->reduce(
+            fn (string $carry, $item) => bcadd(
+                $carry,
+                (string) data_get($item->metadata, 'header_discount_allocation', 0),
+                8
+            ),
+            '0'
+        );
+        $round = fn (string $value): string => number_format((float) $value, $decimals, '.', '');
+
+        $calculated['subtotal'] = $round(bcadd($calculated['subtotal'], $sum('net_amount'), 8));
+        $calculated['discount_amount'] = $round(bcadd(
+            $calculated['discount_amount'],
+            $historicalHeaderDiscount,
+            8
+        ));
+        $calculated['tax_amount'] = $round(bcadd($calculated['tax_amount'], $sum('tax_amount'), 8));
+        $calculated['total'] = $round(bcadd($calculated['total'], $sum('total'), 8));
+
+        foreach (['estimated_material_cost', 'estimated_waste_cost', 'estimated_total_cost'] as $field) {
+            $historical = $historicalItems->pluck($field)->filter(fn ($value) => $value !== null);
+            if ($historical->isNotEmpty()) {
+                $calculated[$field] = $round(bcadd((string) ($calculated[$field] ?? 0), $sum($field), 8));
+            }
+        }
+        $calculated['estimated_margin'] = $calculated['estimated_total_cost'] === null
+            ? null
+            : $round(bcsub($calculated['total'], $calculated['estimated_total_cost'], 8));
+
+        return $calculated;
     }
 }

@@ -14,8 +14,10 @@ use App\Models\JournalEntry;
 use App\Models\OpeningBalanceDocument;
 use App\Models\PaymentMethod;
 use App\Models\Permission;
+use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\Role;
-use App\Models\ServicePackage;
+use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\CompanySetupProgressService;
@@ -114,13 +116,13 @@ class SetupCompletionTest extends TestCase
         $this->assertSame('الشركة غير خاضعة للضريبة', $step['details']['status_label']);
     }
 
-    public function test_catalog_is_counted_but_does_not_block_core_readiness(): void
+    public function test_products_are_counted_but_do_not_block_core_readiness(): void
     {
         [$company] = $this->completeContext();
-        ServicePackage::query()->where('company_id', $company->id)->delete();
+        Product::query()->where('company_id', $company->id)->delete();
 
         $progress = app(CompanySetupProgressService::class)->for($company);
-        $step = collect($progress['steps'])->firstWhere('label', 'المنتجات والخدمات');
+        $step = collect($progress['steps'])->firstWhere('label', 'المنتجات');
 
         $this->assertFalse($step['complete']);
         $this->assertTrue($progress['ready']);
@@ -230,11 +232,37 @@ class SetupCompletionTest extends TestCase
             'scope_key' => 'setup-'.uniqid(),
             'is_active' => true,
         ]);
-        ServicePackage::query()->forceCreate([
+        $unit = Unit::query()->forceCreate([
             'company_id' => $company->id,
-            'code' => 'PKG-'.uniqid(),
-            'name' => 'باقة نشطة',
-            'package_type' => 'fixed',
+            'code' => 'UNIT-'.uniqid(),
+            'name' => 'وحدة',
+            'symbol' => 'u',
+            'unit_type' => 'quantity',
+            'decimal_places' => 6,
+            'is_system' => false,
+            'is_active' => true,
+        ]);
+        $category = ProductCategory::query()->forceCreate([
+            'company_id' => $company->id,
+            'code' => 'CATEGORY-'.uniqid(),
+            'name' => 'منتجات',
+            'is_active' => true,
+        ]);
+        Product::query()->forceCreate([
+            'company_id' => $company->id,
+            'category_id' => $category->id,
+            'sku' => 'PRODUCT-'.uniqid(),
+            'name' => 'منتج نشط',
+            'product_type' => 'consumable',
+            'tracking_type' => 'quantity',
+            'purchase_unit_id' => $unit->id,
+            'stock_unit_id' => $unit->id,
+            'sale_unit_id' => $unit->id,
+            'costing_method' => 'weighted_average',
+            'minimum_stock' => 0,
+            'is_sellable' => true,
+            'is_purchasable' => true,
+            'is_consumable' => true,
             'is_active' => true,
         ]);
         Warehouse::query()->forceCreate([

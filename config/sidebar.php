@@ -48,11 +48,11 @@ return [
             [
                 'label' => 'المنتجات',
                 'icon' => 'box',
-                'route' => 'catalog.index',
+                'route' => 'products.index',
                 'permission' => 'products.view',
                 'module' => 'sales',
                 'profiles' => ['branch_manager', 'manager', 'system_admin'],
-                'active' => ['catalog.*', 'products.*', 'product-references.*'],
+                'active' => ['products.*', 'product-references.*'],
             ],
             ['label' => 'عروض الأسعار', 'icon' => 'sales', 'route' => 'quotations.index', 'permission' => 'quotations.view', 'module' => 'sales', 'profiles' => ['branch_manager', 'manager', 'system_admin']],
             ['label' => 'فواتير المبيعات', 'icon' => 'clipboard', 'route' => 'sales-invoices.index', 'permission' => 'sales_invoices.view', 'module' => 'sales'],

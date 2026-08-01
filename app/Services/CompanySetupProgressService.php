@@ -9,8 +9,6 @@ use App\Models\FiscalYear;
 use App\Models\OpeningBalanceDocument;
 use App\Models\PaymentMethod;
 use App\Models\Product;
-use App\Models\Service;
-use App\Models\ServicePackage;
 use App\Models\Tax;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -102,12 +100,10 @@ class CompanySetupProgressService
         }
 
         $steps[] = $this->step(
-            'المنتجات والخدمات',
-            'catalog.index',
+            'المنتجات',
+            'products.index',
             'products.view',
-            Product::query()->where('company_id', $companyId)->where('is_active', true)->exists()
-                || Service::query()->where('company_id', $companyId)->where('is_active', true)->exists()
-                || ServicePackage::query()->where('company_id', $companyId)->where('is_active', true)->exists(),
+            Product::query()->where('company_id', $companyId)->where('is_active', true)->exists(),
             [],
             [
                 'blocking' => false,

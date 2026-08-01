@@ -6,6 +6,7 @@
         'suspended' => 'موقوف',
         'draft' => 'مسودة',
         'pending' => 'قيد الانتظار',
+        'recorded' => 'مسجلة',
         'confirmed' => 'مؤكد',
         'checked_in' => 'تم تسجيل الوصول',
         'in_progress' => 'قيد التنفيذ',

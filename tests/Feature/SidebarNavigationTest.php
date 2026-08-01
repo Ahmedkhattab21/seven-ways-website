@@ -28,7 +28,7 @@ class SidebarNavigationTest extends TestCase
         $this->actingAs($user)->get(route('dashboard'))
             ->assertOk()
             ->assertSee(route('customers.index'), false)
-            ->assertSee(route('catalog.index'), false)
+            ->assertSee(route('products.index'), false)
             ->assertSee(route('sales-invoices.index'), false)
             ->assertSee(route('suppliers.index'), false)
             ->assertSee(route('warehouses.index'), false)

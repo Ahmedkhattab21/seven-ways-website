@@ -39,7 +39,7 @@ class QuotationPricingService
         }
         $currencyDecimals = (int) ($header['currency_decimals'] ?? 2);
         $snapshots = collect($items)->values()->map(
-            fn (array $item, int $index) => $this->priceItem($branch, $vehicle, $item, $index, $currencyDecimals)
+            fn (array $item, int $index) => $this->priceItem($branch, $customer, $vehicle, $item, $index, $currencyDecimals)
         );
         $subtotal = $this->sum($snapshots, 'net_amount', $currencyDecimals);
         $headerDiscount = $this->discount(
@@ -67,9 +67,18 @@ class QuotationPricingService
         ];
     }
 
-    private function priceItem(Branch $branch, Vehicle $vehicle, array $item, int $index, int $decimals): array
-    {
-        $type = $item['item_type'];
+    private function priceItem(
+        Branch $branch,
+        Customer $customer,
+        Vehicle $vehicle,
+        array $item,
+        int $index,
+        int $decimals
+    ): array {
+        $type = $item['item_type'] ?? 'product';
+        if ($type !== 'product') {
+            throw new BusinessRuleException('New quotation items must be products.');
+        }
         $quantity = (string) $item['quantity'];
         if (bccomp($quantity, '0', 6) !== 1) {
             throw new BusinessRuleException('Item quantity must be greater than zero.');
@@ -160,11 +169,12 @@ class QuotationPricingService
             $priceSource = 'package_price';
         } elseif ($type === 'product') {
             $product = Product::query()->whereKey($item['product_id'])->where('company_id', $branch->company_id)
-                ->where('is_active', true)->where('is_sellable', true)->with('defaultTax')->firstOrFail();
+                ->where('is_active', true)->where('is_sellable', true)->with(['defaultTax', 'saleUnit'])->firstOrFail();
             $resolvedProductPrice = $this->productPricing->resolvePrice(
                 $product,
                 $branch,
                 $item['price_date'] ?? now(),
+                customer: $customer,
                 quantity: $quantity
             );
             $unitPrice = $resolvedProductPrice['final_price'];
@@ -245,6 +255,8 @@ class QuotationPricingService
                 'branch_product_id' => $resolvedProductPrice['branch_product_id'] ?? null,
                 'warehouse_id' => $resolvedProductPrice['warehouse_id'] ?? null,
                 'promotion_discount_amount' => $resolvedProductPrice['discount_amount'] ?? null,
+                'promotion_name' => $resolvedProductPrice['promotion_name'] ?? null,
+                'sale_unit' => $product?->saleUnit?->symbol ?: $product?->saleUnit?->name,
                 'package_services' => $packageServices,
                 'standalone_services_total' => $standaloneServicesTotal,
                 'package_savings' => $standaloneServicesTotal === null
