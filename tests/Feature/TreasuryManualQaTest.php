@@ -20,15 +20,14 @@ use App\Models\TreasuryTransfer;
 use App\Models\User;
 use App\Services\CashBoxSessionService;
 use App\Services\TreasuryApprovalLimitService;
+use Database\Seeders\ProductionReferenceSeeder;
+use Database\Seeders\SevenWaysOperationalSeeder;
+use Database\Seeders\SevenWaysTenantSeeder;
 use Database\Seeders\TreasuryManualQaSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
-
-use Database\Seeders\ProductionReferenceSeeder;
-use Database\Seeders\SevenWaysOperationalSeeder;
-use Database\Seeders\SevenWaysTenantSeeder;
 
 class TreasuryManualQaTest extends TestCase
 {
@@ -48,17 +47,17 @@ class TreasuryManualQaTest extends TestCase
     private Branch $giza;
 
     protected function setUp(): void
-{
-    parent::setUp();
+    {
+        parent::setUp();
 
-    app(ProductionReferenceSeeder::class)->run();
-    app(SevenWaysTenantSeeder::class)->run();
-    app(SevenWaysOperationalSeeder::class)->run();
-    app(TreasuryManualQaSeeder::class)->run();
+        app(ProductionReferenceSeeder::class)->run();
+        app(SevenWaysTenantSeeder::class)->run();
+        app(SevenWaysOperationalSeeder::class)->run();
+        app(TreasuryManualQaSeeder::class)->run();
 
-    $this->company = Company::query()
-        ->where('name', 'Seven Ways')
-        ->firstOrFail();
+        $this->company = Company::query()
+            ->where('name', 'Seven Ways')
+            ->firstOrFail();
         $this->cairo = Branch::query()->where('company_id', $this->company->id)
             ->where('code', 'QA-CAI')->firstOrFail();
         $this->giza = Branch::query()->where('company_id', $this->company->id)
