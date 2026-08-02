@@ -11,6 +11,7 @@ use App\Models\Supplier;
 use Database\Seeders\AnalyticsReportingSeeder;
 use Illuminate\Support\Facades\DB;
 
+
 trait BuildsAnalyticsContext
 {
     use BuildsTreasuryOperationsContext;
