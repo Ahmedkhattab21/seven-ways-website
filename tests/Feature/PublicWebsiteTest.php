@@ -166,12 +166,18 @@ class PublicWebsiteTest extends TestCase
 
     public function test_contact_page_keeps_the_reference_composition_in_both_locales(): void
     {
-        $this->get(route('website.contact', ['lang' => 'ar']))
+        $arabic = $this->get(route('website.contact', ['lang' => 'ar']))
             ->assertOk()
             ->assertSee('sw-contact-hero__title', false)
             ->assertSee('sw-contact-countries', false)
             ->assertSee('sw-contact-branch__map', false)
+            ->assertSee('<iframe', false)
             ->assertSee('https://wa.me/966534899166', false);
+
+        $this->assertStringContainsString(
+            'frame-src https://www.google.com https://maps.google.com',
+            (string) $arabic->headers->get('Content-Security-Policy')
+        );
 
         $this->get(route('website.contact', ['lang' => 'en']))
             ->assertOk()

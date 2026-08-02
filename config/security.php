@@ -10,7 +10,8 @@ return [
         'CONTENT_SECURITY_POLICY',
         "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; ".
         "script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; ".
-        "font-src 'self' data:; media-src 'self'; connect-src 'self'"
+        "font-src 'self' data:; media-src 'self'; connect-src 'self'; ".
+        'frame-src https://www.google.com https://maps.google.com'
     ),
     'permissions_policy' => env(
         'PERMISSIONS_POLICY',

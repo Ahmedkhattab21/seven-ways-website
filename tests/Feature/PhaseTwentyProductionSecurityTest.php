@@ -36,6 +36,10 @@ class PhaseTwentyProductionSecurityTest extends TestCase
             "'unsafe-eval'",
             (string) $response->headers->get('Content-Security-Policy')
         );
+        $this->assertStringContainsString(
+            'frame-src https://www.google.com https://maps.google.com',
+            (string) $response->headers->get('Content-Security-Policy')
+        );
     }
 
     public function test_https_is_forced_only_for_production_http_requests(): void
