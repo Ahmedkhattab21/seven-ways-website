@@ -172,6 +172,12 @@ return [
                     'body' => 'Thermal insulation films are designed to provide an optimal driving experience in all conditions. These films are characterized by their strong heat insulation, reducing the heat inside the car from the sun and helping to reduce fuel consumption resulting from prolonged air conditioning. They also provide complete UV protection of up to 99%, protecting leather from damage and protecting the interior from corrosion or discoloration over time. The thermal insulation films are available in a variety of insulation levels and colors to suit all tastes, while maintaining complete clarity of vision while driving for greater comfort and safety. Additionally, the strong film layer provides additional security against breakage, keeping your car safe even in the most difficult conditions. With Seven Ways, make your car more comfortable, safer, and more distinctive.',
                 ],
             ],
+            'osren' => [
+                'polishing' => [
+                    'title' => 'OSREN Polishing Products',
+                    'body' => 'OSREN NAO GLAZE 28 is a professional water-based finishing glaze formulated to address minor dusting, fine swirl marks, surface blemishes, and sanding marks of P3000 or finer. It delivers a clear gloss and a balanced finishing step within a professional polishing process.',
+                ],
+            ],
         ],
     ],
 

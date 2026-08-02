@@ -196,6 +196,7 @@ return [
         ['id' => '3m', 'name' => '3M', 'image' => 'assets/website/images/logo-L2ly5kkF.webp', 'background' => '#d7b6a3'],
         ['id' => 'carpro', 'name' => 'CarPro', 'image' => 'assets/website/images/logo-CGkfx9mt.webp', 'background' => '#a1a1a1'],
         ['id' => 'project3', 'name' => 'Project 3', 'image' => 'assets/website/images/logo-D0I4roVz.webp', 'background' => '#b1b1b1'],
+        ['id' => 'osren', 'name' => 'OSREN', 'image' => 'assets/website/images/osren-logo.webp', 'background' => '#111111'],
     ],
 
     'service_media' => [
@@ -274,6 +275,14 @@ return [
                 'assets/website/images/project3-package-(1)-BTb8wbbJ.webp',
             ],
             'sections' => ['ppf', 'thermal'],
+        ],
+        [
+            'id' => 'osren',
+            'brand' => 'OSREN',
+            'images' => [
+                'assets/website/images/osren-nao-glaze-28.webp',
+            ],
+            'sections' => ['polishing'],
         ],
     ],
 ];

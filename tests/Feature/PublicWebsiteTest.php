@@ -105,7 +105,9 @@ class PublicWebsiteTest extends TestCase
         $this->get(route('website.services'))
             ->assertOk()
             ->assertSee('id="xpel"', false)
-            ->assertSee('id="project3"', false);
+            ->assertSee('id="project3"', false)
+            ->assertSee('id="osren"', false)
+            ->assertSee('OSREN NAO GLAZE 28');
     }
 
     public function test_about_page_keeps_the_reference_composition_in_both_locales(): void
@@ -395,6 +397,8 @@ class PublicWebsiteTest extends TestCase
             'assets/website/images/thermal-insulation-D5pv4bAo.webp',
             'assets/website/images/nano-ceramic-ClspLSNk.webp',
             'assets/website/images/polishing-kT06SIma.webp',
+            'assets/website/images/osren-logo.webp',
+            'assets/website/images/osren-nao-glaze-28.webp',
             'assets/website/images/audi-ar-DVxr30Bb.webp',
             'assets/website/images/tyre-mark-2-BISH33e4.png',
             'assets/website/fonts/cairo-arabic.woff2',
