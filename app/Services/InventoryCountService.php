@@ -22,9 +22,15 @@ class InventoryCountService
         return DB::transaction(function () use ($count) {
             $count = InventoryCount::query()->whereKey($count->id)->lockForUpdate()->firstOrFail();
             if ($count->status !== 'draft' || $count->items()->exists()) {
-                throw new BusinessRuleException('Inventory count was already snapshotted.');
+                throw new BusinessRuleException('لا يمكن بدء جرد غير موجود في حالة المسودة.');
             }
             $warehouse = Warehouse::findOrFail($count->warehouse_id);
+            if ($count->company_id !== $this->tenant->companyId()
+                || ! $this->tenant->user()->canAccessBranch($count->branch)
+                || $warehouse->company_id !== $count->company_id
+                || $warehouse->branch_id !== $count->branch_id) {
+                throw new BusinessRuleException('لا تملك صلاحية بدء هذا الجرد.', status: 403);
+            }
             if ($warehouse->is_system || $warehouse->warehouse_type === 'transit') {
                 throw new BusinessRuleException('Manual inventory counts cannot use a system Transit warehouse.');
             }
@@ -40,11 +46,46 @@ class InventoryCountService
         });
     }
 
+    public function record(InventoryCount $count, array $items): InventoryCount
+    {
+        return DB::transaction(function () use ($count, $items) {
+            $count = InventoryCount::query()->whereKey($count->id)->lockForUpdate()->firstOrFail();
+            if ($count->company_id !== $this->tenant->companyId()
+                || ! $this->tenant->user()->canAccessBranch($count->branch)) {
+                throw new BusinessRuleException('لا تملك صلاحية إدخال كميات هذا الجرد.', status: 403);
+            }
+            if ($count->status !== 'counting' || $count->counted_at !== null) {
+                throw new BusinessRuleException('لا يمكن إدخال كميات لهذا الجرد في حالته الحالية.');
+            }
+
+            $countItems = $count->items()->lockForUpdate()->get()->keyBy('id');
+            if ($countItems->isEmpty()
+                || collect($items)->keys()->map(fn ($id) => (int) $id)->diff($countItems->keys())->isNotEmpty()) {
+                throw new BusinessRuleException('تحتوي بيانات الجرد على بنود غير صالحة.');
+            }
+
+            foreach ($countItems as $item) {
+                $submitted = $items[$item->id] ?? null;
+                if (! is_array($submitted) || ! array_key_exists('counted_quantity', $submitted)) {
+                    throw new BusinessRuleException('يجب إدخال الكمية المعدودة لكل منتج.');
+                }
+                $item->forceFill(['counted_quantity' => $submitted['counted_quantity']])->save();
+            }
+
+            $count->forceFill([
+                'counted_by' => $this->tenant->user()->id,
+                'counted_at' => now(),
+            ])->save();
+
+            return $count;
+        });
+    }
+
     public function post(InventoryCount $count): InventoryCount
     {
         return DB::transaction(function () use ($count) {
             $count = InventoryCount::query()->whereKey($count->id)->lockForUpdate()->with('items')->firstOrFail();
-            if ($count->status !== 'counting') {
+            if ($count->status !== 'counting' || $count->counted_at === null) {
                 throw new BusinessRuleException('Only a counting document can be posted.');
             }
             $warehouse = Warehouse::findOrFail($count->warehouse_id);

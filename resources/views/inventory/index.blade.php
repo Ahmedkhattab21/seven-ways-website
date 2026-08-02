@@ -29,10 +29,15 @@
 <form method="POST" action="{{ route('inventory.openings.post', $record) }}">@csrf <x-button type="submit">ترحيل</x-button></form>
 @elseif($section === 'adjustments' && in_array($record->status, ['draft','approved']) && auth()->user()->hasPermission('inventory.post'))
 <form method="POST" action="{{ route('inventory.adjustments.post', $record) }}">@csrf <x-button type="submit">ترحيل</x-button></form>
-@elseif($section === 'counts' && $record->status === 'draft' && auth()->user()->hasPermission('inventory.count'))
+@elseif($section === 'counts' && $record->status === 'draft')
+@can('snapshot', $record)
 <form method="POST" action="{{ route('inventory.counts.snapshot', $record) }}">@csrf <x-button type="submit">بدء الجرد</x-button></form>
-@elseif($section === 'counts' && $record->status === 'counting' && auth()->user()->hasPermission('inventory.post'))
+@else — @endcan
+@elseif($section === 'counts' && $record->status === 'counting')
+<a class="sw-button sw-button--outline" href="{{ route('inventory.counts.show', $record) }}">تفاصيل الجرد</a>
+@can('post', $record)
 <form method="POST" action="{{ route('inventory.counts.post', $record) }}">@csrf <x-button type="submit">ترحيل</x-button></form>
+@endcan
 @elseif($section === 'reservations' && $record->status === 'active' && auth()->user()->hasPermission('inventory_reservations.manage'))
 <form method="POST" action="{{ route('inventory.reservations.release', $record) }}">@csrf <x-button type="submit">تحرير</x-button></form>
 @elseif($section === 'scraps' && $record->status === 'available' && auth()->user()->hasPermission('rolls.manage_scraps'))

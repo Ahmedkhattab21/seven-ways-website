@@ -90,6 +90,15 @@ class InventoryDocumentController extends Controller
         return redirect()->route('inventory.index', $section)->with('success', "تم إنشاء المسودة {$document->document_number}.");
     }
 
+    public function showCount(InventoryCount $count): View
+    {
+        $this->authorize('view', $count);
+
+        return view('inventory.count', [
+            'count' => $count->load(['branch', 'warehouse', 'items.product']),
+        ]);
+    }
+
     private function createLine(StockOpeningDocument $document, array $data): void
     {
         if (empty($data['product_id'])) {

@@ -76,10 +76,24 @@ class InventoryActionController extends Controller
 
     public function snapshotCount(InventoryCount $count, InventoryCountService $service): RedirectResponse
     {
-        $this->authorize('post', $count);
+        $this->authorize('snapshot', $count);
         $service->snapshot($count);
 
-        return back()->with('success', 'تم أخذ لقطة الجرد.');
+        return redirect()->route('inventory.counts.show', $count)
+            ->with('success', 'تم بدء الجرد وأخذ لقطة الأرصدة بنجاح.');
+    }
+
+    public function saveCount(Request $request, InventoryCount $count, InventoryCountService $service): RedirectResponse
+    {
+        $this->authorize('count', $count);
+        $data = $request->validate([
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.counted_quantity' => ['required', 'numeric', 'min:0'],
+        ]);
+        $service->record($count, $data['items']);
+
+        return redirect()->route('inventory.counts.show', $count)
+            ->with('success', 'تم حفظ الكميات المعدودة وإرسال الجرد للمراجعة.');
     }
 
     public function postCount(InventoryCount $count, InventoryCountService $service): RedirectResponse

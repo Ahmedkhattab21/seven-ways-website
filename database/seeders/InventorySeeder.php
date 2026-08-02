@@ -29,9 +29,15 @@ class InventorySeeder extends Seeder
             Permission::query()->updateOrCreate(['name' => $permission], ['display_name' => $permission]);
         }
         $all = Permission::query()->whereIn('name', $permissions)->pluck('id');
-        foreach (Role::query()->whereIn('name', ['company_owner', 'general_manager', 'branch_manager'])->get() as $role) {
+        foreach (Role::query()->whereIn('name', ['company_owner', 'general_manager'])->get() as $role) {
             $role->permissions()->syncWithoutDetaching($all);
         }
+        Role::query()->where('name', 'branch_manager')->get()->each(function (Role $role) use ($permissions): void {
+            $role->permissions()->detach(Permission::query()->where('name', 'inventory.post')->value('id'));
+            $role->permissions()->syncWithoutDetaching(
+                Permission::query()->whereIn('name', $permissions)->where('name', '!=', 'inventory.post')->pluck('id')
+            );
+        });
         $keeper = [
             'products.view', 'warehouses.view', 'inventory.view', 'inventory.opening', 'inventory.adjust',
             'inventory.count', 'inventory.post', 'rolls.view', 'rolls.create', 'rolls.consume',

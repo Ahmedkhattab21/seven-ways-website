@@ -574,6 +574,8 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
     Route::post('inventory/openings/{opening}/post', [InventoryActionController::class, 'postOpening'])->middleware('permission:inventory.post')->name('inventory.openings.post');
     Route::post('inventory/adjustments/{adjustment}/post', [InventoryActionController::class, 'postAdjustment'])->middleware('permission:inventory.post')->name('inventory.adjustments.post');
     Route::post('inventory/counts/{count}/snapshot', [InventoryActionController::class, 'snapshotCount'])->middleware('permission:inventory.count')->name('inventory.counts.snapshot');
+    Route::get('inventory/counts/{count}', [InventoryDocumentController::class, 'showCount'])->middleware('permission:inventory.view')->name('inventory.counts.show');
+    Route::put('inventory/counts/{count}/items', [InventoryActionController::class, 'saveCount'])->middleware('permission:inventory.count')->name('inventory.counts.items.update');
     Route::post('inventory/counts/{count}/post', [InventoryActionController::class, 'postCount'])->middleware('permission:inventory.post')->name('inventory.counts.post');
     Route::post('inventory/reservations/{reservation}/release', [InventoryActionController::class, 'releaseReservation'])->middleware('permission:inventory_reservations.manage')->name('inventory.reservations.release');
 
