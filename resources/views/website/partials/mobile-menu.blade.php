@@ -4,10 +4,6 @@
         <a href="{{ route('website.about') }}">{{ __('website.navigation.about') }}</a>
         <a href="{{ route('website.services') }}">{{ __('website.navigation.services') }}</a>
         <a href="{{ route('website.contact') }}">{{ __('website.navigation.contact') }}</a>
-        @auth
-            <a href="{{ route('dashboard') }}">{{ __('website.navigation.dashboard') }}</a>
-        @else
-            <a href="{{ route('website.register') }}">{{ __('website.navigation.register') }}</a>
-        @endauth
+        <a href="{{ route('website.register') }}">{{ __('website.navigation.register') }}</a>
     </nav>
 </div>

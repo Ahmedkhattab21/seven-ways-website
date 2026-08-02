@@ -21,13 +21,9 @@
         </nav>
 
         <div class="sw-header__actions">
-            @auth
-                <a class="sw-system-link" href="{{ route('dashboard') }}">{{ __('website.navigation.dashboard') }}</a>
-            @else
-                <a @class(['sw-system-link', 'is-active' => request()->routeIs('website.register')]) href="{{ route('website.register') }}">
-                    {{ __('website.navigation.register') }}
-                </a>
-            @endauth
+            <a @class(['sw-system-link', 'is-active' => request()->routeIs('website.register')]) href="{{ route('website.register') }}">
+                {{ __('website.navigation.register') }}
+            </a>
 
             <form
                 class="sw-language"

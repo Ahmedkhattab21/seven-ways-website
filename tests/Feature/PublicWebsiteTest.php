@@ -35,12 +35,13 @@ class PublicWebsiteTest extends TestCase
             ->assertSee('name="_token"', false);
     }
 
-    public function test_authenticated_user_sees_dashboard_link_on_public_home(): void
+    public function test_authenticated_user_sees_registration_link_instead_of_dashboard_on_public_home(): void
     {
         $this->actingAs(User::factory()->make())
             ->get(route('website.home'))
             ->assertOk()
-            ->assertSee(route('dashboard'), false);
+            ->assertSee(route('website.register'), false)
+            ->assertDontSee(route('dashboard'), false);
     }
 
     public function test_home_hero_keeps_the_reference_composition_in_both_locales(): void
