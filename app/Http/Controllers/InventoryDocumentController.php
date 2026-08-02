@@ -99,6 +99,20 @@ class InventoryDocumentController extends Controller
         ]);
     }
 
+    public function showOpening(StockOpeningDocument $opening, TenantContext $tenant): View
+    {
+        abort_unless($tenant->user()->hasPermission('inventory.opening'), 403);
+        abort_unless(
+            $opening->company_id === $tenant->companyId()
+            && $tenant->accessibleBranches()->contains('id', $opening->branch_id),
+            404
+        );
+
+        return view('inventory.opening', [
+            'opening' => $opening->load(['warehouse', 'items.product']),
+        ]);
+    }
+
     private function createLine(StockOpeningDocument $document, array $data): void
     {
         if (empty($data['product_id'])) {

@@ -120,8 +120,13 @@ class SidebarNavigationService
         }
         if (isset($item['active_param'])) {
             [$name, $value] = $item['active_param'];
+            $routeValue = $this->request->route($name);
 
-            return (string) $this->request->route($name) === $value;
+            if ($routeValue === null) {
+                return true;
+            }
+
+            return (string) $routeValue === $value;
         }
 
         return true;

@@ -4,7 +4,7 @@
 @section('page-title', $titles[$section])
 @section('breadcrumb', 'المخزون / '.$titles[$section])
 @section('page-actions')
-@if(in_array($section, ['openings','adjustments','counts']))<a class="sw-button sw-button--primary" href="{{ route('inventory.documents.create', $section) }}">إضافة مسودة</a>@endif
+@if(in_array($section, ['openings','adjustments','counts']))<a class="sw-button sw-button--primary" href="{{ route('inventory.documents.create', $section) }}">{{ $section === 'openings' ? 'إضافة رصيد افتتاحي' : 'إضافة مسودة' }}</a>@endif
 @endsection
 @section('content')
 @if($section === 'alerts')
@@ -25,8 +25,11 @@
 <td>
 @if($section === 'movements' && auth()->user()->hasPermission('inventory.reverse') && !$record->reversal_of_id)
 <form method="POST" action="{{ route('inventory.movements.reverse', $record) }}">@csrf <x-button type="submit">عكس</x-button></form>
-@elseif($section === 'openings' && $record->status === 'draft' && auth()->user()->hasPermission('inventory.post'))
+@elseif($section === 'openings')
+<a class="sw-button sw-button--outline" href="{{ route('inventory.openings.show', $record) }}">عرض</a>
+@if($record->status === 'draft' && auth()->user()->hasPermission('inventory.post'))
 <form method="POST" action="{{ route('inventory.openings.post', $record) }}">@csrf <x-button type="submit">ترحيل</x-button></form>
+@endif
 @elseif($section === 'adjustments' && in_array($record->status, ['draft','approved']) && auth()->user()->hasPermission('inventory.post'))
 <form method="POST" action="{{ route('inventory.adjustments.post', $record) }}">@csrf <x-button type="submit">ترحيل</x-button></form>
 @elseif($section === 'counts' && $record->status === 'draft')

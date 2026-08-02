@@ -20,6 +20,9 @@ class InventoryController extends Controller
     public function __invoke(Request $request, string $section, TenantContext $tenant): View
     {
         abort_unless(array_key_exists($section, $this->sections()), 404);
+        abort_unless($tenant->user()->hasPermission(
+            $section === 'openings' ? 'inventory.opening' : 'inventory.view'
+        ), 403);
         $branchIds = $tenant->accessibleBranches()->pluck('id');
         $model = $this->sections()[$section];
         $query = $model::query()->where('company_id', $tenant->companyId())->whereIn('branch_id', $branchIds);

@@ -564,14 +564,15 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
 
     Route::get('inventory/{section}', InventoryController::class)
         ->whereIn('section', ['balances', 'movements', 'rolls', 'scraps', 'openings', 'adjustments', 'counts', 'reservations', 'alerts'])
-        ->middleware('permission:inventory.view')->name('inventory.index');
-    Route::get('inventory-documents/{section}/create', [InventoryDocumentController::class, 'create'])->whereIn('section', ['openings', 'adjustments', 'counts'])->middleware('permission:inventory.view')->name('inventory.documents.create');
-    Route::post('inventory-documents/{section}', [InventoryDocumentController::class, 'store'])->whereIn('section', ['openings', 'adjustments', 'counts'])->middleware('permission:inventory.view')->name('inventory.documents.store');
+        ->name('inventory.index');
+    Route::get('inventory-documents/{section}/create', [InventoryDocumentController::class, 'create'])->whereIn('section', ['openings', 'adjustments', 'counts'])->name('inventory.documents.create');
+    Route::post('inventory-documents/{section}', [InventoryDocumentController::class, 'store'])->whereIn('section', ['openings', 'adjustments', 'counts'])->name('inventory.documents.store');
     Route::post('inventory/rolls/{roll}/consume', [InventoryActionController::class, 'consumeRoll'])->middleware('permission:rolls.consume')->name('inventory.rolls.consume');
     Route::post('inventory/rolls/{roll}/scraps', [InventoryActionController::class, 'createScrap'])->middleware('permission:rolls.manage_scraps')->name('inventory.rolls.scraps.store');
     Route::post('inventory/scraps/{scrap}/consume', [InventoryActionController::class, 'consumeScrap'])->middleware('permission:rolls.manage_scraps')->name('inventory.scraps.consume');
     Route::post('inventory/movements/{movement}/reverse', [InventoryActionController::class, 'reverseMovement'])->middleware('permission:inventory.reverse')->name('inventory.movements.reverse');
     Route::post('inventory/openings/{opening}/post', [InventoryActionController::class, 'postOpening'])->middleware('permission:inventory.post')->name('inventory.openings.post');
+    Route::get('inventory/openings/{opening}', [InventoryDocumentController::class, 'showOpening'])->middleware('permission:inventory.opening')->name('inventory.openings.show');
     Route::post('inventory/adjustments/{adjustment}/post', [InventoryActionController::class, 'postAdjustment'])->middleware('permission:inventory.post')->name('inventory.adjustments.post');
     Route::post('inventory/counts/{count}/snapshot', [InventoryActionController::class, 'snapshotCount'])->middleware('permission:inventory.count')->name('inventory.counts.snapshot');
     Route::get('inventory/counts/{count}', [InventoryDocumentController::class, 'showCount'])->middleware('permission:inventory.view')->name('inventory.counts.show');
