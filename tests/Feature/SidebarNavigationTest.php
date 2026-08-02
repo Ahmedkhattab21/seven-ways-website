@@ -53,7 +53,7 @@ class SidebarNavigationTest extends TestCase
             ->assertDontSee(route('users.index'), false);
     }
 
-    public function test_branch_manager_navigation_is_operational_and_hides_standalone_vehicle_and_receipt_links(): void
+    public function test_branch_manager_navigation_shows_daily_treasury_links_in_operational_order(): void
     {
         [$company, $branch] = $this->companyContext();
         $user = $this->userWithPermissions($company, $branch, [
@@ -68,13 +68,40 @@ class SidebarNavigationTest extends TestCase
         $this->actingAs($user)->get(route('dashboard'))
             ->assertOk()
             ->assertSee(route('customers.index'), false)
-            ->assertSee(route('treasury.cash-sessions.index'), false)
+            ->assertSeeInOrder([
+                route('treasury.cash-boxes.index'),
+                route('treasury.cash-sessions.index'),
+                route('treasury.cash-receipts.index'),
+                route('treasury.cash-payments.index'),
+            ], false)
             ->assertSee('المصروفات والمدفوعات')
             ->assertDontSee(route('vehicles.index'), false)
-            ->assertDontSee(route('treasury.cash-receipts.index'), false)
             ->assertDontSee(route('inventory.index', ['movements']), false)
             ->assertDontSee('إكمال إعداد النظام')
             ->assertDontSee('تنبيهات الإعداد المالي');
+    }
+
+    public function test_cash_receipt_link_requires_permission_and_is_active_on_its_page(): void
+    {
+        [$company, $branch] = $this->companyContext();
+        $unauthorized = $this->userWithPermissions($company, $branch, ['dashboard.view'], 'branch_manager');
+
+        $this->actingAs($unauthorized)->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee(route('treasury.cash-receipts.index'), false);
+
+        [$authorizedCompany, $authorizedBranch] = $this->companyContext();
+        $authorized = $this->userWithPermissions($authorizedCompany, $authorizedBranch, [
+            'treasury.cash_receipts.view',
+        ], 'branch_manager');
+
+        $this->actingAs($authorized)->get(route('treasury.cash-receipts.index'))
+            ->assertOk()
+            ->assertSee(route('treasury.cash-receipts.index'), false)
+            ->assertSee('data-sidebar-group-key="treasury"', false)
+            ->assertSee('data-sidebar-group-active="true"', false)
+            ->assertSee('sw-nav-item--active', false)
+            ->assertSee('aria-current="page"', false);
     }
 
     public function test_accountant_navigation_hides_administration_and_shows_financial_alert_only(): void

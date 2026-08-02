@@ -228,6 +228,39 @@ class TreasuryManualQaTest extends TestCase
         ])->assertSessionHasErrors(['company_id', 'status', 'document_number', 'journal_entry_id']);
     }
 
+    public function test_CashReceipt_branch_manager_is_scoped_to_its_branch(): void
+    {
+        $manager = $this->cairoOnlyManager();
+        $owner = $this->user('qa.owner@sevenways.test');
+        $account = $this->account('QA-OTHER-INCOME');
+
+        CashReceipt::factory()->create([
+            'company_id' => $this->company->id,
+            'branch_id' => $this->cairo->id,
+            'cash_box_id' => $this->cashBox('QA-CAI-MAIN')->id,
+            'currency_id' => $this->company->currency_id,
+            'offset_account_id' => $account->id,
+            'document_number' => 'QA-CAI-CR-SCOPE',
+            'created_by' => $owner->id,
+        ]);
+        CashReceipt::factory()->create([
+            'company_id' => $this->company->id,
+            'branch_id' => $this->giza->id,
+            'cash_box_id' => $this->cashBox('QA-GIZ-MAIN')->id,
+            'currency_id' => $this->company->currency_id,
+            'offset_account_id' => $account->id,
+            'document_number' => 'QA-GIZ-CR-SCOPE',
+            'created_by' => $owner->id,
+        ]);
+
+        $this->actingAs($manager)
+            ->withSession(['tenant.branch_id' => $this->cairo->id])
+            ->get(route('treasury.cash-receipts.index'))
+            ->assertOk()
+            ->assertSee('QA-CAI-CR-SCOPE')
+            ->assertDontSee('QA-GIZ-CR-SCOPE');
+    }
+
     public function test_cross_branch_ids_return_forbidden_for_treasury_documents(): void
     {
         $actor = $this->cairoOnlyManager();

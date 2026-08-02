@@ -91,7 +91,7 @@ return [
         'items' => [
             ['label' => 'الخزائن', 'icon' => 'wallet', 'route' => 'treasury.cash-boxes.index', 'permission' => 'treasury.cash_boxes.view'],
             ['label' => 'جلسات الخزائن', 'icon' => 'clipboard', 'route' => 'treasury.cash-sessions.index', 'permission' => 'treasury.cash_sessions.view'],
-            ['label' => 'المقبوضات النقدية', 'icon' => 'wallet', 'route' => 'treasury.cash-receipts.index', 'permission' => 'treasury.cash_receipts.view', 'profiles' => ['accountant', 'manager', 'system_admin']],
+            ['label' => 'المقبوضات النقدية', 'icon' => 'wallet', 'route' => 'treasury.cash-receipts.index', 'permission' => 'treasury.cash_receipts.view'],
             [
                 'label' => 'المدفوعات النقدية',
                 'labels' => ['branch_manager' => 'المصروفات والمدفوعات'],
