@@ -52,7 +52,7 @@ class ThreeRoleOperatingModelSeeder extends Seeder
             'quotations.submit', 'quotations.send', 'sales_invoices.view', 'sales_invoices.create',
             'sales_invoices.update', 'sales_invoices.submit', 'sales_invoices.issue', 'sales_invoices.print',
             'sales_invoices.direct_sale', 'sales_invoices.share', 'customer_payments.view', 'customer_payments.record',
-            'customer_payments.allocate', 'customer_payments.print', 'customer_statements.view',
+            'customer_payments.approve', 'customer_payments.allocate', 'customer_payments.print', 'customer_statements.view',
             'sales_credit_notes.view', 'sales_credit_notes.create', 'sales_credit_notes.print',
             'treasury.cash_boxes.view', 'treasury.balances.view', 'treasury.cash_sessions.view',
             'treasury.cash_sessions.open', 'treasury.cash_sessions.count', 'treasury.cash_sessions.submit',

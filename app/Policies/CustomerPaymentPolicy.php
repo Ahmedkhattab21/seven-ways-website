@@ -29,6 +29,8 @@ class CustomerPaymentPolicy
 
     public function approve(User $user, CustomerPayment $payment): bool
     {
-        return $this->scoped($user, $payment) && $user->hasPermission('customer_payments.approve');
+        return $payment->status === 'recorded'
+            && $this->scoped($user, $payment)
+            && $user->hasPermission('customer_payments.approve');
     }
 }

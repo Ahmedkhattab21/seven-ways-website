@@ -4,6 +4,10 @@
 @section('page-title', $payment->payment_number)
 @section('breadcrumb', 'المبيعات / تحصيلات العملاء / تفاصيل الدفعة')
 
+@php
+    $paymentStatusLabels = ['recorded' => 'مسجلة', 'approved' => 'معتمدة'];
+@endphp
+
 @section('page-actions')
     <a class="sw-button sw-button--outline" href="{{ route('customer-payments.receipt', $payment) }}">طباعة الإيصال</a>
 @endsection
@@ -21,7 +25,7 @@
                 <div><dt>المبلغ</dt><dd>{{ number_format((float) $payment->amount, 2) }}</dd></div>
                 <div><dt>المخصص</dt><dd>{{ number_format((float) $payment->allocated_amount, 2) }}</dd></div>
                 <div><dt>غير المخصص</dt><dd>{{ number_format((float) $payment->unallocated_amount, 2) }}</dd></div>
-                <div><dt>الحالة</dt><dd><x-status-badge :status="$payment->status" /></dd></div>
+                <div><dt>الحالة</dt><dd><x-status-badge :status="$payment->status" :label="$paymentStatusLabels[$payment->status] ?? null" /></dd></div>
                 <div><dt>حركة الخزينة</dt><dd>{{ $payment->cashReceipt?->document_number ?? '—' }}</dd></div>
             </dl>
         </x-card>

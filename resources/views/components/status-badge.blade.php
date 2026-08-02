@@ -1,4 +1,4 @@
-@props(['status'])
+@props(['status', 'label' => null])
 @php
     $labels = [
         'active' => 'نشط',
@@ -30,5 +30,5 @@
     ];
 @endphp
 <span {{ $attributes->class(['sw-badge', "sw-badge--{$status}"]) }}>
-    <span class="sw-badge__dot"></span>{{ $labels[$status] ?? $status }}
+    <span class="sw-badge__dot"></span>{{ $label ?? $labels[$status] ?? $status }}
 </span>

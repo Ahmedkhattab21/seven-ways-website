@@ -118,6 +118,8 @@ class CashCustomerPaymentTreasuryTest extends TestCase
     public function test_real_store_show_and_approve_routes_persist_and_post_cash_context(): void
     {
         $data = $this->context();
+        $data['user']->roles->first()->forceFill(['name' => 'branch_manager'])->save();
+        $this->switchTreasuryActor($data['user']->fresh());
 
         $response = $this->actingAs($data['user'])->post(route('customer-payments.store'), [
             'customer_id' => $data['customer']->id,
@@ -142,7 +144,20 @@ class CashCustomerPaymentTreasuryTest extends TestCase
             ->assertSee($data['cashBox']->code)
             ->assertSee($data['cashBox']->name)
             ->assertSee($data['session']->session_number)
-            ->assertSee($data['invoice']->invoice_number);
+            ->assertSee($data['invoice']->invoice_number)
+            ->assertSee('مسجلة')
+            ->assertSee('اعتماد الدفعة');
+
+        $otherBranchPayment = CustomerPayment::factory()->create([
+            'company_id' => $data['company']->id,
+            'branch_id' => $data['secondBranch']->id,
+            'customer_id' => $data['customer']->id,
+            'currency_id' => $data['currency']->id,
+            'payment_method_id' => $data['method']->id,
+            'received_by' => $data['user']->id,
+            'status' => 'recorded',
+        ]);
+        $this->post(route('customer-payments.approve', $otherBranchPayment))->assertForbidden();
 
         $this->actingAs($data['user'])->post(route('customer-payments.approve', $payment))
             ->assertRedirect();
@@ -155,6 +170,10 @@ class CashCustomerPaymentTreasuryTest extends TestCase
         $this->assertSame(1, $payment->fresh()->allocations()->count());
         $this->assertSame('paid', $data['invoice']->fresh()->status);
         $this->assertSame('0.0000', $data['invoice']->fresh()->balance_due);
+
+        $this->post(route('customer-payments.approve', $payment))->assertForbidden();
+        $this->assertSame(1, CashReceipt::query()->where('customer_payment_id', $payment->id)->count());
+        $this->assertSame(1, $payment->fresh()->allocations()->count());
     }
 
     public function test_form_lists_only_current_branch_cash_context_and_uses_arabic_invoice_field(): void

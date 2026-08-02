@@ -158,7 +158,7 @@ class CustomerPaymentService
                     'cash_box_session_id' => $payment->cash_box_session_id,
                     'payment_date' => $payment->payment_date->toDateString(),
                     'amount' => $payment->amount,
-                ], (int) $payment->currency_id);
+                ], (int) $payment->currency_id, $payment->branch_id, false);
                 if (CashReceipt::query()->where('customer_payment_id', $payment->id)->exists()) {
                     throw new BusinessRuleException('تم إنشاء حركة خزينة لهذه الدفعة من قبل.');
                 }
@@ -206,21 +206,27 @@ class CustomerPaymentService
         });
     }
 
-    private function cashContext(array $data, int $currencyId): array
-    {
+    private function cashContext(
+        array $data,
+        int $currencyId,
+        ?int $branchId = null,
+        bool $assertCustodian = true
+    ): array {
         if (empty($data['cash_box_id']) || empty($data['cash_box_session_id'])) {
             throw new BusinessRuleException('الخزينة وجلسة الخزينة مطلوبتان للدفع النقدي.');
         }
 
         $box = CashBox::query()
             ->where('company_id', $this->tenant->companyId())
-            ->where('branch_id', $this->tenant->branchId())
+            ->where('branch_id', $branchId ?? $this->tenant->branchId())
             ->where('currency_id', $currencyId)
             ->where('status', 'active')
             ->where('allows_receipts', true)
             ->lockForUpdate()
             ->findOrFail($data['cash_box_id']);
-        $this->custodians->assert($box, 'can_receive', (string) $data['amount']);
+        if ($assertCustodian) {
+            $this->custodians->assert($box, 'can_receive', (string) $data['amount']);
+        }
         $session = $this->sessionGuard->assertActiveSession($box, (int) $data['cash_box_session_id']);
 
         if ($session->business_date->toDateString() !== (string) $data['payment_date']) {
