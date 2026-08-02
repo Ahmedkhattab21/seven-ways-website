@@ -181,6 +181,27 @@ class PublicWebsiteTest extends TestCase
             ->assertSee('Nasr City');
     }
 
+    public function test_alexandria_branch_uses_the_provided_coordinates(): void
+    {
+        $alexandria = collect(config('website.branches'))->firstWhere('id', 'alexandria');
+
+        $this->assertNotNull($alexandria);
+        $this->assertSame(
+            'https://www.google.com/maps/search/?api=1&query=31.26125,29.98375',
+            $alexandria['map_link']
+        );
+
+        $this->get(route('website.contact', ['lang' => 'ar']))
+            ->assertOk()
+            ->assertSee('فرع الإسكندرية')
+            ->assertSee('31.26125,29.98375', false);
+
+        $this->get(route('website.contact', ['lang' => 'en']))
+            ->assertOk()
+            ->assertSee('Alexandria Branch')
+            ->assertSee('31.26125,29.98375', false);
+    }
+
     public function test_registration_page_has_the_google_form_composition_in_both_locales(): void
     {
         $this->get(route('website.register', ['lang' => 'ar']))

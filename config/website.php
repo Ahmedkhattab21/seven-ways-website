@@ -119,6 +119,20 @@ return [
             'map_link' => 'https://www.google.com/maps/search/?api=1&query=Seven+Ways+Nasr+City',
             'map_embed' => 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3453.6884222212807!2d31.358420824582655!3d30.045795518506964!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14583d002493452f%3A0xe7f18626b13860ec!2sSeven%20Ways!5e0!3m2!1sar!2seg!4v1754321669152!5m2!1sar!2seg',
         ],
+        [
+            'id' => 'alexandria',
+            'country_code' => 'egypt',
+            'country' => ['ar' => 'مصر', 'en' => 'Egypt'],
+            'name' => ['ar' => 'فرع الإسكندرية', 'en' => 'Alexandria Branch'],
+            'address' => [
+                'ar' => 'الإسكندرية، مصر',
+                'en' => 'Alexandria, Egypt',
+            ],
+            'phone' => '+201095584458',
+            'whatsapp' => 'https://wa.me/201095584458',
+            'map_link' => 'https://www.google.com/maps/search/?api=1&query=31.26125,29.98375',
+            'map_embed' => 'https://www.google.com/maps?q=31.26125,29.98375&z=16&output=embed',
+        ],
     ],
 
     'footer_locations' => [
@@ -139,8 +153,14 @@ return [
             ],
         ],
         'egypt' => [
-            'ar' => ['محطة بنزين وطنية - بجوار مسجد السلام، الوفاء والأمل، مدينة نصر'],
-            'en' => ['Wataniya Gas Station - Next to Al Salam Mosque, Wafaa and Amal, Nasr City'],
+            'ar' => [
+                'محطة بنزين وطنية - بجوار مسجد السلام، الوفاء والأمل، مدينة نصر',
+                'فرع الإسكندرية - الإسكندرية، مصر',
+            ],
+            'en' => [
+                'Wataniya Gas Station - Next to Al Salam Mosque, Wafaa and Amal, Nasr City',
+                'Alexandria Branch - Alexandria, Egypt',
+            ],
         ],
     ],
 
