@@ -23,7 +23,7 @@ class BranchAccountingSettingsService
         'rounding_account_id',
     ];
 
-    private const CONTROL_TYPES = [
+    public const CONTROL_TYPES = [
         'accounts_receivable_account_id' => 'accounts_receivable',
         'accounts_payable_account_id' => 'accounts_payable',
         'inventory_account_id' => 'inventory',

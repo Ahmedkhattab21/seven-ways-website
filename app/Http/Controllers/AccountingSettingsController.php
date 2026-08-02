@@ -23,13 +23,33 @@ class AccountingSettingsController extends Controller
     {
         $settings = AccountingSetting::where('company_id', $tenant->companyId())->firstOrFail();
         $this->authorize('view', $settings);
+        $accounts = Account::query()
+            ->where('company_id', $tenant->companyId())
+            ->where('is_active', true)
+            ->where('is_posting', true)
+            ->orderBy('account_code')
+            ->get();
+        $accountOptions = collect(BranchAccountingSettingsService::ACCOUNT_COLUMNS)
+            ->mapWithKeys(function (string $column) use ($accounts): array {
+                $eligible = $accounts;
+                if ($controlType = BranchAccountingSettingsService::CONTROL_TYPES[$column] ?? null) {
+                    $eligible = $eligible->where('control_type', $controlType);
+                } elseif ($column === 'cash_account_id') {
+                    $eligible = $eligible->where('is_cash_account', true);
+                } elseif ($column === 'bank_account_id') {
+                    $eligible = $eligible->where('is_bank_account', true);
+                }
+
+                return [$column => $eligible->values()];
+            });
 
         return view('accounting.settings.edit', [
             'settings' => $settings, 'currencies' => Currency::where('is_active', true)->get(),
             'years' => FiscalYear::where('company_id', $tenant->companyId())->get(),
             'branches' => $tenant->accessibleBranches(),
             'mappings' => BranchAccountingSetting::where('company_id', $tenant->companyId())->get()->keyBy('branch_id'),
-            'accounts' => Account::where('company_id', $tenant->companyId())->where('is_active', true)->where('is_posting', true)->get(),
+            'accountColumns' => BranchAccountingSettingsService::ACCOUNT_COLUMNS,
+            'accountOptions' => $accountOptions,
             'costCenters' => CostCenter::where('company_id', $tenant->companyId())->where('is_active', true)->where('is_posting', true)->get(),
         ]);
     }

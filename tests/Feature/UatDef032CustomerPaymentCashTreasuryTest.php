@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Core\Exceptions\BusinessRuleException;
+use App\Models\Account;
+use App\Models\BranchAccountingSetting;
 use App\Models\CashBox;
 use App\Models\CashBoxCount;
 use App\Models\CashBoxSession;
@@ -13,6 +15,7 @@ use App\Models\DocumentSequence;
 use App\Models\PaymentMethod;
 use App\Models\Permission;
 use App\Models\SalesInvoice;
+use App\Services\BranchAccountingSettingsService;
 use App\Services\CustomerPaymentService;
 use App\Services\DocumentNumberService;
 use App\Services\TreasuryBalanceService;
@@ -120,6 +123,17 @@ class CashCustomerPaymentTreasuryTest extends TestCase
         $data = $this->context();
         $data['user']->roles->first()->forceFill(['name' => 'branch_manager'])->save();
         $this->switchTreasuryActor($data['user']->fresh());
+        $advanceAccount = Account::query()
+            ->where('company_id', $data['company']->id)
+            ->where('control_type', 'customer_advances')
+            ->where('is_active', true)
+            ->where('is_posting', true)
+            ->firstOrFail();
+        BranchAccountingSetting::query()->where('branch_id', $data['branch']->id)
+            ->update(['customer_advance_account_id' => null]);
+        app(BranchAccountingSettingsService::class)->update($data['branch'], [
+            'customer_advance_account_id' => $advanceAccount->id,
+        ]);
 
         $response = $this->actingAs($data['user'])->post(route('customer-payments.store'), [
             'customer_id' => $data['customer']->id,

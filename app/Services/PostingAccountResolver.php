@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Core\Exceptions\BusinessRuleException;
+use App\Models\Branch;
 use App\Models\BranchAccountingSetting;
 use App\Models\ProductAccountingMapping;
 
@@ -17,6 +18,17 @@ class PostingAccountResolver
         $id = BranchAccountingSetting::query()->where('company_id', $companyId)
             ->where('branch_id', $branchId)->value($column);
         if (! $id) {
+            if ($column === 'customer_advance_account_id') {
+                $branchName = (string) Branch::query()
+                    ->where('company_id', $companyId)
+                    ->whereKey($branchId)
+                    ->value('name');
+                $branchName = preg_replace('/^فرع\s+/u', '', $branchName) ?: $branchName;
+
+                throw new BusinessRuleException(
+                    "لم يتم تحديد حساب دفعات العملاء المقدمة لفرع {$branchName}. يرجى ضبطه من إعدادات المحاسبة."
+                );
+            }
             throw new BusinessRuleException("Missing branch accounting mapping: {$column}.");
         }
 
