@@ -1,1 +1,1 @@
-<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>الميزانية</title><body><h1>الميزانية</h1><p>الأصول: {{ $assets??0 }}</p><p>الالتزامات وحقوق الملكية: {{ $liabilities_and_equity??0 }}</p></body></html>
+<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>الميزانية</title><body>@include('partials.print-brand')<h1>الميزانية</h1><p>الأصول: {{ $assets??0 }}</p><p>الالتزامات وحقوق الملكية: {{ $liabilities_and_equity??0 }}</p></body></html>

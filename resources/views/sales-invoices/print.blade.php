@@ -8,7 +8,7 @@
         *{box-sizing:border-box}body{font-family:Tahoma,Arial,sans-serif;margin:0;background:#f5f5f5;color:#171717}
         .document{max-width:980px;margin:24px auto;background:#fff;padding:36px;border:1px solid #ddd}
         .header,.row{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}.brand{display:flex;align-items:center;gap:14px}
-        .brand img{max-width:120px;max-height:64px}.brand strong{color:#c40000;font-size:25px}.flags{display:flex;gap:8px}.flags img{width:42px;height:28px;border:1px solid #ddd}
+        .brand img{width:220px;max-width:100%;max-height:78px;object-fit:contain}.flags{display:flex;gap:8px}.flags img{width:42px;height:28px;border:1px solid #ddd}
         h1{margin:28px 0 8px}.muted{color:#666}.panel{border:1px solid #ddd;border-radius:10px;padding:18px;margin-top:20px}
         table{width:100%;border-collapse:collapse;margin-top:20px}td,th{border:1px solid #ddd;padding:10px;text-align:right}th{background:#f2f2f2}
         .totals{margin:20px 0 0 auto;max-width:420px}.totals p{display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:7px}
@@ -27,10 +27,8 @@
 <main class="document">
     <header class="header">
         <div class="brand">
-            @if($invoice->company->logo_path)
-                <img src="{{ asset($invoice->company->logo_path) }}" alt="{{ $invoice->company->name }}">
-            @endif
-            <div><strong>SEVEN WAYS</strong><div>{{ $invoice->company->legal_name ?: $invoice->company->name }}</div></div>
+            <img src="{{ asset($invoice->company->logo_path ?: config('branding.logo_on_light')) }}" alt="Seven Ways">
+            <div>{{ $invoice->company->legal_name ?: $invoice->company->name }}</div>
         </div>
         <div class="flags">
             @if($settings['show_egypt_flag'])<img src="{{ asset('images/flags/eg.svg') }}" alt="علم مصر">@endif

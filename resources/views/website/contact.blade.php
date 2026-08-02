@@ -15,7 +15,7 @@
             style="--sw-contact-hero-background: url('{{ asset(config('website.assets.page_title_background')) }}')"
         >
             <div class="sw-contact-hero__title">
-                <img src="{{ asset(config('website.assets.logo')) }}" alt="" aria-hidden="true">
+                <img src="{{ asset(config('branding.mark')) }}" alt="" aria-hidden="true">
                 <h1>{{ __('website.contact.page_title') }}</h1>
             </div>
         </section>

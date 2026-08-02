@@ -8,7 +8,7 @@
     <div class="sw-shell sw-footer__grid">
         <div class="sw-footer__about">
             <a class="sw-footer__emblem" href="{{ route('website.home') }}" aria-label="Seven Ways">
-                <img src="{{ asset(config('website.assets.logo')) }}" alt="">
+                <img src="{{ asset(config('branding.logo')) }}" alt="Seven Ways">
             </a>
 
             <p>{{ __('website.footer.goal') }}</p>

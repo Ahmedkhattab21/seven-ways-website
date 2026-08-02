@@ -9,7 +9,7 @@
             @if (session('registration_success'))
                 <section class="sw-registration-card sw-registration-card--status" role="status">
                     <div class="sw-registration-card__accent"></div>
-                    <img src="{{ asset(config('website.assets.logo')) }}" alt="Seven Ways">
+                    <img src="{{ asset(config('branding.logo_on_light')) }}" alt="Seven Ways">
                     <h1>{{ __('website.registration.success_title') }}</h1>
                     <p>{{ session('registration_success') }}</p>
                     <a href="{{ route('website.home') }}">{{ __('website.registration.back_home') }}</a>
@@ -20,7 +20,7 @@
 
                     <section class="sw-registration-card sw-registration-card--intro">
                         <div class="sw-registration-card__accent"></div>
-                        <img src="{{ asset(config('website.assets.logo')) }}" alt="Seven Ways">
+                        <img src="{{ asset(config('branding.logo_on_light')) }}" alt="Seven Ways">
                         <h1>{{ __('website.registration.title') }}</h1>
                         <p>{{ __('website.registration.intro') }}</p>
                         <div class="sw-registration-required-note">* {{ __('website.registration.required_note') }}</div>

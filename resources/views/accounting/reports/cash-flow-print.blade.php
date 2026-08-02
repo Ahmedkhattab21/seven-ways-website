@@ -1,1 +1,1 @@
-<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>التدفقات النقدية</title><body><h1>التدفقات النقدية — Direct Foundation</h1><p>Opening: {{ $opening_cash??0 }}</p><p>Closing: {{ $closing_cash??0 }}</p></body></html>
+<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>التدفقات النقدية</title><body>@include('partials.print-brand')<h1>التدفقات النقدية — Direct Foundation</h1><p>Opening: {{ $opening_cash??0 }}</p><p>Closing: {{ $closing_cash??0 }}</p></body></html>

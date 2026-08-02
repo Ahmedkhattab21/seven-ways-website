@@ -1,13 +1,8 @@
 @props(['compact' => false])
 
 <div {{ $attributes->class(['sw-brand', 'sw-brand--compact' => $compact]) }}>
-    <span class="sw-brand__mark" aria-hidden="true">
-        <span>7</span><span>W</span>
-    </span>
     @unless($compact)
-        <span class="sw-brand__copy">
-            <strong>SEVEN WAYS</strong>
-            <small>نظام الإدارة والتشغيل</small>
-        </span>
+        <img class="sw-brand__logo" src="{{ asset(config('branding.logo')) }}" alt="Seven Ways">
     @endunless
+    <img class="sw-brand__compact-logo" src="{{ asset(config('branding.mark')) }}" alt="" aria-hidden="true">
 </div>

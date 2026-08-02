@@ -11,7 +11,7 @@
         >
             <div class="sw-about-hero__title">
                 <img
-                    src="{{ asset(config('website.assets.logo')) }}"
+                    src="{{ asset(config('branding.mark')) }}"
                     alt=""
                     width="702"
                     height="668"

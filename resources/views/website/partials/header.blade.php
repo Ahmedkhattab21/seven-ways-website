@@ -1,8 +1,8 @@
 <header class="sw-header" data-sw-header>
     <div class="sw-shell sw-header__inner">
         <a class="sw-brand" href="{{ route('website.home') }}" aria-label="Seven Ways">
-            <img class="sw-brand__mark" src="{{ asset(config('website.assets.logo')) }}" alt="">
-            <img class="sw-brand__name" src="{{ asset(config('website.assets.brand_name')) }}" alt="Seven Ways">
+            <img class="sw-brand__logo" src="{{ asset(config('branding.logo')) }}" alt="Seven Ways">
+            <img class="sw-brand__compact-logo" src="{{ asset(config('branding.mark')) }}" alt="" aria-hidden="true">
         </a>
 
         <nav class="sw-nav" aria-label="{{ __('website.navigation.label') }}">

@@ -359,11 +359,13 @@ class PublicWebsiteTest extends TestCase
     public function test_required_public_assets_exist(): void
     {
         foreach ([
-            'assets/website/images/logo-DHNnkSwZ.webp',
+            'assets/brand/seven-ways-logo.webp',
+            'assets/brand/seven-ways-logo.png',
+            'assets/brand/seven-ways-mark.webp',
+            'assets/brand/seven-ways-icon.webp',
             'assets/website/images/home-bg-DkJ_mK4W.webp',
             'assets/website/images/g-class-ar-Cv_phCfN.webp',
             'assets/website/images/white-car-2kDVYj1h.webp',
-            'assets/website/images/secondary-logo-MgVH3Knt.webp',
             'assets/website/images/tyre-mark-1-Bcet6rRb.png',
             'assets/website/images/logo-BBmOnB6N.webp',
             'assets/website/images/logo-D0I4roVz.webp',

@@ -150,8 +150,8 @@ return [
     ],
 
     'assets' => [
-        'logo' => 'assets/website/images/logo-DHNnkSwZ.webp',
-        'brand_name' => 'assets/website/images/brand-name-DPS60m21.webp',
+        'logo' => 'assets/brand/seven-ways-logo.webp',
+        'mark' => 'assets/brand/seven-ways-mark.webp',
         'hero_car' => 'assets/website/images/g-class-ar-Cv_phCfN.webp',
         'hero_background' => 'assets/website/images/home-bg-DkJ_mK4W.webp',
         'about_background' => 'assets/website/images/about-us-bg-DpxzeicM.webp',
@@ -160,7 +160,7 @@ return [
         'services_background' => 'assets/website/images/services-bg-BTO8wyrl.webp',
         'advantages_background' => 'assets/website/images/adv-bg-DhCImAKt.webp',
         'advantages_car' => 'assets/website/images/white-car-2kDVYj1h.webp',
-        'secondary_logo' => 'assets/website/images/secondary-logo-MgVH3Knt.webp',
+        'secondary_logo' => 'assets/brand/seven-ways-mark.webp',
         'xpel_logo' => 'assets/website/images/logo-BBmOnB6N.webp',
         'products_background' => 'assets/website/images/products-bg-BKw9Wbq6.webp',
         'branches_background' => 'assets/website/images/branches-bg-b-euROWx.webp',

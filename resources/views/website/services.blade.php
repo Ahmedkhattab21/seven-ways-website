@@ -10,7 +10,7 @@
             style="--sw-services-hero-background: url('{{ asset(config('website.assets.page_title_background')) }}')"
         >
             <div class="sw-services-hero__title">
-                <img src="{{ asset(config('website.assets.logo')) }}" alt="" aria-hidden="true">
+                <img src="{{ asset(config('branding.mark')) }}" alt="" aria-hidden="true">
                 <h1>{{ __('website.services.page_title') }}</h1>
             </div>
         </section>

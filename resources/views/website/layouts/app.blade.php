@@ -14,7 +14,7 @@
         '@type' => 'AutomotiveBusiness',
         'name' => 'Seven Ways',
         'url' => route('website.home'),
-        'logo' => asset(config('website.assets.logo')),
+        'logo' => asset(config('branding.logo')),
         'description' => __('website.meta.default_description'),
         'sameAs' => array_values(array_diff_key(config('website.socials', []), ['xpel' => true])),
         'telephone' => config('website.branches.0.phone'),
@@ -33,7 +33,7 @@
     <link rel="alternate" hreflang="ar" href="{{ $alternateUrls['ar'] }}">
     <link rel="alternate" hreflang="en" href="{{ $alternateUrls['en'] }}">
     <link rel="alternate" hreflang="x-default" href="{{ $alternateUrls['ar'] }}">
-    <link rel="icon" type="image/webp" href="{{ asset(config('website.assets.logo')) }}">
+    <link rel="icon" type="image/webp" href="{{ asset(config('branding.icon')) }}">
 
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Seven Ways">

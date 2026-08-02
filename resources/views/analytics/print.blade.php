@@ -17,6 +17,7 @@
 <body>
     <button onclick="window.print()">طباعة / حفظ PDF</button>
     <header>
+        @include('partials.print-brand')
         <h1>{{ $metadata['company_name'] }}</h1>
         <h2>{{ $definition['name'] }}</h2>
         <div class="meta">

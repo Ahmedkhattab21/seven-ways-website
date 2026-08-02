@@ -18,7 +18,7 @@ class AuthenticationUiTest extends TestCase
         $this->get(route('login'))
             ->assertOk()
             ->assertSee('تسجيل الدخول إلى النظام')
-            ->assertSee('SEVEN WAYS');
+            ->assertSee(asset(config('branding.logo')), false);
     }
 
     public function test_dashboard_requires_authentication(): void
@@ -51,6 +51,7 @@ class AuthenticationUiTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('لوحة التحكم')
+            ->assertSee(asset(config('branding.logo')), false)
             ->assertSee('مستخدم Seven Ways')
             ->assertDontSee('فواتير المبيعات')
             ->assertDontSee('href="'.route('sales-invoices.index').'"', false)

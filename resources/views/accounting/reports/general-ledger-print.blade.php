@@ -1,1 +1,1 @@
-<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>الأستاذ العام</title><body><h1>الأستاذ العام</h1>@include('accounting.reports._trial-summary',['report'=>['rows'=>$rows??collect()]])</body></html>
+<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>الأستاذ العام</title><body>@include('partials.print-brand')<h1>الأستاذ العام</h1>@include('accounting.reports._trial-summary',['report'=>['rows'=>$rows??collect()]])</body></html>
