@@ -33,6 +33,11 @@ class SalesInvoiceItem extends BaseModel
         return $this->belongsTo(Warehouse::class);
     }
 
+    public function issuedMovement(): BelongsTo
+    {
+        return $this->belongsTo(StockMovement::class, 'issued_movement_id');
+    }
+
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);

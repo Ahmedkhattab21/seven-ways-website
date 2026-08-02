@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Core\Exceptions\BusinessRuleException;
 use App\Core\Tenancy\TenantContext;
 use App\Models\Branch;
 use App\Models\BranchProduct;
@@ -16,6 +17,9 @@ use App\Models\ProductCategory;
 use App\Models\Promotion;
 use App\Models\Quotation;
 use App\Models\Role;
+use App\Models\SalesInvoice;
+use App\Models\StockBalance;
+use App\Models\StockMovement;
 use App\Models\Tax;
 use App\Models\Unit;
 use App\Models\User;
@@ -24,8 +28,10 @@ use App\Models\VehicleBrand;
 use App\Models\VehicleModel;
 use App\Models\Warehouse;
 use App\Services\DocumentNumberService;
+use App\Services\InventoryService;
 use App\Services\QuotationToSalesInvoiceService;
 use App\Services\QuotationVersionService;
+use App\Services\SalesInvoiceIssuanceService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -51,6 +57,8 @@ class UatDef030ProductOnlyQuotationTest extends TestCase
 
     private Product $cairoProduct;
 
+    private Warehouse $warehouse;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -65,7 +73,8 @@ class UatDef030ProductOnlyQuotationTest extends TestCase
         $this->alexandria = $this->branch('ALX', 'الإسكندرية', true);
         $this->cairo = $this->branch('CAI', 'القاهرة');
         $this->manager = $this->userWithPermissions([
-            'quotations.view', 'quotations.create', 'quotations.update', 'sales_invoices.create',
+            'quotations.view', 'quotations.create', 'quotations.update', 'sales_invoices.view',
+            'sales_invoices.create', 'sales_invoices.issue', 'sales_invoices.print',
         ]);
         app(TenantContext::class)->initialize($this->manager);
 
@@ -120,10 +129,19 @@ class UatDef030ProductOnlyQuotationTest extends TestCase
             ),
             'is_active' => true,
         ]);
-        Warehouse::query()->forceCreate([
+        DocumentSequence::query()->forceCreate([
+            'company_id' => $this->company->id, 'branch_id' => $this->alexandria->id,
+            'document_type' => 'stock_movement', 'prefix' => 'MOV-030-', 'current_number' => 0,
+            'padding' => 6, 'reset_period' => 'yearly', 'period_key' => now()->format('Y'),
+            'scope_key' => DocumentNumberService::scopeKey(
+                $this->company->id, $this->alexandria->id, 'stock_movement', now()->format('Y')
+            ),
+            'is_active' => true,
+        ]);
+        $this->warehouse = Warehouse::query()->forceCreate([
             'company_id' => $this->company->id, 'branch_id' => $this->alexandria->id,
             'code' => 'WH-030', 'name' => 'مخزن الإسكندرية', 'warehouse_type' => 'main',
-            'is_main' => true, 'is_system' => false, 'is_active' => true,
+            'is_main' => true, 'is_system' => false, 'is_active' => true, 'allows_sale_issue' => true,
         ]);
     }
 
@@ -254,6 +272,132 @@ class UatDef030ProductOnlyQuotationTest extends TestCase
         $this->assertSame($source->tax_amount, $item->tax_amount);
         $this->assertSame($source->total, $item->total);
         $this->assertSame(data_get($source->metadata, 'base_unit_price'), data_get($item->metadata, 'base_unit_price'));
+    }
+
+    public function test_SalesInvoiceInventory_issues_QuotationToSalesInvoice_product_once_and_exposes_the_movement(): void
+    {
+        app(InventoryService::class)->receive($this->warehouse, $this->alexProduct, '5', '100', 'stock_opening');
+        $invoice = $this->approvedProductInvoice();
+
+        app(SalesInvoiceIssuanceService::class)->issue($invoice);
+
+        $item = $invoice->items()->firstOrFail()->fresh();
+        $this->assertSame('quotation', $invoice->fresh()->invoice_type);
+        $this->assertNotNull($item->issued_movement_id);
+        $this->assertSame('4.000000', StockBalance::query()
+            ->where('warehouse_id', $this->warehouse->id)
+            ->where('product_id', $this->alexProduct->id)
+            ->value('quantity'));
+        $this->assertDatabaseHas('stock_movements', [
+            'id' => $item->issued_movement_id,
+            'warehouse_id' => $this->warehouse->id,
+            'product_id' => $this->alexProduct->id,
+            'movement_type' => 'sales_issue',
+            'direction' => 'out',
+            'reference_type' => 'sales_invoice',
+            'reference_id' => $invoice->id,
+        ]);
+
+        try {
+            app(SalesInvoiceIssuanceService::class)->issue($invoice->fresh());
+            $this->fail('Issued invoice must not be processed again.');
+        } catch (BusinessRuleException) {
+            $this->assertSame(1, StockMovement::query()
+                ->where('movement_type', 'sales_issue')
+                ->where('reference_type', 'sales_invoice')
+                ->where('reference_id', $invoice->id)
+                ->count());
+        }
+
+        $this->actingAs($this->manager)->get(route('sales-invoices.show', $invoice))
+            ->assertOk()
+            ->assertSee($this->warehouse->name)
+            ->assertSee($item->issuedMovement()->value('movement_number'))
+            ->assertDontSee('تحذير إداري');
+    }
+
+    public function test_quotation_invoice_with_insufficient_stock_rolls_back_issuance(): void
+    {
+        $invoice = $this->approvedProductInvoice();
+
+        try {
+            app(SalesInvoiceIssuanceService::class)->issue($invoice);
+            $this->fail('Insufficient stock must block invoice issuance.');
+        } catch (BusinessRuleException $exception) {
+            $this->assertStringContainsString('لا يمكن إصدار الفاتورة', $exception->getMessage());
+            $this->assertStringContainsString('المتاح: 0، المطلوب: 1', $exception->getMessage());
+        }
+
+        $this->assertSame('approved', $invoice->fresh()->status);
+        $this->assertNull($invoice->items()->firstOrFail()->issued_movement_id);
+        $this->assertSame(0, StockMovement::query()->where('movement_type', 'sales_issue')->count());
+    }
+
+    public function test_issued_historical_invoice_is_reported_without_being_changed(): void
+    {
+        $invoice = $this->approvedProductInvoice();
+        $invoice->forceFill(['status' => 'issued', 'issued_at' => now(), 'issued_by' => $this->manager->id])->save();
+
+        $this->artisan('inventory:audit-sales-invoices', ['--dry-run' => true])
+            ->expectsOutputToContain($invoice->invoice_number)
+            ->expectsOutputToContain($this->alexProduct->sku)
+            ->assertSuccessful();
+
+        $this->assertNull($invoice->items()->firstOrFail()->issued_movement_id);
+        $this->actingAs($this->manager)->get(route('sales-invoices.show', $invoice))
+            ->assertOk()
+            ->assertSee('تحذير إداري');
+        $this->actingAs($this->manager)->get(route('sales-invoices.print', $invoice))
+            ->assertOk()
+            ->assertDontSee('تحذير إداري');
+    }
+
+    public function test_invoice_product_cannot_issue_from_another_branch_warehouse(): void
+    {
+        $cairoWarehouse = Warehouse::query()->forceCreate([
+            'company_id' => $this->company->id,
+            'branch_id' => $this->cairo->id,
+            'code' => 'CAI-WH-037',
+            'name' => 'مخزن القاهرة',
+            'warehouse_type' => 'main',
+            'is_system' => false,
+            'is_active' => true,
+            'allows_sale_issue' => true,
+        ]);
+        $invoice = $this->approvedProductInvoice();
+        $invoice->items()->firstOrFail()->forceFill(['warehouse_id' => $cairoWarehouse->id])->save();
+
+        $this->expectException(BusinessRuleException::class);
+
+        try {
+            app(SalesInvoiceIssuanceService::class)->issue($invoice->fresh());
+        } finally {
+            $this->assertSame('approved', $invoice->fresh()->status);
+            $this->assertSame(0, StockMovement::query()->where('movement_type', 'sales_issue')->count());
+        }
+    }
+
+    public function test_legacy_non_product_invoice_items_do_not_create_inventory_movements(): void
+    {
+        $quotation = $this->historicalQuotation('approved');
+        $quotation->items()->create($this->legacyItemRow());
+        $invoice = app(QuotationToSalesInvoiceService::class)->convert($quotation);
+        $invoice->forceFill(['status' => 'approved'])->save();
+
+        app(SalesInvoiceIssuanceService::class)->issue($invoice);
+
+        $this->assertSame('issued', $invoice->fresh()->status);
+        $this->assertSame(0, StockMovement::query()->where('movement_type', 'sales_issue')->count());
+    }
+
+    private function approvedProductInvoice(): SalesInvoice
+    {
+        $quotation = $this->storeProductQuotation();
+        $quotation->forceFill(['status' => 'approved'])->save();
+        $invoice = app(QuotationToSalesInvoiceService::class)->convert($quotation);
+        $invoice->forceFill(['status' => 'approved'])->save();
+
+        return $invoice->fresh('items');
     }
 
     private function storeProductQuotation(): Quotation

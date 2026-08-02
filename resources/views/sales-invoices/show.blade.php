@@ -35,8 +35,11 @@
     </header>
     <div class="sw-card__body">
         <p>الإجمالي: {{ $invoice->total }} | المدفوع: {{ $invoice->paid_amount }} | المتبقي: {{ $invoice->balance_due }}</p>
-        <table class="sw-table"><thead><tr><th>الوصف</th><th>الكمية</th><th>السعر</th><th>الخصم</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>
-        @foreach($invoice->items as $item)<tr><td>{{ $item->description }} @if($item->warranty_applies)<small>— يشمل ضمانًا</small>@endif</td><td>{{ $item->quantity }}</td><td>{{ $item->unit_price }}</td><td>{{ $item->discount_amount }}</td><td>{{ $item->tax_amount }}</td><td>{{ $item->total }}</td></tr>@endforeach
+        @if(in_array($invoice->status, ['issued', 'partially_paid', 'paid', 'overdue', 'credited'], true) && $invoice->items->where('item_type', 'product')->whereNull('issued_movement_id')->isNotEmpty())
+            <div class="sw-alert sw-alert--warning">تحذير إداري: توجد منتجات صادرة في هذه الفاتورة بدون حركة صرف مخزون. راجع تدقيق المخزون قبل إجراء أي تصحيح.</div>
+        @endif
+        <table class="sw-table"><thead><tr><th>الوصف</th><th>الكمية</th><th>المخزن</th><th>حركة الصرف</th><th>الكمية المصروفة</th><th>السعر</th><th>الخصم</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>
+        @foreach($invoice->items as $item)<tr><td>{{ $item->description }} @if($item->warranty_applies)<small>— يشمل ضمانًا</small>@endif</td><td>{{ $item->quantity }}</td><td>{{ $item->item_type === 'product' ? ($item->warehouse?->name ?? '—') : '—' }}</td><td>{{ $item->issuedMovement?->movement_number ?? '—' }}</td><td>{{ $item->issuedMovement?->stock_quantity ?? '—' }}</td><td>{{ $item->unit_price }}</td><td>{{ $item->discount_amount }}</td><td>{{ $item->tax_amount }}</td><td>{{ $item->total }}</td></tr>@endforeach
         </tbody></table>
     </div>
 </section>

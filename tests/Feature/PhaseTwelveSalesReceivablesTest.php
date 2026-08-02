@@ -87,7 +87,7 @@ class PhaseTwelveSalesReceivablesTest extends TestCase
         app(WorkOrderToInvoiceService::class)->create($order->fresh());
     }
 
-    public function test_direct_sale_issues_stock_once_and_backend_calculates_tax_and_discount(): void
+    public function test_DirectSaleInventory_issues_stock_once_and_backend_calculates_tax_and_discount(): void
     {
         $context = $this->context();
         app(InventoryService::class)->receive($context['warehouse'], $context['product'], '10', '20', 'stock_opening');

@@ -12,7 +12,7 @@ class SalesInvoiceIssuanceService
 {
     public function __construct(
         private TenantContext $tenant,
-        private DirectSaleInventoryService $inventory,
+        private SalesInvoiceInventoryService $inventory,
         private AuditService $audit
     ) {
     }

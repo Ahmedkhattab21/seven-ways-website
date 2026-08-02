@@ -32,9 +32,15 @@ class InventoryService
         return $this->change($warehouse, $product, $quantity, $unitCost, $type, 'in', $reference, false, false, $totalCost);
     }
 
-    public function issue(Warehouse $warehouse, Product $product, string $quantity, string $type, array $reference = []): StockMovement
-    {
-        return $this->change($warehouse, $product, $quantity, null, $type, 'out', $reference);
+    public function issue(
+        Warehouse $warehouse,
+        Product $product,
+        string $quantity,
+        string $type,
+        array $reference = [],
+        ?callable $insufficientStockMessage = null
+    ): StockMovement {
+        return $this->change($warehouse, $product, $quantity, null, $type, 'out', $reference, insufficientStockMessage: $insufficientStockMessage);
     }
 
     public function issueAtCost(Warehouse $warehouse, Product $product, string $quantity, string $unitCost, string $type, array $reference = []): StockMovement
@@ -104,19 +110,22 @@ class InventoryService
         array $reference,
         bool $allowSystemTransit = false,
         bool $preserveProvidedCost = false,
-        ?string $providedTotalCost = null
+        ?string $providedTotalCost = null,
+        ?callable $insufficientStockMessage = null
     ): StockMovement {
         if (bccomp($quantity, '0', 6) <= 0) {
             throw new BusinessRuleException('Stock quantity must be positive.');
         }
 
-        return DB::transaction(function () use ($warehouse, $product, $quantity, $unitCost, $type, $direction, $reference, $allowSystemTransit, $preserveProvidedCost, $providedTotalCost) {
+        return DB::transaction(function () use ($warehouse, $product, $quantity, $unitCost, $type, $direction, $reference, $allowSystemTransit, $preserveProvidedCost, $providedTotalCost, $insufficientStockMessage) {
             $this->assertScope($warehouse, $product, $allowSystemTransit);
             $balance = $this->lockedBalance($warehouse, $product);
             $before = $balance->quantity;
             if ($direction === 'out') {
                 if (! $warehouse->branch?->settings?->allow_negative_stock && bccomp($quantity, $balance->available_quantity, 6) === 1) {
-                    throw new BusinessRuleException('Issue exceeds available stock.');
+                    throw new BusinessRuleException($insufficientStockMessage
+                        ? $insufficientStockMessage((string) $balance->available_quantity)
+                        : 'Issue exceeds available stock.');
                 }
                 $after = bcsub($before, $quantity, 6);
                 $unitCost = $preserveProvidedCost ? $unitCost : $balance->average_cost;

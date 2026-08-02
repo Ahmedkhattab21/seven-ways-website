@@ -39,7 +39,8 @@ class QuotationToSalesInvoiceService
 
             $warehouse = Warehouse::query()->where('company_id', $locked->company_id)
                 ->where('branch_id', $locked->branch_id)->where('is_active', true)
-                ->where('is_system', false)->orderByDesc('is_main')->orderBy('id')->first();
+                ->where('is_system', false)->where('allows_sale_issue', true)
+                ->orderByDesc('is_main')->orderBy('id')->first();
             if ($locked->items->contains('item_type', 'product') && ! $warehouse) {
                 throw new BusinessRuleException('An active sales warehouse is required for product items.');
             }

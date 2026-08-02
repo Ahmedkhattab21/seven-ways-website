@@ -13,7 +13,7 @@ class SalesProductReturnService
 {
     public function __construct(
         private TenantContext $tenant,
-        private DirectSaleInventoryService $inventory,
+        private SalesInvoiceInventoryService $inventory,
         private SalesCreditNoteService $credits,
         private AuditService $audit
     ) {

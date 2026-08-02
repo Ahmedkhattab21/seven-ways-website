@@ -79,7 +79,7 @@ class SalesInvoiceController extends Controller
     {
         $this->authorize('view', $salesInvoice);
 
-        return view('sales-invoices.show', ['invoice' => $salesInvoice->load(['company', 'branch', 'customer', 'vehicle', 'workOrder', 'currency', 'items.product', 'allocations.payment', 'creditNotes', 'shares.generatedBy'])]);
+        return view('sales-invoices.show', ['invoice' => $salesInvoice->load(['company', 'branch', 'customer', 'vehicle', 'workOrder', 'currency', 'items.product', 'items.warehouse', 'items.issuedMovement', 'allocations.payment', 'creditNotes', 'shares.generatedBy'])]);
     }
 
     public function action(SalesInvoiceActionRequest $request, SalesInvoice $salesInvoice, string $action, SalesInvoiceApprovalService $approval, SalesInvoiceIssuanceService $issuance): RedirectResponse
