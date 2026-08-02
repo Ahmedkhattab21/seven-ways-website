@@ -12,6 +12,7 @@ use App\Models\Tax;
 use App\Services\DocumentNumberService;
 use App\Services\FinancialHistoryInspector;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use RuntimeException;
 
@@ -42,13 +43,13 @@ class SevenWaysOperationalSeeder extends Seeder
             'referral' => 'ترشيح', 'car_showroom' => 'معرض سيارات',
             'sales_representative' => 'مندوب مبيعات', 'other' => 'أخرى',
         ] as $code => $name) {
-            CustomerSource::query()->updateOrCreate(
+            $this->forceUpdateOrCreate(CustomerSource::class,
                 ['company_id' => $company->id, 'code' => $code],
                 ['name' => $name, 'is_active' => true]
             );
         }
 
-        $vat = Tax::query()->updateOrCreate(
+        $vat = $this->forceUpdateOrCreate(Tax::class,
             ['company_id' => $company->id, 'code' => 'VAT14-EG'],
             [
                 'name' => 'ضريبة القيمة المضافة المصرية 14%', 'rate' => 14, 'tax_type' => 'both',
@@ -68,7 +69,7 @@ class SevenWaysOperationalSeeder extends Seeder
             ['ONLINE', 'دفع إلكتروني', 'online', true, false],
             ['CREDIT', 'آجل', 'credit', false, false],
         ] as $order => [$code, $name, $type, $reference, $cash]) {
-            PaymentMethod::query()->updateOrCreate(
+            $this->forceUpdateOrCreate(PaymentMethod::class,
                 ['company_id' => $company->id, 'code' => $code],
                 [
                     'name' => $name, 'type' => $type, 'requires_reference' => $reference,
@@ -82,7 +83,7 @@ class SevenWaysOperationalSeeder extends Seeder
             $start->subYear();
         }
         $end = $start->copy()->addYear()->subDay();
-        FiscalYear::query()->updateOrCreate(
+        $this->forceUpdateOrCreate(FiscalYear::class,
             ['company_id' => $company->id, 'start_date' => $start->toDateString()],
             [
                 'name' => $start->format('Y').'/'.$end->format('Y'), 'end_date' => $end->toDateString(),
@@ -100,7 +101,7 @@ class SevenWaysOperationalSeeder extends Seeder
         $periodKey = now()->format('Y');
         foreach ($company->branches()->where('is_active', true)->get() as $branch) {
             foreach ($types as $type => $shortCode) {
-                DocumentSequence::query()->updateOrCreate(
+                $this->forceUpdateOrCreate(DocumentSequence::class,
                     ['scope_key' => DocumentNumberService::scopeKey($company->id, $branch->id, $type, $periodKey)],
                     [
                         'company_id' => $company->id, 'branch_id' => $branch->id,
@@ -111,7 +112,7 @@ class SevenWaysOperationalSeeder extends Seeder
                 );
             }
             foreach (['customer' => ['CUS-', 'never', null], 'lead' => ['{BRANCH}-LEAD-{YYYY}-', 'yearly', $periodKey]] as $type => [$prefix, $reset, $key]) {
-                DocumentSequence::query()->updateOrCreate(
+                $this->forceUpdateOrCreate(DocumentSequence::class,
                     ['scope_key' => DocumentNumberService::scopeKey($company->id, $branch->id, $type, $key)],
                     [
                         'company_id' => $company->id, 'branch_id' => $branch->id,
@@ -131,5 +132,13 @@ class SevenWaysOperationalSeeder extends Seeder
             }
             $settings->save();
         }
+    }
+
+    private function forceUpdateOrCreate(string $modelClass, array $attributes, array $values): Model
+    {
+        $model = $modelClass::query()->where($attributes)->first() ?? new $modelClass;
+        $model->forceFill([...$attributes, ...$values])->save();
+
+        return $model;
     }
 }

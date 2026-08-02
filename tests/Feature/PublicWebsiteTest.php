@@ -10,6 +10,13 @@ use Tests\TestCase;
 
 class PublicWebsiteTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['website.contact.recipient' => 'website@example.com']);
+    }
+
     public function test_public_website_pages_are_available_to_guests(): void
     {
         foreach ([

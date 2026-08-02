@@ -25,7 +25,7 @@ class ContactController extends Controller
             Mail::to($recipient)->send(new WebsiteContactMessage($data));
         } catch (Throwable $exception) {
             Log::error('Website contact message delivery failed.', [
-                'exception' => get_class($exception),
+                'exception' => $exception,
             ]);
 
             return back()

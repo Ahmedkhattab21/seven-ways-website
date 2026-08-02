@@ -46,7 +46,7 @@ class RegistrationController extends Controller
             Mail::to($recipient)->send(new WebsiteContactMessage($contact));
         } catch (Throwable $exception) {
             Log::error('Website registration delivery failed.', [
-                'exception' => get_class($exception),
+                'exception' => $exception,
             ]);
 
             return back()
