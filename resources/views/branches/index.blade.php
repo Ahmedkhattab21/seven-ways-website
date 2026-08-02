@@ -9,6 +9,7 @@
 <x-table-shell>
     <thead><tr><th>الكود</th><th>الاسم</th><th>الهاتف</th><th>النوع</th><th>المستخدمون</th><th>الحالة</th><th>الإجراءات</th></tr></thead>
     <tbody>
+
     @forelse($branches as $branch)
         <tr>
             <td>{{ $branch->code }}</td><td><a href="{{ route('branches.show', $branch) }}">{{ $branch->name }}</a></td><td>{{ $branch->phone ?? '—' }}</td>
