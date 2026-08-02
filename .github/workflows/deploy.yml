@@ -128,7 +128,7 @@ jobs:
           php artisan optimize:clear
           php artisan production:validate-env
           php artisan production:scan-migrations
-          php artisan migrate --pretend
+          php artisan migrate --pretend --force
           php artisan migrate --force
           php artisan config:cache
           php artisan route:cache
