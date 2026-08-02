@@ -11,4 +11,9 @@ class CashPaymentRequest extends CashReceiptRequest
             'general_expense,employee_advance,employee_reimbursement,customer_refund_foundation,petty_cash,miscellaneous'
         );
     }
+
+    protected function direction(): string
+    {
+        return 'payment';
+    }
 }

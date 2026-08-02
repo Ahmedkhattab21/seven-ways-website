@@ -3,10 +3,13 @@
 namespace Tests\Feature;
 
 use App\Core\Exceptions\BusinessRuleException;
+use App\Models\Account;
 use App\Models\AccountingPeriod;
 use App\Models\BankAccount;
 use App\Models\Branch;
+use App\Models\BranchAccountingSetting;
 use App\Models\CashBox;
+use App\Models\CashBoxCount;
 use App\Models\CashBoxSession;
 use App\Models\CashReceipt;
 use App\Models\Cheque;
@@ -167,6 +170,94 @@ class TreasuryManualQaTest extends TestCase
                     ->assertSee('cash-operation-table-card');
             }
         }
+    }
+
+    public function test_CashOperation_form_uses_current_branch_and_safe_offset_accounts(): void
+    {
+        $manager = $this->cairoOnlyManager();
+        $cairoBox = $this->cashBox('QA-CAI-MAIN');
+        $gizaBox = $this->cashBox('QA-GIZ-MAIN');
+        $bankGlAccount = $this->bankAccount('QA-BANK-CAI')->glAccount;
+
+        $this->actingAs($manager)->withSession(['tenant.branch_id' => $this->cairo->id])
+            ->get(route('treasury.cash-receipts.index'))
+            ->assertOk()
+            ->assertSee('<option value="" selected>اختر الحساب المقابل</option>', false)
+            ->assertSee('QA-OTHER-INCOME')
+            ->assertSee($cairoBox->code)
+            ->assertDontSee($gizaBox->code)
+            ->assertDontSee($cairoBox->glAccount->account_code)
+            ->assertDontSee($bankGlAccount->account_code)
+            ->assertSee('data-options-url', false)
+            ->assertSee('data-offset-account', false);
+    }
+
+    public function test_CashOperation_options_filter_boxes_and_sessions_by_branch_and_box(): void
+    {
+        $owner = $this->user('qa.owner@sevenways.test');
+        $cairoBox = $this->cashBox('QA-CAI-MAIN');
+        $gizaBox = $this->cashBox('QA-GIZ-MAIN');
+        $cairoSession = $this->readySession($cairoBox, $owner, 'QA-CAI-OPTIONS-CS');
+        $gizaSession = $this->readySession($gizaBox, $owner, 'QA-GIZ-OPTIONS-CS');
+
+        $response = $this->actingAs($owner)
+            ->withSession(['tenant.branch_id' => $this->cairo->id])
+            ->getJson(route('treasury.cash-operations.options', [
+                'direction' => 'receipt',
+                'branch_id' => $this->cairo->id,
+            ]));
+
+        $response->assertOk()
+            ->assertJsonFragment(['id' => $cairoBox->id, 'code' => $cairoBox->code])
+            ->assertJsonFragment(['id' => $cairoSession->id, 'cash_box_id' => $cairoBox->id])
+            ->assertJsonMissing(['id' => $gizaBox->id, 'code' => $gizaBox->code])
+            ->assertJsonMissing(['id' => $gizaSession->id, 'cash_box_id' => $gizaBox->id]);
+    }
+
+    public function test_CashOperation_BranchScope_rejects_cross_branch_cash_and_restricted_offsets(): void
+    {
+        $manager = $this->cairoOnlyManager();
+        $owner = $this->user('qa.owner@sevenways.test');
+        $cairoBox = $this->cashBox('QA-CAI-MAIN');
+        $gizaBox = $this->cashBox('QA-GIZ-MAIN');
+        $manualAccount = $this->account('QA-OTHER-INCOME');
+        $restricted = Account::factory()->create([
+            'company_id' => $this->company->id,
+            'account_type_id' => $manualAccount->account_type_id,
+            'account_code' => 'QA-GIZ-RESTRICTED-OFFSET',
+            'name_ar' => 'QA Giza restricted offset',
+            'requires_branch' => true,
+            'created_by' => $owner->id,
+        ]);
+        BranchAccountingSetting::query()->where('company_id', $this->company->id)
+            ->where('branch_id', $this->giza->id)
+            ->update(['rounding_account_id' => $restricted->id]);
+        $payload = [
+            'branch_id' => $this->cairo->id,
+            'cash_box_id' => $cairoBox->id,
+            'receipt_type' => 'other_income',
+            'document_date' => now()->toDateString(),
+            'currency_id' => $this->company->currency_id,
+            'exchange_rate' => 1,
+            'amount' => 100,
+            'offset_account_id' => $manualAccount->id,
+            'description' => 'Scoped receipt validation',
+        ];
+
+        $this->actingAs($manager)->withSession(['tenant.branch_id' => $this->cairo->id]);
+        $this->post(route('treasury.cash-receipts.store'), array_merge($payload, [
+            'branch_id' => $this->giza->id,
+            'cash_box_id' => $gizaBox->id,
+        ]))->assertSessionHasErrors('branch_id');
+        $this->post(route('treasury.cash-receipts.store'), array_merge($payload, [
+            'offset_account_id' => $cairoBox->gl_account_id,
+        ]))->assertSessionHasErrors('offset_account_id');
+        $this->post(route('treasury.cash-receipts.store'), array_merge($payload, [
+            'offset_account_id' => $restricted->id,
+        ]))->assertSessionHasErrors('offset_account_id');
+        $this->get(route('treasury.cash-receipts.index'))
+            ->assertOk()
+            ->assertDontSee('QA-GIZ-RESTRICTED-OFFSET');
     }
 
     public function test_cairo_cashier_is_scoped_requires_session_and_cannot_spoof_protected_fields(): void
@@ -425,6 +516,30 @@ class TreasuryManualQaTest extends TestCase
     {
         return BankAccount::query()->where('company_id', $this->company->id)
             ->where('account_code', $code)->firstOrFail();
+    }
+
+    private function readySession(CashBox $box, User $actor, string $number): CashBoxSession
+    {
+        $session = CashBoxSession::factory()->create([
+            'company_id' => $this->company->id,
+            'branch_id' => $box->branch_id,
+            'cash_box_id' => $box->id,
+            'custodian_user_id' => $actor->id,
+            'session_number' => $number,
+            'status' => 'counting',
+            'active_guard' => 'active',
+            'opened_by' => $actor->id,
+        ]);
+        CashBoxCount::factory()->create([
+            'company_id' => $this->company->id,
+            'cash_box_session_id' => $session->id,
+            'count_type' => 'opening',
+            'status' => 'approved',
+            'counted_by' => $actor->id,
+            'approved_by' => $actor->id,
+        ]);
+
+        return $session;
     }
 
     private function account(string $code)

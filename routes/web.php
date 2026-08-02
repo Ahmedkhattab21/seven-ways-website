@@ -256,6 +256,8 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
             ->name('cash-counts.adjustment');
         Route::post('cash-over-short/{cashOverShortAdjustment}/{action}', [CashBoxSessionController::class, 'adjustmentAction'])
             ->whereIn('action', ['submit', 'approve', 'post', 'reverse'])->name('cash-over-short.action');
+        Route::get('cash-operations/options', [CashOperationController::class, 'options'])
+            ->name('cash-operations.options');
         Route::get('cash-receipts', [CashOperationController::class, 'receipts'])->name('cash-receipts.index');
         Route::post('cash-receipts', [CashOperationController::class, 'storeReceipt'])->name('cash-receipts.store');
         Route::post('cash-receipts/{cashReceipt}/{action}', [CashOperationController::class, 'receiptAction'])

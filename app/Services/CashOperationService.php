@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Core\Exceptions\BusinessRuleException;
 use App\Core\Tenancy\TenantContext;
-use App\Models\Account;
 use App\Models\CashBox;
 use App\Models\CashPayment;
 use App\Models\CashReceipt;
@@ -16,6 +15,7 @@ class CashOperationService
 {
     public function __construct(
         private TenantContext $tenant,
+        private CashOperationScopeService $scope,
         private CashBoxCustodianService $custodians,
         private TreasuryOperationAuthorizationService $authorization,
         private CashSessionOperationalGuard $sessionGuard,
@@ -29,8 +29,9 @@ class CashOperationService
     {
         return DB::transaction(function () use ($direction, $data) {
             $class = $this->class($direction);
+            $branch = $this->scope->requireBranch((int) $data['branch_id']);
             $box = CashBox::query()->where('company_id', $this->tenant->companyId())
-                ->where('branch_id', $data['branch_id'])->where('status', 'active')
+                ->where('branch_id', $branch->id)->where('status', 'active')
                 ->lockForUpdate()->findOrFail($data['cash_box_id']);
             if ($box->currency_id !== (int) $data['currency_id'] || bccomp((string) ($data['exchange_rate'] ?? 1), '1', 8) !== 0) {
                 throw new BusinessRuleException('Cross-currency cash operations are not supported.');
@@ -42,14 +43,16 @@ class CashOperationService
             $sessionId = $data['cash_box_session_id'] ?? null;
             if ($box->requires_shift_opening) {
                 $sessionId = $this->sessionGuard->assertReady($box, $sessionId)->id;
+            } elseif ($sessionId) {
+                $sessionId = $this->sessionGuard->assertActiveSession($box, $sessionId)->id;
             }
             $this->custodians->assert($box, $direction === 'receipt' ? 'can_receive' : 'can_pay', (string) $data['amount']);
             $this->authorization->assert(
                 'treasury.cash_'.$direction.'s.create', 'cash_'.$direction, 'create',
                 $box->currency_id, (string) $data['amount'], $box->branch_id
             );
-            $offset = Account::query()->where('company_id', $box->company_id)->where('is_active', true)
-                ->where('is_posting', true)->findOrFail($data['offset_account_id']);
+            $offset = $this->scope->account($direction, $box->branch_id, (int) $data['offset_account_id'])
+                ?? throw new BusinessRuleException('Offset account is not eligible for this cash operation and branch.');
             if ($offset->is_control_account
                 && ! $this->tenant->user()->hasPermission('accounting.journals.post_control_accounts')) {
                 throw new BusinessRuleException('Control account cash operation requires explicit permission.');
