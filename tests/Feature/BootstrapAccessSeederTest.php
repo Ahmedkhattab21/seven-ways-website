@@ -61,7 +61,7 @@ class BootstrapAccessSeederTest extends TestCase
         $this->post('/login', [
             'email' => 'system.admin@sevenways.test',
             'password' => 'Test@123456',
-        ])->assertRedirect(route('dashboard'));
+        ])->assertRedirect(route('dashboards.executive'));
         $this->post('/logout');
 
         $this->post('/login', [

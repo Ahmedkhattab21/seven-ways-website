@@ -26,4 +26,18 @@ class UserDashboardProfileResolver
             default => $user->hasPermission('dashboard.view') ? 'dashboard' : null,
         };
     }
+
+    public function canAccessRoute(User $user, string $routeName): bool
+    {
+        return match ($routeName) {
+            'dashboards.executive' => $user->hasRole('system_admin')
+                || $user->isCompanyAdministrator()
+                || $user->hasPermission('dashboards.executive.view'),
+            'accounting.dashboard' => $user->hasRole('system_admin')
+                || $user->hasPermission('accounting.accounts.view'),
+            'dashboard' => $user->hasRole('system_admin')
+                || $user->hasPermission('dashboard.view'),
+            default => false,
+        };
+    }
 }

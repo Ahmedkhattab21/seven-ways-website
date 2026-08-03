@@ -334,7 +334,7 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
             ->whereIn('action', ['submit', 'approve', 'post', 'reverse', 'cancel'])->name('bank-adjustments.action');
     });
 
-    Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->middleware('permission:dashboard.view')->name('dashboard');
     Route::get('dashboard/executive', ExecutiveDashboardController::class)->name('dashboards.executive');
     Route::get('dashboard/branches', BranchDashboardController::class)->name('dashboards.branches');
     Route::get('reports/{report}', AnalyticsReportController::class)

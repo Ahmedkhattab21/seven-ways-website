@@ -21,7 +21,7 @@ class DashboardLandingService
     {
         $route = $this->profiles->routeName($user);
 
-        return $route ? route($route) : URL::to('/');
+        return $route && $this->profiles->canAccessRoute($user, $route) ? route($route) : URL::to('/');
     }
 
     public function intendedOrDefault(Request $request, User $user): string
@@ -54,7 +54,7 @@ class DashboardLandingService
             return false;
         }
         if (in_array($name, self::LANDING_ROUTES, true)) {
-            return $name === $this->profiles->routeName($user);
+            return $this->profiles->canAccessRoute($user, $name);
         }
 
         foreach ($route->gatherMiddleware() as $middleware) {

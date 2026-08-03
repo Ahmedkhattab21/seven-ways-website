@@ -52,4 +52,53 @@ class UserDashboardProfileResolverTest extends TestCase
             'generic denied' => [[], false, 'generic', null],
         ];
     }
+
+    /**
+     * @dataProvider routeAccess
+     */
+    public function test_it_centralizes_dashboard_route_access(
+        array $roles,
+        array $permissions,
+        string $route,
+        bool $expected
+    ): void {
+        $user = new class($roles, $permissions) extends User
+        {
+            public function __construct(private array $testRoles, private array $testPermissions)
+            {
+                parent::__construct();
+            }
+
+            public function hasRole(string|array $roles): bool
+            {
+                return collect((array) $roles)->intersect($this->testRoles)->isNotEmpty();
+            }
+
+            public function hasPermission(string $permission): bool
+            {
+                return in_array($permission, $this->testPermissions, true);
+            }
+
+            public function isCompanyAdministrator(): bool
+            {
+                return $this->hasRole(['company_owner', 'general_manager']);
+            }
+        };
+
+        $this->assertSame($expected, (new UserDashboardProfileResolver)->canAccessRoute($user, $route));
+    }
+
+    public function routeAccess(): array
+    {
+        return [
+            'owner executive' => [['company_owner'], [], 'dashboards.executive', true],
+            'general manager executive' => [['general_manager'], [], 'dashboards.executive', true],
+            'system admin executive' => [['system_admin'], [], 'dashboards.executive', true],
+            'explicit executive permission' => [[], ['dashboards.executive.view'], 'dashboards.executive', true],
+            'branch manager executive denied' => [['branch_manager'], ['dashboard.view'], 'dashboards.executive', false],
+            'accountant executive denied' => [['accountant'], ['accounting.accounts.view'], 'dashboards.executive', false],
+            'dashboard permission' => [[], ['dashboard.view'], 'dashboard', true],
+            'dashboard denied' => [[], [], 'dashboard', false],
+        ];
+    }
 }

@@ -74,11 +74,11 @@ class PhaseNineteenDashboardTest extends TestCase
         ]))->assertOk();
     }
 
-    public function test_executive_dashboard_requires_specific_permission(): void
+    public function test_company_owner_keeps_executive_dashboard_access_without_optional_permission(): void
     {
         $context = $this->analyticsContext();
         $role = $context['user']->roles()->first();
         $role->permissions()->detach(Permission::where('name', 'dashboards.executive.view')->value('id'));
-        $this->get(route('dashboards.executive'))->assertForbidden();
+        $this->get(route('dashboards.executive'))->assertOk();
     }
 }

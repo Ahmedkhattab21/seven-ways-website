@@ -12,6 +12,7 @@ use App\Models\FinancialReportDefinition;
 use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\Role;
+use App\Models\SalesCreditNote;
 use App\Models\SalesInvoice;
 use App\Models\User;
 use App\Services\BalanceSheetService;
@@ -150,6 +151,75 @@ class PhaseFourteenFinancialReportingTest extends TestCase
         $count = FinancialReportDefinition::query()->where('company_id', $context['company']->id)->count();
         app(FinancialReportingSeeder::class)->run();
         $this->assertSame($count, FinancialReportDefinition::query()->where('company_id', $context['company']->id)->count());
+    }
+
+    public function test_unposted_source_count_supports_multiple_classes_filters_and_posting_statuses(): void
+    {
+        $context = $this->context();
+        $secondBranch = Branch::query()->create([
+            'company_id' => $context['company']->id,
+            'code' => 'SECOND',
+            'name' => 'Second',
+            'is_main' => false,
+            'is_active' => true,
+        ]);
+        $customer = \App\Models\Customer::factory()->create([
+            'company_id' => $context['company']->id,
+            'created_branch_id' => $context['branch']->id,
+            'assigned_branch_id' => $context['branch']->id,
+        ]);
+        $service = app(UnpostedAccountingSourcesService::class);
+        $branchBaseline = $service->count(['branch_id' => $context['branch']->id]);
+        $bothBaseline = $service->count(['branch_ids' => [$context['branch']->id, $secondBranch->id]]);
+
+        $invoice = SalesInvoice::factory()->create([
+            'company_id' => $context['company']->id,
+            'branch_id' => $context['branch']->id,
+            'customer_id' => $customer->id,
+            'currency_id' => $context['currency']->id,
+            'status' => 'issued',
+            'created_by' => $context['user']->id,
+        ]);
+        $creditNote = SalesCreditNote::factory()->create([
+            'company_id' => $context['company']->id,
+            'branch_id' => $context['branch']->id,
+            'sales_invoice_id' => $invoice->id,
+            'customer_id' => $customer->id,
+            'currency_id' => $context['currency']->id,
+            'status' => 'issued',
+            'created_by' => $context['user']->id,
+        ]);
+        SalesInvoice::factory()->create([
+            'company_id' => $context['company']->id,
+            'branch_id' => $secondBranch->id,
+            'customer_id' => $customer->id,
+            'currency_id' => $context['currency']->id,
+            'status' => 'issued',
+            'created_by' => $context['user']->id,
+        ]);
+
+        $this->assertSame($branchBaseline + 2, $service->count(['branch_id' => $context['branch']->id]));
+        $this->assertSame($bothBaseline + 3, $service->count(['branch_ids' => [$context['branch']->id, $secondBranch->id]]));
+
+        foreach ([[$invoice, 'posted'], [$creditNote, 'not_required']] as [$source, $status]) {
+            DB::table('accounting_posting_links')->insert([
+                'uuid' => fake()->uuid(),
+                'company_id' => $context['company']->id,
+                'branch_id' => $context['branch']->id,
+                'source_type' => $source::class,
+                'source_id' => $source->id,
+                'source_uuid' => $source->uuid,
+                'posting_action' => 'post',
+                'idempotency_key' => fake()->sha256(),
+                'status' => $status,
+                'created_by' => $context['user']->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $this->assertSame($branchBaseline, $service->count(['branch_id' => $context['branch']->id]));
+        $this->assertSame($bothBaseline + 1, $service->count(['branch_ids' => [$context['branch']->id, $secondBranch->id]]));
     }
 
     public function test_csv_formula_injection_is_neutralized(): void

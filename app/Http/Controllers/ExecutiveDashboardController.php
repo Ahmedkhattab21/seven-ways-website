@@ -8,6 +8,7 @@ use App\Core\Tenancy\TenantContext;
 use App\Http\Requests\AnalyticsReportRequest;
 use App\Services\ExecutiveDashboardService;
 use App\Services\FinancialReportViewDataService;
+use App\Services\UserDashboardProfileResolver;
 use Illuminate\View\View;
 
 class ExecutiveDashboardController extends Controller
@@ -17,13 +18,10 @@ class ExecutiveDashboardController extends Controller
         TenantContext $tenant,
         ExecutiveDashboardService $dashboard,
         ReportRegistry $registry,
-        FinancialReportViewDataService $viewData
+        FinancialReportViewDataService $viewData,
+        UserDashboardProfileResolver $profiles
     ): View {
-        abort_unless(
-            $request->user()->hasRole('system_admin')
-                || $request->user()->hasPermission('dashboards.executive.view'),
-            403
-        );
+        abort_unless($profiles->canAccessRoute($request->user(), 'dashboards.executive'), 403);
         $filters = ReportFilterData::from($request->validated(), $tenant);
 
         return view('analytics.executive-dashboard', [

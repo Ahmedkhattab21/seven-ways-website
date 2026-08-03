@@ -71,7 +71,7 @@ class TreasuryManualQaTest extends TestCase
     {
         $owner = $this->user('qa.owner@sevenways.test');
         $this->post(route('login'), $this->credentials($owner->email))
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('dashboards.executive'));
         $this->assertAuthenticatedAs($owner);
         $this->post(route('logout'))->assertRedirect(route('login'));
 

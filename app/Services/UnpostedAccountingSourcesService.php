@@ -65,9 +65,10 @@ class UnpostedAccountingSourcesService
     public function count(array $filters = []): int
     {
         $companyId = $this->tenant->companyId();
+        $total = 0;
 
-        return collect(self::SOURCES)->sum(function (array $statuses, string $class) use ($companyId, $filters) {
-            return $class::query()->where('company_id', $companyId)
+        foreach (self::SOURCES as $class => $statuses) {
+            $total += $class::query()->where('company_id', $companyId)
                 ->when($statuses !== [], fn ($query) => $query->whereIn('status', $statuses))
                 ->when($filters['branch_id'] ?? null, fn ($query, $id) => $query->where('branch_id', $id))
                 ->when($filters['branch_ids'] ?? null, fn ($query, $ids) => $query->whereIn('branch_id', $ids))
@@ -76,7 +77,9 @@ class UnpostedAccountingSourcesService
                         ->whereColumn('apl.source_id', (new $class)->getTable().'.id')
                         ->where('apl.source_type', $class)->whereIn('apl.status', ['posted', 'not_required']);
                 })->count();
-        });
+        }
+
+        return $total;
     }
 
     private function number(Model $model): string

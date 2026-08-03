@@ -59,6 +59,13 @@ class AuthenticationUiTest extends TestCase
             ->assertDontSee('href="'.url('/purchases').'"', false);
     }
 
+    public function test_authenticated_user_without_dashboard_permission_is_forbidden(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+
+        $this->actingAs($user)->get(route('dashboard'))->assertForbidden();
+    }
+
     public function test_logout_ends_the_authenticated_session(): void
     {
         $user = User::factory()->make();

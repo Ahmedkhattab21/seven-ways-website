@@ -57,7 +57,7 @@ class PhaseTwentyOneMasterDataAccessTest extends TestCase
         $this->post(route('login'), [
             'email' => $owner->email,
             'password' => 'Uat@123456',
-        ])->assertRedirect(route('dashboard'));
+        ])->assertRedirect(route('dashboards.executive'));
 
         $this->post(route('logout'));
         $this->post(route('login'), [
