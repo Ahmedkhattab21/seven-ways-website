@@ -73,6 +73,8 @@ class SalesInvoiceRequest extends FormRequest
             'items.*.discount_type' => ['nullable', 'in:fixed,percentage'], 'items.*.discount_value' => ['nullable', 'numeric', 'min:0'],
             'items.*.warranty' => ['nullable', 'array'],
             'items.*.warranty.applies' => ['nullable', 'boolean'],
+            'items.*.warranty.manufacturer' => ['nullable', 'string', 'max:255'],
+            'items.*.warranty.roll_name' => ['nullable', 'string', 'max:255'],
             'items.*.warranty.film_type' => ['nullable', 'string', 'max:255'],
             'items.*.warranty.film_code' => ['nullable', 'string', 'max:255'],
             'items.*.warranty.application_area' => ['nullable', 'string', 'max:255'],

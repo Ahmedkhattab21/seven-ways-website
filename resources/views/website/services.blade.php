@@ -110,7 +110,13 @@
                                 @foreach ($product['sections'] as $section)
                                     @php($copy = __('website.services.products.'.$product['id'].'.'.$section))
                                     <section class="sw-product__copy sw-product-reveal">
-                                        <h3>{{ $copy['title'] }}</h3>
+                                        <h3>
+                                            @if ($product['id'] === 'layer-plus')
+                                                {!! str_replace('LAYER+', '<bdi dir="ltr">LAYER+</bdi>', e($copy['title'])) !!}
+                                            @else
+                                                {{ $copy['title'] }}
+                                            @endif
+                                        </h3>
                                         <p>{{ $copy['body'] }}</p>
                                     </section>
                                 @endforeach

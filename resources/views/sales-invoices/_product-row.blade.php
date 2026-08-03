@@ -14,6 +14,7 @@
                         data-base-price="{{ $product->resolved_base_price }}"
                         data-final-price="{{ $product->resolved_final_price }}"
                         data-promotion="{{ $product->resolved_promotion_name }}"
+                        data-brand="{{ $product->brand?->name }}"
                         data-default-warehouse="{{ $product->default_sales_warehouse_id }}"
                         @selected((string) ($row['product_id'] ?? '') === (string) $product->id)
                     >{{ $product->sku }} — {{ $product->name }}</option>
@@ -56,6 +57,7 @@
 
     <div class="sales-invoice-product-summary" data-invoice-product-summary hidden>
         <div><span>وحدة البيع</span><strong data-product-unit>—</strong></div>
+        <div><span>الشركة / العلامة</span><strong data-product-brand>—</strong></div>
         <div><span>المتاح بالفرع</span><strong data-product-stock>—</strong></div>
         <div><span>السعر الأساسي</span><strong data-product-base-price>—</strong></div>
         <div><span>السعر المستخدم</span><strong data-product-final-price>—</strong></div>
@@ -73,8 +75,10 @@
                     <option value="0" @selected((string) data_get($row, 'warranty.applies') === '0')>لا</option>
                 </select>
             </label>
+            <label class="sw-field"><span class="sw-field__label">الشركة المصنّعة</span><input class="sw-input" name="items[{{ $index }}][warranty][manufacturer]" value="{{ data_get($row, 'warranty.manufacturer') }}" data-warranty-manufacturer placeholder="تُجلب من علامة المنتج تلقائيًا"></label>
+            <label class="sw-field"><span class="sw-field__label">اسم الرول</span><input class="sw-input" name="items[{{ $index }}][warranty][roll_name]" value="{{ data_get($row, 'warranty.roll_name') }}"></label>
             <label class="sw-field"><span class="sw-field__label">نوع الفيلم</span><input class="sw-input" name="items[{{ $index }}][warranty][film_type]" value="{{ data_get($row, 'warranty.film_type') }}"></label>
-            <label class="sw-field"><span class="sw-field__label">كود الفيلم</span><input class="sw-input" name="items[{{ $index }}][warranty][film_code]" value="{{ data_get($row, 'warranty.film_code') }}"></label>
+            <label class="sw-field"><span class="sw-field__label">كود الفيلم / رقم الرول</span><input class="sw-input" name="items[{{ $index }}][warranty][film_code]" value="{{ data_get($row, 'warranty.film_code') }}"></label>
             <label class="sw-field"><span class="sw-field__label">منطقة التطبيق</span><input class="sw-input" name="items[{{ $index }}][warranty][application_area]" value="{{ data_get($row, 'warranty.application_area') }}"></label>
             <label class="sw-field"><span class="sw-field__label">بداية الضمان</span><input class="sw-input" type="date" name="items[{{ $index }}][warranty][start_date]" value="{{ data_get($row, 'warranty.start_date') }}"></label>
             <label class="sw-field"><span class="sw-field__label">مدة الضمان</span><input class="sw-input" type="number" min="1" name="items[{{ $index }}][warranty][duration_value]" value="{{ data_get($row, 'warranty.duration_value') }}"></label>

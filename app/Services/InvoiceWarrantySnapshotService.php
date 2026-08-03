@@ -95,6 +95,12 @@ class InvoiceWarrantySnapshotService
 
         return [
             'applies' => $applies,
+            'product_name' => $source instanceof Product ? $source->name : null,
+            'product_sku' => $source instanceof Product ? $source->sku : null,
+            'manufacturer' => $source instanceof Product
+                ? ($source->brand?->name ?: ($override['manufacturer'] ?? null))
+                : ($override['manufacturer'] ?? null),
+            'roll_name' => $override['roll_name'] ?? null,
             'film_type' => $override['film_type'] ?? $source?->default_warranty_film_type,
             'film_code' => $override['film_code'] ?? null,
             'application_area' => $override['application_area'] ?? $source?->default_warranty_application_area,

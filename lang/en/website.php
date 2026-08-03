@@ -128,18 +128,18 @@ return [
                     'body' => "Enhance your car's protection and shine with Hexis Bodyfence Ceramic, a premium nano-ceramic coating designed to add an extra layer of security and visual appeal. This product offers very good resistance to water and dirt, helping keep the car cleaner for longer and making maintenance easier. It also provides high protection against ultraviolet rays, preserving the vehicle's paint from fading and sun damage. The coating adds a refined gloss that enhances the overall appearance of the car. With moderate scratch resistance and a warranty ranging from 2 to 3 years, it delivers reliable performance. Commonly used alongside paint protection films, this coating significantly boosts the effectiveness and durability of PPF, offering a more complete and long-lasting protection solution.",
                 ],
             ],
-            'upx' => [
+            'layer-plus' => [
                 'ppf' => [
-                    'title' => 'UPX Paint Protection Films',
-                    'body' => "Protect your car with UPX Paint Protection Films, engineered to keep your vehicle looking brand new with advanced technology and premium performance. Featuring self-healing capabilities, any surface scratches disappear when exposed to heat—preserving your car's flawless appearance. Made from high-grade polyurethane, the films offer excellent resistance to erosion and scratches, shielding your paint from gravel, weather, and daily wear. With advanced heat insulation, UPX films reduce the internal temperature of your car, enhancing comfort—especially in summer. They also block harmful UV rays, maintaining the vibrancy of your paint while ensuring clear visibility. Long-lasting warranties range from 5 years to over 10 years, depending on the selected package such as Supreme, Diamond, or Platinum. These films are low-maintenance and easy to clean, offering durability without the hassle of frequent upkeep. With a variety of balanced packages tailored to your needs and budget, UPX lets you choose the protection that perfectly suits your car—and your style.",
+                    'title' => 'LAYER+ Paint Protection Films',
+                    'body' => 'High-performance TPU paint protection films offering excellent clarity and gloss, self-healing of light surface scratches, and resistance to yellowing, stains, and environmental damage.',
                 ],
                 'thermal' => [
-                    'title' => 'UPX Thermal Insulation',
-                    'body' => "Enjoy a more comfortable driving experience with UPX heat insulation films, combining high performance with advanced technology. These films provide effective thermal insulation ranging from 80% to 90%, significantly reducing cabin heat and enhancing comfort, especially during hot weather. They also offer high resistance to UV rays, protecting both the vehicle's paint and passengers from harmful exposure. With clear visibility under various conditions, you can count on safe and pleasant driving. Backed by a 5–10 year warranty, these films reflect superior durability and quality. Additional benefits include sound insulation and resistance to wear and corrosion, making UPX films the perfect solution for comprehensive car protection.",
+                    'title' => 'LAYER+ Window Films',
+                    'body' => 'Advanced ceramic and carbon window films designed to reduce heat and ultraviolet exposure while maintaining clear visibility and a refined appearance.',
                 ],
                 'nano' => [
-                    'title' => 'UPX Nano Ceramic',
-                    'body' => "Protect your vehicle with UPX Nano Ceramic, available in premium packages like Supreme, Diamond, and Platinum, offering advanced surface protection with a refined finish. This nano-ceramic coating delivers very good gloss and a high level of UV protection, helping to preserve your car's paint and appearance over time. It provides good resistance to water and dirt, making maintenance easier and the vehicle cleaner for longer. With scratch resistance ranging from moderate to good depending on the selected package, it ensures durable surface defense. The product comes with a warranty ranging from 2 to 5 years. Often used alongside heat insulation films, UPX Nano Ceramic offers dual protection for both paint and glass surfaces, delivering a complete, long-lasting solution.",
+                    'title' => 'LAYER+ Nano Ceramic Coating',
+                    'body' => 'Nano ceramic coatings for exterior and interior surfaces that enhance gloss and provide water-repellent protection against dirt and environmental contaminants.',
                 ],
             ],
             '3m' => [

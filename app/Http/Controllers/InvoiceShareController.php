@@ -59,7 +59,7 @@ class InvoiceShareController extends Controller
     public function show(InvoiceShare $invoiceShare): View
     {
         abort_if($invoiceShare->expires_at->isPast(), 410);
-        $invoiceShare->load('invoice.company', 'invoice.branch', 'invoice.customer', 'invoice.currency', 'invoice.items');
+        $invoiceShare->load('invoice.company', 'invoice.branch', 'invoice.customer', 'invoice.currency', 'invoice.items.product.brand');
         if (! $invoiceShare->opened_at) {
             $invoiceShare->forceFill(['opened_at' => now(), 'status' => 'opened'])->save();
         }

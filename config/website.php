@@ -194,6 +194,7 @@ return [
     'brand_logos' => [
         ['id' => 'xpel', 'name' => 'XPEL', 'image' => 'assets/website/images/logo-BBmOnB6N.webp', 'background' => '#ffb81c'],
         ['id' => 'hexis', 'name' => 'Hexis', 'image' => 'assets/website/images/logo-DguEO2O0.webp', 'background' => '#ffffff'],
+        ['id' => 'layer-plus', 'name' => 'LAYER+', 'image' => 'assets/website/images/layer-plus-logo.png', 'background' => '#ffffff'],
         ['id' => '3m', 'name' => '3M', 'image' => 'assets/website/images/logo-L2ly5kkF.webp', 'background' => '#d7b6a3'],
         ['id' => 'carpro', 'name' => 'CarPro', 'image' => 'assets/website/images/logo-CGkfx9mt.webp', 'background' => '#a1a1a1'],
         ['id' => 'project3', 'name' => 'Project 3', 'image' => 'assets/website/images/logo-D0I4roVz.webp', 'background' => '#b1b1b1'],
@@ -253,6 +254,12 @@ return [
                 'assets/website/images/hexis-package-(1)-Blm3ZWSg.webp',
                 'assets/website/images/hexis-package-(2)-DnveVTkO.webp',
             ],
+            'sections' => ['ppf', 'thermal', 'nano'],
+        ],
+        [
+            'id' => 'layer-plus',
+            'brand' => 'LAYER+',
+            'images' => [],
             'sections' => ['ppf', 'thermal', 'nano'],
         ],
         [

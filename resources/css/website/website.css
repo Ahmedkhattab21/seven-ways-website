@@ -1700,6 +1700,13 @@ html[dir="ltr"] .sw-website .sw-home-services .sw-home-brand.sw-reveal.is-visibl
     object-fit: contain;
 }
 
+.sw-website .sw-product#layer-plus .sw-product__brand {
+    padding: 20px 24px;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34);
+}
+
 .sw-website .sw-product__brand-name {
     display: inline-flex;
     min-height: 96px;
@@ -1944,6 +1951,11 @@ html[dir="ltr"] .sw-website .sw-home-services .sw-home-brand.sw-reveal.is-visibl
 
     .sw-website .sw-product__brand {
         width: 135px;
+    }
+
+    .sw-website .sw-product#layer-plus .sw-product__brand {
+        width: 180px;
+        padding: 12px 14px;
     }
 
     .sw-website .sw-product__package {

@@ -21,6 +21,7 @@
 <body>
 @php
     $settings = array_merge(['show_egypt_flag' => true, 'show_saudi_flag' => true], $invoice->company->invoice_print_settings ?? []);
+    $productItems = $invoice->items->where('item_type', 'product');
     $warrantyItems = $invoice->items->where('warranty_applies', true);
     $warrantyInvalid = in_array($invoice->status, ['cancelled', 'void'], true);
 @endphp
@@ -50,10 +51,11 @@
     </section>
 
     <table>
-        <thead><tr><th>الوصف</th><th>الكمية</th><th>السعر</th><th>الخصم</th><th>الضريبة</th><th>الإجمالي</th></tr></thead>
+        <thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th><th>الخصم</th><th>الضريبة</th><th>الإجمالي</th></tr></thead>
         <tbody>
         @foreach($invoice->items as $item)
-            <tr><td>{{ $item->description }}</td><td>{{ $item->quantity }}</td><td>{{ $item->unit_price }}</td><td>{{ $item->discount_amount }}</td><td>{{ $item->tax_amount }}</td><td>{{ $item->total }}</td></tr>
+            @php($warranty = $item->warranty_snapshot ?? [])
+            <tr><td><strong>{{ $warranty['product_name'] ?? $item->product?->name ?? $item->description }}</strong><br><small>SKU: {{ $warranty['product_sku'] ?? $item->product?->sku ?? '—' }} | الشركة: {{ $warranty['manufacturer'] ?? $item->product?->brand?->name ?? '—' }}</small></td><td>{{ $item->quantity }}</td><td>{{ $item->unit_price }}</td><td>{{ $item->discount_amount }}</td><td>{{ $item->tax_amount }}</td><td>{{ $item->total }}</td></tr>
         @endforeach
         </tbody>
     </table>
@@ -67,16 +69,20 @@
         <p><span>المتبقي</span><strong>{{ $invoice->balance_due }}</strong></p>
     </div>
 
-    @if($warrantyItems->isNotEmpty())
+    @if($productItems->isNotEmpty())
         <section class="panel warranty">
-            <h2>تفاصيل الضمان المضمنة بالفاتورة</h2>
-            <p class="{{ $warrantyInvalid ? 'invalid' : '' }}">حالة الضمان: {{ $warrantyInvalid ? 'غير ساري بسبب إلغاء/إبطال الفاتورة' : 'ساري وفق الشروط الموضحة' }}</p>
-            @foreach($warrantyItems as $item)
+            <h2>بيانات المنتجات والضمان</h2>
+            @foreach($productItems as $item)
                 @php($warranty = $item->warranty_snapshot ?? [])
                 <div class="warranty-item">
-                    <strong>{{ $item->description }}</strong>
-                    <p>نوع الفيلم: {{ $warranty['film_type'] ?? '—' }} | الكود: {{ $warranty['film_code'] ?? '—' }} | منطقة التطبيق: {{ $warranty['application_area'] ?? '—' }}</p>
-                    <p>البداية: {{ $warranty['start_date'] ?? '—' }} | النهاية: {{ ($warranty['duration_unit'] ?? null) === 'lifetime' ? 'مدى الحياة' : ($warranty['end_date'] ?? '—') }}</p>
+                    <strong>{{ $warranty['product_name'] ?? $item->product?->name ?? $item->description }}</strong>
+                    <p>SKU: {{ $warranty['product_sku'] ?? $item->product?->sku ?? '—' }} | حالة الضمان: <span class="{{ $item->warranty_applies && $warrantyInvalid ? 'invalid' : '' }}">{{ $item->warranty_applies ? ($warrantyInvalid ? 'غير ساري بسبب إلغاء/إبطال الفاتورة' : 'ساري وفق الشروط الموضحة') : 'غير مسجل لهذا المنتج' }}</span></p>
+                    <p>الشركة: {{ $warranty['manufacturer'] ?? $item->product?->brand?->name ?? '—' }} | اسم الرول: {{ $warranty['roll_name'] ?? '—' }}</p>
+                    <p>نوع الفيلم: {{ $warranty['film_type'] ?? '—' }} | كود/رقم الرول: {{ $warranty['film_code'] ?? '—' }} | منطقة التطبيق: {{ $warranty['application_area'] ?? '—' }}</p>
+                    @if($item->warranty_applies)
+                        <p>البداية: {{ $warranty['start_date'] ?? '—' }} | النهاية: {{ ($warranty['duration_unit'] ?? null) === 'lifetime' ? 'مدى الحياة' : ($warranty['end_date'] ?? '—') }}</p>
+                        <p><strong>بطاقة الضمان الإلكترونية:</strong> هذه الفاتورة رقم {{ $invoice->invoice_number }} هي مستند الضمان، ويمكن عرضها من رابط المشاركة الآمن المرسل للعميل.</p>
+                    @endif
                     @if(!empty($warranty['terms']))<p><strong>الشروط:</strong> {{ $warranty['terms'] }}</p>@endif
                     @if(!empty($warranty['notes']))<p><strong>ملاحظات:</strong> {{ $warranty['notes'] }}</p>@endif
                     @foreach($warranty['components'] ?? [] as $component)

@@ -135,6 +135,30 @@ class PublicWebsiteTest extends TestCase
             ->assertSeeInOrder(['id="project3"', 'id="xpel"'], false);
     }
 
+    public function test_layer_plus_replaces_the_removed_upx_brand(): void
+    {
+        $this->assertTrue(collect(config('website.brand_logos'))->contains('id', 'layer-plus'));
+        $this->assertTrue(collect(config('website.product_packages'))->contains('id', 'layer-plus'));
+        $this->assertFileExists(public_path('assets/website/images/layer-plus-logo.png'));
+
+        $this->get(route('website.home', ['lang' => 'en']))
+            ->assertOk()
+            ->assertSee('href="'.route('website.services').'#layer-plus"', false)
+            ->assertSee('assets/website/images/layer-plus-logo.png', false);
+
+        $this->get(route('website.services', ['lang' => 'en']))
+            ->assertOk()
+            ->assertSee('id="layer-plus"', false)
+            ->assertSee('<bdi dir="ltr">LAYER+</bdi>', false)
+            ->assertSee('Paint Protection Films')
+            ->assertSee('Window Films')
+            ->assertSee('Nano Ceramic Coating');
+
+        $this->get(route('website.services', ['lang' => 'ar']))
+            ->assertOk()
+            ->assertSee('<bdi dir="ltr">LAYER+</bdi>', false);
+    }
+
     public function test_polishing_products_from_the_approved_list_are_public(): void
     {
         $polishing = collect(config('website.product_packages'))

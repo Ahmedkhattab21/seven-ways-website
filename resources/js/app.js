@@ -710,6 +710,7 @@ ready(() => {
                 if (!selected) return;
 
                 row.querySelector('[data-product-unit]').textContent = option.dataset.unit || '—';
+                row.querySelector('[data-product-brand]').textContent = option.dataset.brand || '—';
                 row.querySelector('[data-product-stock]').textContent = option.dataset.stock || '0';
                 row.querySelector('[data-product-base-price]').textContent = Number(option.dataset.basePrice || 0).toFixed(2);
                 row.querySelector('[data-product-final-price]').textContent = Number(option.dataset.finalPrice || 0).toFixed(2);
@@ -719,6 +720,10 @@ ready(() => {
                 row.querySelector('[data-product-promotion]').textContent = promotion || '—';
                 if (!warehouse.value && option.dataset.defaultWarehouse) {
                     warehouse.value = option.dataset.defaultWarehouse;
+                }
+                const manufacturer = row.querySelector('[data-warranty-manufacturer]');
+                if (manufacturer && !manufacturer.value) {
+                    manufacturer.value = option.dataset.brand || '';
                 }
             };
             product.addEventListener('change', syncProduct);

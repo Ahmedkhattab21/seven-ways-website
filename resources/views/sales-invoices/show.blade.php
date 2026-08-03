@@ -38,27 +38,37 @@
         @if(in_array($invoice->status, ['issued', 'partially_paid', 'paid', 'overdue', 'credited'], true) && $invoice->items->where('item_type', 'product')->whereNull('issued_movement_id')->isNotEmpty())
             <div class="sw-alert sw-alert--warning">تحذير إداري: توجد منتجات صادرة في هذه الفاتورة بدون حركة صرف مخزون. راجع تدقيق المخزون قبل إجراء أي تصحيح.</div>
         @endif
-        <table class="sw-table"><thead><tr><th>الوصف</th><th>الكمية</th><th>المخزن</th><th>حركة الصرف</th><th>الكمية المصروفة</th><th>السعر</th><th>الخصم</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>
-        @foreach($invoice->items as $item)<tr><td>{{ $item->description }} @if($item->warranty_applies)<small>— يشمل ضمانًا</small>@endif</td><td>{{ $item->quantity }}</td><td>{{ $item->item_type === 'product' ? ($item->warehouse?->name ?? '—') : '—' }}</td><td>{{ $item->issuedMovement?->movement_number ?? '—' }}</td><td>{{ $item->issuedMovement?->stock_quantity ?? '—' }}</td><td>{{ $item->unit_price }}</td><td>{{ $item->discount_amount }}</td><td>{{ $item->tax_amount }}</td><td>{{ $item->total }}</td></tr>@endforeach
+        <table class="sw-table"><thead><tr><th>المنتج</th><th>الكمية</th><th>المخزن</th><th>حركة الصرف</th><th>الكمية المصروفة</th><th>السعر</th><th>الخصم</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>
+        @foreach($invoice->items as $item)
+            @php($warranty = $item->warranty_snapshot ?? [])
+            <tr><td><strong>{{ $warranty['product_name'] ?? $item->product?->name ?? $item->description }}</strong><br><small>SKU: {{ $warranty['product_sku'] ?? $item->product?->sku ?? '—' }} | الشركة: {{ $warranty['manufacturer'] ?? $item->product?->brand?->name ?? '—' }}</small>@if($item->warranty_applies)<br><small>يشمل ضمانًا</small>@endif</td><td>{{ $item->quantity }}</td><td>{{ $item->item_type === 'product' ? ($item->warehouse?->name ?? '—') : '—' }}</td><td>{{ $item->issuedMovement?->movement_number ?? '—' }}</td><td>{{ $item->issuedMovement?->stock_quantity ?? '—' }}</td><td>{{ $item->unit_price }}</td><td>{{ $item->discount_amount }}</td><td>{{ $item->tax_amount }}</td><td>{{ $item->total }}</td></tr>
+        @endforeach
         </tbody></table>
     </div>
 </section>
 
-@if($invoice->items->where('warranty_applies', true)->isNotEmpty())
+@if($invoice->items->where('item_type', 'product')->isNotEmpty())
 <section class="sw-card">
-    <header class="sw-card__header"><h2 class="sw-card__title">الضمان المضمن داخل الفاتورة</h2></header>
+    <header class="sw-card__header"><h2 class="sw-card__title">بيانات المنتجات والضمان</h2></header>
     <div class="sw-card__body">
-        @foreach($invoice->items->where('warranty_applies', true) as $item)
+        @foreach($invoice->items->where('item_type', 'product') as $item)
             @php($warranty = $item->warranty_snapshot ?? [])
             <article class="sw-card">
-                <strong>{{ $item->description }}</strong>
+                <strong>{{ $warranty['product_name'] ?? $item->product?->name ?? $item->description }}</strong>
+                <p>SKU: {{ $warranty['product_sku'] ?? $item->product?->sku ?? '—' }} | حالة الضمان: {{ $item->warranty_applies ? 'مسجل' : 'غير مسجل لهذا المنتج' }}</p>
+                <p>الشركة: {{ $warranty['manufacturer'] ?? $item->product?->brand?->name ?? '—' }} | اسم الرول: {{ $warranty['roll_name'] ?? '—' }} | كود/رقم الرول: {{ $warranty['film_code'] ?? '—' }}</p>
                 <p>نوع الفيلم: {{ $warranty['film_type'] ?? '—' }} | منطقة التطبيق: {{ $warranty['application_area'] ?? '—' }}</p>
-                <p>من {{ $warranty['start_date'] ?? '—' }} إلى {{ ($warranty['duration_unit'] ?? null) === 'lifetime' ? 'مدى الحياة' : ($warranty['end_date'] ?? '—') }}</p>
-                @if(!empty($warranty['terms']))<p>{{ $warranty['terms'] }}</p>@endif
+                @if($item->warranty_applies)
+                    <p>من {{ $warranty['start_date'] ?? '—' }} إلى {{ ($warranty['duration_unit'] ?? null) === 'lifetime' ? 'مدى الحياة' : ($warranty['end_date'] ?? '—') }}</p>
+                    @if(!empty($warranty['terms']))<p>{{ $warranty['terms'] }}</p>@endif
+                @endif
             </article>
         @endforeach
     </div>
 </section>
+@if($invoice->items->where('warranty_applies', true)->isNotEmpty())
+    <section class="sw-card"><div class="sw-card__body"><strong>بطاقة الضمان الإلكترونية:</strong> هذه الفاتورة رقم {{ $invoice->invoice_number }} هي مستند الضمان، ويمكن للعميل عرضها من رابط المشاركة الآمن المرسل إليه.</div></section>
+@endif
 @endif
 
 @foreach(['draft'=>'submit','pending_approval'=>'approve','approved'=>'issue'] as $status=>$action)

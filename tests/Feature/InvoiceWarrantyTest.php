@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Product;
+use App\Models\ProductBrand;
 use App\Models\Service;
 use App\Models\ServicePackage;
 use App\Models\ServicePackageItem;
@@ -38,6 +40,31 @@ class InvoiceWarrantyTest extends TestCase
 
         $this->assertNull($snapshot['duration_value']);
         $this->assertNull($snapshot['end_date']);
+    }
+
+    public function test_product_warranty_snapshot_contains_invoice_card_details(): void
+    {
+        $product = new Product([
+            'name' => 'LAYER+ Max Premium',
+            'sku' => 'LAYER-MAX-001',
+            'requires_warranty' => true,
+            'default_warranty_duration_value' => 10,
+            'default_warranty_duration_unit' => 'years',
+        ]);
+        $product->setRelation('brand', new ProductBrand(['name' => 'LAYER+']));
+
+        $snapshot = app(InvoiceWarrantySnapshotService::class)->build($product, '2026-08-04', [
+            'manufacturer' => 'Untrusted browser value',
+            'roll_name' => 'Max Premium Roll 01',
+            'film_code' => 'ROLL-0001',
+        ]);
+
+        $this->assertSame('LAYER+ Max Premium', $snapshot['product_name']);
+        $this->assertSame('LAYER-MAX-001', $snapshot['product_sku']);
+        $this->assertSame('LAYER+', $snapshot['manufacturer']);
+        $this->assertSame('Max Premium Roll 01', $snapshot['roll_name']);
+        $this->assertSame('ROLL-0001', $snapshot['film_code']);
+        $this->assertSame('2036-08-04', $snapshot['end_date']);
     }
 
     public function test_non_warranted_item_has_no_snapshot(): void
@@ -85,7 +112,9 @@ class InvoiceWarrantyTest extends TestCase
     {
         $template = file_get_contents(resource_path('views/sales-invoices/print.blade.php'));
 
-        $this->assertStringContainsString('تفاصيل الضمان المضمنة بالفاتورة', $template);
+        $this->assertStringContainsString('بيانات المنتجات والضمان', $template);
+        $this->assertStringContainsString('$productItems = $invoice->items->where(\'item_type\', \'product\')', $template);
+        $this->assertStringContainsString('غير مسجل لهذا المنتج', $template);
         $this->assertStringContainsString('images/flags/eg.svg', $template);
         $this->assertStringContainsString('images/flags/sa.svg', $template);
         $this->assertStringNotContainsString('warranties.print', $template);

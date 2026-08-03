@@ -57,7 +57,7 @@ class SalesInvoiceController extends Controller
                     ->whereDate('effective_from', '<=', $invoiceDate)
                     ->where(fn ($dates) => $dates->whereNull('effective_to')
                         ->orWhereDate('effective_to', '>=', $invoiceDate))))
-            ->with('saleUnit:id,name,symbol')
+            ->with(['saleUnit:id,name,symbol', 'brand:id,name'])
             ->withSum(['stockBalances as branch_stock_available' => fn ($query) => $query
                 ->where('branch_id', $branch->id)], 'available_quantity')
             ->orderBy('name')
@@ -107,7 +107,7 @@ class SalesInvoiceController extends Controller
     {
         $this->authorize('view', $salesInvoice);
 
-        return view('sales-invoices.show', ['invoice' => $salesInvoice->load(['company', 'branch', 'customer', 'vehicle', 'workOrder', 'currency', 'items.product', 'items.warehouse', 'items.issuedMovement', 'allocations.payment', 'creditNotes', 'shares.generatedBy'])]);
+        return view('sales-invoices.show', ['invoice' => $salesInvoice->load(['company', 'branch', 'customer', 'vehicle', 'workOrder', 'currency', 'items.product.brand', 'items.warehouse', 'items.issuedMovement', 'allocations.payment', 'creditNotes', 'shares.generatedBy'])]);
     }
 
     public function action(SalesInvoiceActionRequest $request, SalesInvoice $salesInvoice, string $action, SalesInvoiceApprovalService $approval, SalesInvoiceIssuanceService $issuance): RedirectResponse
@@ -128,7 +128,7 @@ class SalesInvoiceController extends Controller
     {
         $this->authorize('print', $salesInvoice);
 
-        return view('sales-invoices.print', ['invoice' => $salesInvoice->load(['company', 'branch', 'customer', 'vehicle', 'workOrder', 'currency', 'items'])]);
+        return view('sales-invoices.print', ['invoice' => $salesInvoice->load(['company', 'branch', 'customer', 'vehicle', 'workOrder', 'currency', 'items.product.brand'])]);
     }
 
     public function returnProduct(SalesProductReturnRequest $request, SalesInvoiceItem $salesInvoiceItem, SalesProductReturnService $service): RedirectResponse
