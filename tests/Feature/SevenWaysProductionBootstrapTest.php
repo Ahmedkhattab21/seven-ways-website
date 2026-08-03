@@ -124,7 +124,7 @@ class SevenWaysProductionBootstrapTest extends TestCase
         $bootstrap->reference();
         $bootstrap->branches();
         $branch = Branch::query()->where('company_id', $this->company->id)->where('code', 'CAI-MAIN')->firstOrFail();
-        $canonical = Warehouse::query()->create([
+        $canonical = Warehouse::query()->forceCreate([
             'company_id' => $this->company->id,
             'branch_id' => $branch->id,
             'code' => 'NASR-MAIN-WH',
@@ -133,7 +133,7 @@ class SevenWaysProductionBootstrapTest extends TestCase
             'is_main' => false,
             'is_active' => true,
         ]);
-        $legacy = Warehouse::query()->create([
+        $legacy = Warehouse::query()->forceCreate([
             'company_id' => $this->company->id,
             'branch_id' => $branch->id,
             'code' => 'LEGACY-MAIN-WH',
