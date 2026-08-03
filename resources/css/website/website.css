@@ -1162,12 +1162,22 @@ html[dir="ltr"] .sw-website .sw-home-service__media img {
     object-fit: contain;
 }
 
+.sw-website .sw-home-brand__name {
+    color: #fff;
+    font-size: 17px;
+    font-weight: 900;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+}
+
 @media (min-width: 769px) {
     html[dir="rtl"] .sw-website .sw-home-brand a {
         transform: skewX(25deg);
     }
 
-    html[dir="rtl"] .sw-website .sw-home-brand img {
+    html[dir="rtl"] .sw-website .sw-home-brand img,
+    html[dir="rtl"] .sw-website .sw-home-brand__name {
         transform: skewX(-25deg);
     }
 
@@ -1175,7 +1185,8 @@ html[dir="ltr"] .sw-website .sw-home-service__media img {
         transform: skewX(-25deg);
     }
 
-    html[dir="ltr"] .sw-website .sw-home-brand img {
+    html[dir="ltr"] .sw-website .sw-home-brand img,
+    html[dir="ltr"] .sw-website .sw-home-brand__name {
         transform: skewX(25deg);
     }
 }
@@ -1687,6 +1698,22 @@ html[dir="ltr"] .sw-website .sw-home-services .sw-home-brand.sw-reveal.is-visibl
     width: 100%;
     max-height: 180px;
     object-fit: contain;
+}
+
+.sw-website .sw-product__brand-name {
+    display: inline-flex;
+    min-height: 96px;
+    align-items: center;
+    padding: 14px 22px;
+    border: 2px solid rgba(255, 255, 255, 0.72);
+    border-radius: 18px;
+    color: #fff;
+    background: rgba(8, 8, 8, 0.82);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+    font-size: clamp(28px, 4vw, 58px);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.04em;
 }
 
 .sw-website .sw-product__packages {

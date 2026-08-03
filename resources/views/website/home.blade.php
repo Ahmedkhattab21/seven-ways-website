@@ -87,11 +87,15 @@
                             style="--sw-brand-background: {{ $brand['background'] }}"
                             aria-label="{{ $brand['name'] }}"
                         >
-                            <img
-                                src="{{ asset($brand['image']) }}"
-                                alt="{{ $brand['name'] }}"
-                                loading="lazy"
-                            >
+                              @if (filled($brand['image'] ?? null))
+                                  <img
+                                      src="{{ asset($brand['image']) }}"
+                                      alt="{{ $brand['name'] }}"
+                                      loading="lazy"
+                                  >
+                              @else
+                                  <strong class="sw-home-brand__name">{{ $brand['name'] }}</strong>
+                              @endif
                         </a>
                     </div>
                 @endforeach

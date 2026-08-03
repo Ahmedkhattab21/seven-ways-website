@@ -12,6 +12,8 @@ return [
 
     'contact' => [
         'recipient' => env('WEBSITE_CONTACT_EMAIL') ?: env('MAIL_FROM_ADDRESS'),
+        'call_phone' => '+201099025564',
+        'whatsapp_url' => 'https://wa.me/201118742044',
     ],
 
     'socials' => [
@@ -78,18 +80,18 @@ return [
             'map_embed' => 'https://www.google.com/maps?q=Seven+Ways+Khamis+Mushait&output=embed',
         ],
         [
-            'id' => 'dammam',
+            'id' => 'makkah',
             'country_code' => 'saudi_arabia',
             'country' => ['ar' => 'السعودية', 'en' => 'Saudi Arabia'],
-            'name' => ['ar' => 'فرع الدمام', 'en' => 'Dammam Branch'],
+            'name' => ['ar' => 'فرع مكة', 'en' => 'Makkah Branch'],
             'address' => [
-                'ar' => 'الدمام، المملكة العربية السعودية',
-                'en' => 'Dammam, Saudi Arabia',
+                'ar' => 'مكة، المملكة العربية السعودية',
+                'en' => 'Makkah, Saudi Arabia',
             ],
             'phone' => '+966504118823',
             'whatsapp' => 'https://wa.me/966504118823',
-            'map_link' => 'https://www.google.com/maps/search/?api=1&query=Seven+Ways+Dammam',
-            'map_embed' => 'https://www.google.com/maps?q=Seven+Ways+Dammam&output=embed',
+            'map_link' => 'https://www.google.com/maps/search/?api=1&query=Seven+Ways+Makkah',
+            'map_embed' => 'https://www.google.com/maps?q=Seven+Ways+Makkah&output=embed',
         ],
         [
             'id' => 'jeddah',
@@ -141,14 +143,14 @@ return [
                 'فرع الرياض - القادسية - معارض السيارات',
                 'فرع جيزان - صبيا - طريق الملك فهد',
                 'فرع خميس مشيط - معارض السيارات',
-                'فرع الدمام',
+                'فرع مكة',
                 'فرع جدة',
             ],
             'en' => [
                 'Riyadh Branch - Al Qadisiyah - Car Showrooms',
                 'Jazan Branch - Sabya - King Fahd Road',
                 'Khamis Mushait Branch - Car Showrooms',
-                'Dammam Branch',
+                'Makkah Branch',
                 'Jeddah Branch',
             ],
         ],
@@ -192,11 +194,15 @@ return [
     'brand_logos' => [
         ['id' => 'xpel', 'name' => 'XPEL', 'image' => 'assets/website/images/logo-BBmOnB6N.webp', 'background' => '#ffb81c'],
         ['id' => 'hexis', 'name' => 'Hexis', 'image' => 'assets/website/images/logo-DguEO2O0.webp', 'background' => '#ffffff'],
-        ['id' => 'upx', 'name' => 'UPX', 'image' => 'assets/website/images/logo-D3wbkwtS.webp', 'background' => '#000000'],
         ['id' => '3m', 'name' => '3M', 'image' => 'assets/website/images/logo-L2ly5kkF.webp', 'background' => '#d7b6a3'],
         ['id' => 'carpro', 'name' => 'CarPro', 'image' => 'assets/website/images/logo-CGkfx9mt.webp', 'background' => '#a1a1a1'],
         ['id' => 'project3', 'name' => 'Project 3', 'image' => 'assets/website/images/logo-D0I4roVz.webp', 'background' => '#b1b1b1'],
         ['id' => 'osren', 'name' => 'OSREN', 'image' => 'assets/website/images/osren-logo.webp', 'background' => '#111111'],
+        ['id' => 'rupes', 'name' => 'RUPES', 'image' => null, 'background' => '#cc2027'],
+        ['id' => 'sonax', 'name' => 'SONAX', 'image' => null, 'background' => '#e31b23'],
+        ['id' => 'koch-chemie', 'name' => 'Koch-Chemie', 'image' => null, 'background' => '#1b1b1b'],
+        ['id' => 'meguiars', 'name' => "Meguiar's", 'image' => null, 'background' => '#f1c40f'],
+        ['id' => 'zerox', 'name' => 'ZeroX', 'image' => null, 'background' => '#202020'],
     ],
 
     'service_media' => [
@@ -224,6 +230,14 @@ return [
 
     'product_packages' => [
         [
+            'id' => 'project3',
+            'brand' => 'Project 3',
+            'images' => [
+                'assets/website/images/project3-package-(1)-BTb8wbbJ.webp',
+            ],
+            'sections' => ['ppf', 'thermal'],
+        ],
+        [
             'id' => 'xpel',
             'brand' => 'XPEL',
             'images' => [
@@ -242,22 +256,13 @@ return [
             'sections' => ['ppf', 'thermal', 'nano'],
         ],
         [
-            'id' => 'upx',
-            'brand' => 'UPX',
-            'images' => [
-                'assets/website/images/uxp-package-(1)-C11Q91bg.webp',
-                'assets/website/images/uxp-package-(2)-DCCBpFP1.webp',
-            ],
-            'sections' => ['ppf', 'thermal', 'nano'],
-        ],
-        [
             'id' => '3m',
             'brand' => '3M',
             'images' => [
                 'assets/website/images/3m-package-(1)-DTO3noni.webp',
                 'assets/website/images/3m-package-(2)-C52kz2Uf.webp',
             ],
-            'sections' => ['ppf', 'thermal', 'nano'],
+            'sections' => ['ppf', 'thermal', 'nano', 'polishing'],
         ],
         [
             'id' => 'carpro',
@@ -266,15 +271,7 @@ return [
                 'assets/website/images/carpro-package-(1)-gn69KU65.webp',
                 'assets/website/images/carpro-package-(2)-D5ajrG_X.webp',
             ],
-            'sections' => ['nano'],
-        ],
-        [
-            'id' => 'project3',
-            'brand' => 'Project 3',
-            'images' => [
-                'assets/website/images/project3-package-(1)-BTb8wbbJ.webp',
-            ],
-            'sections' => ['ppf', 'thermal'],
+            'sections' => ['nano', 'polishing'],
         ],
         [
             'id' => 'osren',
@@ -282,6 +279,36 @@ return [
             'images' => [
                 'assets/website/images/osren-nao-glaze-28.webp',
             ],
+            'sections' => ['polishing'],
+        ],
+        [
+            'id' => 'rupes',
+            'brand' => 'RUPES',
+            'images' => [],
+            'sections' => ['polishing'],
+        ],
+        [
+            'id' => 'sonax',
+            'brand' => 'SONAX',
+            'images' => [],
+            'sections' => ['polishing'],
+        ],
+        [
+            'id' => 'koch-chemie',
+            'brand' => 'Koch-Chemie',
+            'images' => [],
+            'sections' => ['polishing'],
+        ],
+        [
+            'id' => 'meguiars',
+            'brand' => "Meguiar's",
+            'images' => [],
+            'sections' => ['polishing'],
+        ],
+        [
+            'id' => 'zerox',
+            'brand' => 'ZeroX',
+            'images' => [],
             'sections' => ['polishing'],
         ],
     ],

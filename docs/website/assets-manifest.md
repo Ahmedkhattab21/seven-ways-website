@@ -17,7 +17,7 @@ For every retained source file, the original URL is
 | About | `about-us-bg-DpxzeicM.webp`, `about-us-video-zlm9A9Qo.mp4` |
 | Advantages/services/products/branches | `adv-bg-DhCImAKt.webp`, `services-bg-BTO8wyrl.webp`, `products-bg-BKw9Wbq6.webp`, `branches-bg-b-euROWx.webp` |
 | Service cards | `protection-Bojyp1bE.webp`, `thermal-insulation-D5pv4bAo.webp`, `nano-ceramic-ClspLSNk.webp`, `polishing-kT06SIma.webp`, and the four matching MP4 files |
-| Partner/product content | six `logo-*` brand images and the XPEL, Hexis, UPX, 3M, CarPro, and Project 3 package images |
+| Partner/product content | five `logo-*` brand images and the XPEL, Hexis, 3M, CarPro, and Project 3 package images |
 | Footer decoration | `audi-ar-DVxr30Bb.webp`, `tyre-mark-1-Bcet6rRb.png`, `tyre-mark-2-BISH33e4.png` |
 
 ## Images
@@ -40,7 +40,6 @@ For every retained source file, the original URL is
 | `logo-BBmOnB6N.webp` | 795×215 | 10,880 |
 | `logo-CGkfx9mt.webp` | 405×93 | 6,302 |
 | `logo-D0I4roVz.webp` | 465×158 | 16,118 |
-| `logo-D3wbkwtS.webp` | 1920×653 | 19,534 |
 | `logo-DHNnkSwZ.webp` | 702×668 | 10,834 |
 | `logo-DguEO2O0.webp` | 836×382 | 9,784 |
 | `logo-L2ly5kkF.webp` | 815×413 | 13,686 |
@@ -55,8 +54,6 @@ For every retained source file, the original URL is
 | `thermal-insulation-D5pv4bAo.webp` | 750×500 | 28,432 |
 | `tyre-mark-1-Bcet6rRb.png` | 1200×155 | 35,676 |
 | `tyre-mark-2-BISH33e4.png` | 1200×156 | 52,908 |
-| `uxp-package-(1)-C11Q91bg.webp` | 989×1024 | 23,788 |
-| `uxp-package-(2)-DCCBpFP1.webp` | 312×346 | 8,210 |
 | `white-car-2kDVYj1h.webp` | 248×549 | 9,496 |
 | `xpel-package-(1)-Cy0PwtMp.webp` | 604×223 | 9,782 |
 | `xpel-package-(3)-sWI_VhrM.webp` | 462×462 | 10,112 |

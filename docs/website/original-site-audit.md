@@ -8,7 +8,7 @@ Audited on 2026-07-25 from `https://seven-ways.com/`.
 | --- | --- | --- |
 | Home | `/` | Hero, six advantages, partner brands, four service cards, branch footer |
 | About | `/about-us` | Page hero, company history/video, six advantages |
-| Services | `/services` | Four-service media carousel and XPEL, Hexis, UPX, 3M, CarPro, Project 3 product sections |
+| Services | `/services` | Four-service media carousel and XPEL, Hexis, 3M, CarPro, Project 3 product sections |
 | Contact | `/contact-us` | Al Qadisiyah, Jazan, and Nasr City contact/map cards |
 
 The shared header contains Home, About Us, Services, Contact Us, language control,

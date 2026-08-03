@@ -155,11 +155,19 @@ return [
                     'title' => '3M Nano Ceramic',
                     'body' => "Protect your car's paint with long-lasting brilliance and world-class quality using 3M's nano ceramic coating. Designed to deliver a luxurious finish and superior protection, it offers excellent resistance to water and dirt, making cleaning easier and keeping your vehicle looking fresh for longer. It provides outstanding UV protection to preserve your car's color and prevent fading. With a high-gloss finish that enhances color depth and strong scratch resistance, this coating ensures a striking appearance. Backed by a warranty of 3 to 5 years depending on the number of layers, it also offers added benefits like acid rain resistance and reduced wash marks, with global certification to guarantee performance and reliability.",
                 ],
+                'polishing' => [
+                    'title' => '3M Polishing Products',
+                    'body' => 'Professional polishing products for paint correction, sanding-mark removal, cutting, finishing, and restoring gloss.',
+                ],
             ],
             'carpro' => [
                 'nano' => [
                     'title' => 'CarPro Nano Ceramic',
                     'body' => "Protect your car with CarPro's advanced nano-ceramic technology, offering a high-performance layer against UV rays and oxidation. It provides excellent resistance to chemicals and environmental factors like oils and acid rain. With hydrophobic and oleophobic properties, it repels water and oil for easier cleaning and reduced dust buildup. It delivers a deep, luxurious shine that lasts for years, along with protection from light scratches and corrosion. It also reduces the need for frequent washes by up to 50%, making it a globally trusted choice among professionals for long-term surface protection.",
+                ],
+                'polishing' => [
+                    'title' => 'CarPro Polishing Products',
+                    'body' => 'Products for surface preparation, paint correction, and final finishing within a professional polishing process.',
                 ],
             ],
             'project3' => [
@@ -176,6 +184,36 @@ return [
                 'polishing' => [
                     'title' => 'OSREN Polishing Products',
                     'body' => 'OSREN NAO GLAZE 28 is a professional water-based finishing glaze formulated to address minor dusting, fine swirl marks, surface blemishes, and sanding marks of P3000 or finer. It delivers a clear gloss and a balanced finishing step within a professional polishing process.',
+                ],
+            ],
+            'rupes' => [
+                'polishing' => [
+                    'title' => 'RUPES Polishing Products',
+                    'body' => 'Professional polishing solutions for paint correction, cutting, finishing, and restoring surface gloss.',
+                ],
+            ],
+            'sonax' => [
+                'polishing' => [
+                    'title' => 'SONAX Polishing Products',
+                    'body' => 'Polishing compounds for paint correction, swirl-mark reduction, finishing, and final gloss.',
+                ],
+            ],
+            'koch-chemie' => [
+                'polishing' => [
+                    'title' => 'Koch-Chemie Polishing Products',
+                    'body' => 'A multi-stage polishing range for medium and fine cutting, finishing, and improving paint clarity.',
+                ],
+            ],
+            'meguiars' => [
+                'polishing' => [
+                    'title' => "Meguiar's Polishing Products",
+                    'body' => 'Paint correction, polishing, and finishing products that help restore color depth and gloss.',
+                ],
+            ],
+            'zerox' => [
+                'polishing' => [
+                    'title' => 'ZeroX Polishing Products',
+                    'body' => 'Paint preparation and polishing products for correction and finishing stages.',
                 ],
             ],
         ],

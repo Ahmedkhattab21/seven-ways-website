@@ -111,6 +111,61 @@ class PublicWebsiteTest extends TestCase
             ->assertSee('OSREN NAO GLAZE 28');
     }
 
+    public function test_upx_brand_and_products_are_removed_from_the_public_website(): void
+    {
+        $this->assertFalse(collect(config('website.brand_logos'))->contains('id', 'upx'));
+        $this->assertFalse(collect(config('website.product_packages'))->contains('id', 'upx'));
+
+        foreach ([route('website.home'), route('website.services')] as $url) {
+            $this->get($url)
+                ->assertOk()
+                ->assertDontSee('UPX')
+                ->assertDontSee('id="upx"', false)
+                ->assertDontSee('uxp-package-', false)
+                ->assertDontSee('logo-D3wbkwtS.webp', false);
+        }
+    }
+
+    public function test_project_three_is_the_first_public_product(): void
+    {
+        $this->assertSame('project3', config('website.product_packages.0.id'));
+
+        $this->get(route('website.services'))
+            ->assertOk()
+            ->assertSeeInOrder(['id="project3"', 'id="xpel"'], false);
+    }
+
+    public function test_polishing_products_from_the_approved_list_are_public(): void
+    {
+        $polishing = collect(config('website.product_packages'))
+            ->filter(fn (array $product) => in_array('polishing', $product['sections'], true))
+            ->pluck('id');
+
+        foreach (['rupes', 'carpro', 'sonax', 'koch-chemie', 'meguiars', '3m', 'zerox'] as $product) {
+            $this->assertTrue($polishing->contains($product), $product);
+        }
+
+        $this->get(route('website.services', ['lang' => 'en']))
+            ->assertOk()
+            ->assertSee('RUPES Polishing Products')
+            ->assertSee('CarPro Polishing Products')
+            ->assertSee('SONAX Polishing Products')
+            ->assertSee('Koch-Chemie Polishing Products')
+            ->assertSee("Meguiar's Polishing Products")
+            ->assertSee('3M Polishing Products')
+            ->assertSee('ZeroX Polishing Products')
+            ->assertSee('sw-product__brand-name', false);
+
+        $this->get(route('website.home', ['lang' => 'en']))
+            ->assertOk()
+            ->assertSee('RUPES')
+            ->assertSee('SONAX')
+            ->assertSee('Koch-Chemie')
+            ->assertSee("Meguiar's")
+            ->assertSee('ZeroX')
+            ->assertSee('sw-home-brand__name', false);
+    }
+
     public function test_about_page_keeps_the_reference_composition_in_both_locales(): void
     {
         $this->get(route('website.about', ['lang' => 'ar']))
@@ -190,6 +245,20 @@ class PublicWebsiteTest extends TestCase
             ->assertSee('Nasr City');
     }
 
+    public function test_floating_call_button_uses_the_egypt_contact_number(): void
+    {
+        $this->get(route('website.home'))
+            ->assertOk()
+            ->assertSee('href="tel:+201099025564"', false);
+    }
+
+    public function test_floating_whatsapp_button_uses_the_egypt_contact_number(): void
+    {
+        $this->get(route('website.home'))
+            ->assertOk()
+            ->assertSee('href="https://wa.me/201118742044"', false);
+    }
+
     public function test_alexandria_branch_uses_the_provided_coordinates(): void
     {
         $alexandria = collect(config('website.branches'))->firstWhere('id', 'alexandria');
@@ -209,6 +278,24 @@ class PublicWebsiteTest extends TestCase
             ->assertOk()
             ->assertSee('Alexandria Branch')
             ->assertSee('31.26125,29.98375', false);
+    }
+
+    public function test_makkah_replaces_dammam_in_public_locations(): void
+    {
+        $makkah = collect(config('website.branches'))->firstWhere('id', 'makkah');
+
+        $this->assertNotNull($makkah);
+        $this->assertNull(collect(config('website.branches'))->firstWhere('id', 'dammam'));
+
+        $this->get(route('website.contact', ['lang' => 'ar']))
+            ->assertOk()
+            ->assertSee('فرع مكة')
+            ->assertDontSee('الدمام');
+
+        $this->get(route('website.contact', ['lang' => 'en']))
+            ->assertOk()
+            ->assertSee('Makkah Branch')
+            ->assertDontSee('Dammam');
     }
 
     public function test_registration_page_has_the_google_form_composition_in_both_locales(): void

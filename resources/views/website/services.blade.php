@@ -87,7 +87,11 @@
                         <article id="{{ $product['id'] }}" class="sw-product">
                             <div class="sw-product__masthead">
                                 <div class="sw-product__brand sw-product-reveal sw-product-reveal--brand">
-                                    <img src="{{ asset($brand['image']) }}" alt="{{ $brand['name'] }}">
+                                    @if (filled($brand['image'] ?? null))
+                                        <img src="{{ asset($brand['image']) }}" alt="{{ $brand['name'] }}">
+                                    @else
+                                        <strong class="sw-product__brand-name">{{ $brand['name'] }}</strong>
+                                    @endif
                                 </div>
 
                                 <div class="sw-product__packages" aria-hidden="true">
