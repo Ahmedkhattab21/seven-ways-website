@@ -297,8 +297,10 @@ class SevenWaysProductionBootstrap
         ] as $branchCode => [$code, $name]) {
             $branch = Branch::query()->where('company_id', $company->id)->where('code', $branchCode)->firstOrFail();
             $warehouse = Warehouse::withTrashed()->where('company_id', $company->id)
-                ->where('branch_id', $branch->id)->where('is_main', true)->first();
+                ->where('branch_id', $branch->id)->where('code', $code)->first();
             $warehouse ??= Warehouse::withTrashed()->where('company_id', $company->id)->where('code', $code)->first();
+            $warehouse ??= Warehouse::withTrashed()->where('company_id', $company->id)
+                ->where('branch_id', $branch->id)->where('is_main', true)->first();
             $warehouse ??= new Warehouse;
             $this->saveTracked('warehouses', $warehouse, [
                 'company_id' => $company->id, 'branch_id' => $branch->id, 'code' => $code, 'name' => $name,
@@ -306,6 +308,10 @@ class SevenWaysProductionBootstrap
                 'allows_sale_issue' => true, 'allows_work_order_issue' => false,
                 'allows_damaged_stock' => false, 'deleted_at' => null,
             ]);
+            Warehouse::withTrashed()->where('company_id', $company->id)
+                ->where('branch_id', $branch->id)->where('is_main', true)
+                ->whereKeyNot($warehouse->id)->get()
+                ->each(fn (Warehouse $other) => $this->saveTracked('warehouses', $other, ['is_main' => false]));
         }
     }
 

@@ -118,6 +118,38 @@ class SevenWaysProductionBootstrapTest extends TestCase
         );
     }
 
+    public function test_warehouse_bootstrap_prefers_the_canonical_code_over_a_legacy_main_warehouse(): void
+    {
+        $bootstrap = app(SevenWaysProductionBootstrap::class)->configure();
+        $bootstrap->reference();
+        $bootstrap->branches();
+        $branch = Branch::query()->where('company_id', $this->company->id)->where('code', 'CAI-MAIN')->firstOrFail();
+        $canonical = Warehouse::query()->create([
+            'company_id' => $this->company->id,
+            'branch_id' => $branch->id,
+            'code' => 'NASR-MAIN-WH',
+            'name' => 'Canonical warehouse',
+            'warehouse_type' => 'main',
+            'is_main' => false,
+            'is_active' => true,
+        ]);
+        $legacy = Warehouse::query()->create([
+            'company_id' => $this->company->id,
+            'branch_id' => $branch->id,
+            'code' => 'LEGACY-MAIN-WH',
+            'name' => 'Legacy main warehouse',
+            'warehouse_type' => 'main',
+            'is_main' => true,
+            'is_active' => true,
+        ]);
+
+        $bootstrap->warehouses();
+
+        $this->assertTrue($canonical->fresh()->is_main);
+        $this->assertFalse($legacy->fresh()->is_main);
+        $this->assertSame(1, Warehouse::query()->where('branch_id', $branch->id)->where('is_main', true)->count());
+    }
+
     public function test_dry_run_command_changes_no_rows_and_never_prints_passwords(): void
     {
         $before = [
