@@ -545,10 +545,6 @@ html[dir="ltr"] .sw-website .sw-hero__copy p {
     animation: sw-hero-cta-arrow-left 600ms ease-in-out infinite alternate both;
 }
 
-.sw-website.sw-page-home .sw-floating-contact {
-    display: none;
-}
-
 .sw-website .sw-cta {
     position: relative;
     display: inline-flex;

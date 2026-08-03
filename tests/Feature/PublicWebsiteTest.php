@@ -274,6 +274,11 @@ class PublicWebsiteTest extends TestCase
         $this->get(route('website.home'))
             ->assertOk()
             ->assertSee('href="tel:+201099025564"', false);
+
+        $this->assertStringNotContainsString(
+            '.sw-website.sw-page-home .sw-floating-contact',
+            file_get_contents(resource_path('css/website/website.css'))
+        );
     }
 
     public function test_floating_whatsapp_button_uses_the_egypt_contact_number(): void
