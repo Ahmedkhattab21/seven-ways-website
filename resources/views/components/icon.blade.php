@@ -77,6 +77,13 @@
         @case('search')
             <circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>
             @break
+        @case('plus')
+            <path d="M12 5v14M5 12h14"/>
+            @break
+        @case('receipt')
+            <path d="M5 3h14v18l-2.5-1.5L14 21l-2-1.5L10 21l-2.5-1.5L5 21V3z"/>
+            <path d="M8 8h8M8 12h8M8 16h5"/>
+            @break
         @case('close')
             <path d="M18 6L6 18M6 6l12 12"/>
             @break

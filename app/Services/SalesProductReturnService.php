@@ -13,7 +13,6 @@ class SalesProductReturnService
 {
     public function __construct(
         private TenantContext $tenant,
-        private SalesInvoiceInventoryService $inventory,
         private SalesCreditNoteService $credits,
         private AuditService $audit
     ) {
@@ -38,26 +37,16 @@ class SalesProductReturnService
 
                 return $existing->creditNote;
             }
-            $return = new SalesProductReturn([
-                'idempotency_key' => $idempotencyKey,
-                'sales_invoice_item_id' => $item->id,
-                'warehouse_id' => $warehouse->id,
-                'quantity' => $quantity,
-                'reason' => $reason,
-            ]);
-            $return->forceFill([
-                'company_id' => $item->invoice->company_id,
-                'created_by' => $this->tenant->user()->id,
-            ])->save();
-            $movement = $this->inventory->return($item, $quantity, $warehouse);
             $note = $this->credits->create($item->invoice, [
                 'credit_note_date' => now()->toDateString(), 'reason_code' => 'product_return', 'reason' => $reason,
-            ], [['sales_invoice_item_id' => $item->id, 'quantity' => $quantity]]);
-            $return->forceFill([
-                'stock_movement_id' => $movement->id,
-                'sales_credit_note_id' => $note->id,
-            ])->save();
-            $this->audit->record('sales_product.returned', $note, ['invoice_item_id' => $item->id, 'quantity' => $quantity]);
+            ], [[
+                'sales_invoice_item_id' => $item->id,
+                'quantity' => $quantity,
+                'return_to_stock' => true,
+                'warehouse_id' => $warehouse->id,
+                'idempotency_key' => $idempotencyKey,
+            ]]);
+            $this->audit->record('sales_product.return_requested', $note, ['invoice_item_id' => $item->id, 'quantity' => $quantity]);
 
             return $note;
         });

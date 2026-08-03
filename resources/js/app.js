@@ -680,7 +680,7 @@ ready(() => {
         const template = form.querySelector('[data-invoice-item-template]');
         const customer = form.querySelector('[data-invoice-customer]');
         const vehicle = form.querySelector('[data-invoice-vehicle]');
-        let itemIndex = 0;
+        let itemIndex = container.children.length;
 
         const filterVehicles = () => {
             const selectedCustomer = customer?.value;
@@ -690,24 +690,45 @@ ready(() => {
             });
             if (vehicle?.selectedOptions[0]?.disabled) vehicle.value = '';
         };
-        const bindItem = (row) => {
-            const type = row.querySelector('[data-invoice-item-type]');
-            const sync = () => {
-                row.querySelectorAll('[data-invoice-reference]').forEach((field) => {
-                    const reference = field.dataset.invoiceReference;
-                    const visible = reference === type.value || (reference === 'warehouse' && type.value === 'product');
-                    field.hidden = !visible;
-                    field.querySelectorAll('select, input').forEach((input) => {
-                        input.disabled = !visible;
-                        input.required = visible;
-                    });
+        const reindexItems = () => {
+            [...container.querySelectorAll('[data-invoice-item]')].forEach((row, index) => {
+                row.querySelector('[data-invoice-item-title]').textContent = `المنتج رقم ${index + 1}`;
+                row.querySelectorAll('[name^="items["]').forEach((input) => {
+                    input.name = input.name.replace(/^items\[[^\]]+\]/, `items[${index}]`);
                 });
-            };
-            type.addEventListener('change', sync);
-            row.querySelector('[data-remove-invoice-item]')?.addEventListener('click', () => {
-                if (container.children.length > 1) row.remove();
             });
-            sync();
+            itemIndex = container.children.length;
+        };
+        const bindItem = (row) => {
+            const product = row.querySelector('[data-invoice-product]');
+            const warehouse = row.querySelector('[data-invoice-warehouse]');
+            const summary = row.querySelector('[data-invoice-product-summary]');
+            const syncProduct = () => {
+                const option = product.selectedOptions[0];
+                const selected = Boolean(option?.value);
+                summary.hidden = !selected;
+                if (!selected) return;
+
+                row.querySelector('[data-product-unit]').textContent = option.dataset.unit || '—';
+                row.querySelector('[data-product-stock]').textContent = option.dataset.stock || '0';
+                row.querySelector('[data-product-base-price]').textContent = Number(option.dataset.basePrice || 0).toFixed(2);
+                row.querySelector('[data-product-final-price]').textContent = Number(option.dataset.finalPrice || 0).toFixed(2);
+                const promotion = option.dataset.promotion || '';
+                const promotionWrap = row.querySelector('[data-product-promotion-wrap]');
+                promotionWrap.hidden = !promotion;
+                row.querySelector('[data-product-promotion]').textContent = promotion || '—';
+                if (!warehouse.value && option.dataset.defaultWarehouse) {
+                    warehouse.value = option.dataset.defaultWarehouse;
+                }
+            };
+            product.addEventListener('change', syncProduct);
+            row.querySelector('[data-remove-invoice-item]')?.addEventListener('click', () => {
+                if (container.children.length > 1) {
+                    row.remove();
+                    reindexItems();
+                }
+            });
+            syncProduct();
         };
         const addItem = () => {
             const wrapper = document.createElement('div');
@@ -715,12 +736,49 @@ ready(() => {
             const row = wrapper.firstElementChild;
             container.append(row);
             bindItem(row);
+            reindexItems();
         };
 
         customer?.addEventListener('change', filterVehicles);
         form.querySelector('[data-add-invoice-item]')?.addEventListener('click', addItem);
         filterVehicles();
-        addItem();
+        container.querySelectorAll('[data-invoice-item]').forEach(bindItem);
+        reindexItems();
+        if (!container.children.length) addItem();
+    });
+
+    document.querySelectorAll('[data-credit-note-form]').forEach((form) => {
+        const rows = [...form.querySelectorAll('[data-credit-item-row]')];
+        const selectionCount = form.querySelector('[data-credit-selection-count]');
+        const sync = () => {
+            let selectedCount = 0;
+            rows.forEach((row) => {
+                const checkbox = row.querySelector('[data-credit-item-check]');
+                const quantity = row.querySelector('[data-credit-item-quantity]');
+                const stockCheck = row.querySelector('[data-credit-stock-check]');
+                const warehouse = row.querySelector('[data-credit-warehouse]');
+                const selected = checkbox.checked;
+                selectedCount += selected ? 1 : 0;
+                row.classList.toggle('is-selected', selected);
+                quantity.disabled = !selected;
+                quantity.required = selected;
+                if (stockCheck) stockCheck.disabled = !selected;
+                if (warehouse) {
+                    const stockReturn = selected && stockCheck.checked;
+                    warehouse.disabled = !stockReturn;
+                    warehouse.required = stockReturn;
+                }
+            });
+            selectionCount.textContent = selectedCount
+                ? `تم اختيار ${selectedCount} ${selectedCount === 1 ? 'بند' : 'بنود'}`
+                : 'لم يتم اختيار بنود';
+        };
+
+        rows.forEach((row) => {
+            row.querySelector('[data-credit-item-check]').addEventListener('change', sync);
+            row.querySelector('[data-credit-stock-check]')?.addEventListener('change', sync);
+        });
+        sync();
     });
 
     document.querySelectorAll('[data-modal-open]').forEach((trigger) => {

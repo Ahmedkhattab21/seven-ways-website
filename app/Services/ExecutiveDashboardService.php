@@ -6,8 +6,10 @@ use App\Analytics\ReportFilterData;
 
 class ExecutiveDashboardService
 {
-    public function __construct(private AnalyticsReportService $reports)
-    {
+    public function __construct(
+        private AnalyticsReportService $reports,
+        private OperationalDashboardService $operations
+    ) {
     }
 
     public function build(ReportFilterData $filters): array
@@ -33,6 +35,8 @@ class ExecutiveDashboardService
             'current' => $current,
             'previous' => $previous,
             'comparisons' => $comparisons,
+            'operational' => $this->operations->summary($filters),
+            'branch_comparison' => $this->operations->byBranch($filters),
             'period' => [$filters->dateFrom, $filters->dateTo],
             'previous_period' => [$filters->previousPeriod()->dateFrom, $filters->previousPeriod()->dateTo],
         ];

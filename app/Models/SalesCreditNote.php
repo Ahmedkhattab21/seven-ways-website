@@ -40,4 +40,9 @@ class SalesCreditNote extends BaseModel
     {
         return $this->hasMany(SalesCreditNoteItem::class);
     }
+
+    public function productReturns(): HasMany
+    {
+        return $this->hasMany(SalesProductReturn::class, 'sales_credit_note_id');
+    }
 }

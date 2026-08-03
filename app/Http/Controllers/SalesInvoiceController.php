@@ -12,11 +12,10 @@ use App\Models\Quotation;
 use App\Models\SalesCreditNote;
 use App\Models\SalesInvoice;
 use App\Models\SalesInvoiceItem;
-use App\Models\Service;
-use App\Models\ServicePackage;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Models\WorkOrder;
+use App\Services\ProductPricingService;
 use App\Services\QuotationToSalesInvoiceService;
 use App\Services\SalesInvoiceApprovalService;
 use App\Services\SalesInvoiceIssuanceService;
@@ -36,16 +35,45 @@ class SalesInvoiceController extends Controller
             ->whereIn('branch_id', $tenant->accessibleBranches()->pluck('id'))->with(['customer', 'branch'])->latest()->paginate(30)]);
     }
 
-    public function create(TenantContext $tenant): View
+    public function create(TenantContext $tenant, ProductPricingService $productPricing): View
     {
         $this->authorize('create', SalesInvoice::class);
+
+        $branch = $tenant->branch();
+        $invoiceDate = today()->toDateString();
+        $products = Product::query()
+            ->where('company_id', $tenant->companyId())
+            ->where('is_sellable', true)
+            ->where('is_active', true)
+            ->whereNotIn('tracking_type', ['roll', 'scrap'])
+            ->whereHas('branchProducts', fn ($query) => $query
+                ->where('branch_id', $branch->id)
+                ->where('is_available', true)
+                ->where('is_sellable', true))
+            ->where(fn ($query) => $query->whereNotNull('default_sale_price')
+                ->orWhereHas('branchPrices', fn ($prices) => $prices
+                    ->where('branch_id', $branch->id)
+                    ->where('is_active', true)
+                    ->whereDate('effective_from', '<=', $invoiceDate)
+                    ->where(fn ($dates) => $dates->whereNull('effective_to')
+                        ->orWhereDate('effective_to', '>=', $invoiceDate))))
+            ->with('saleUnit:id,name,symbol')
+            ->withSum(['stockBalances as branch_stock_available' => fn ($query) => $query
+                ->where('branch_id', $branch->id)], 'available_quantity')
+            ->orderBy('name')
+            ->get()
+            ->each(function (Product $product) use ($productPricing, $branch, $invoiceDate) {
+                $price = $productPricing->resolvePrice($product, $branch, $invoiceDate);
+                $product->setAttribute('resolved_base_price', $price['base_price']);
+                $product->setAttribute('resolved_final_price', $price['final_price']);
+                $product->setAttribute('resolved_promotion_name', $price['promotion_name']);
+                $product->setAttribute('default_sales_warehouse_id', $price['warehouse_id']);
+            });
 
         return view('sales-invoices.form', [
             'customers' => Customer::forUser($tenant->user())->where('status', 'active')->with('vehicles')->get(),
             'vehicles' => Vehicle::forUser($tenant->user())->where('status', 'active')->with('customer')->get(),
-            'products' => Product::where('company_id', $tenant->companyId())->where('is_sellable', true)->where('is_active', true)->get(),
-            'services' => Service::where('company_id', $tenant->companyId())->where('is_active', true)->get(),
-            'packages' => ServicePackage::where('company_id', $tenant->companyId())->where('is_active', true)->get(),
+            'products' => $products,
             'warehouses' => Warehouse::where('company_id', $tenant->companyId())->where('branch_id', $tenant->branchId())->where('is_system', false)->where('is_active', true)->get(),
         ]);
     }
@@ -53,7 +81,7 @@ class SalesInvoiceController extends Controller
     public function store(SalesInvoiceRequest $request, SalesInvoiceService $service): RedirectResponse
     {
         $this->authorize('create', SalesInvoice::class);
-        $invoice = $service->createDirect($request->safe()->except('items'), $request->validated('items'));
+        $invoice = $service->createProductOnlyDirect($request->safe()->except('items'), $request->validated('items'));
 
         return redirect()->route('sales-invoices.show', $invoice)->with('success', 'Invoice draft created.');
     }
@@ -121,6 +149,6 @@ class SalesInvoiceController extends Controller
             $request->validated('idempotency_key')
         );
 
-        return redirect()->route('sales-credit-notes.show', $note)->with('success', 'Product return recorded.');
+        return redirect()->route('sales-credit-notes.show', $note)->with('success', 'تم حفظ طلب مرتجع المنتج كمسودة.');
     }
 }

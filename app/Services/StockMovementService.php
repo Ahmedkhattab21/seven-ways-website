@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Core\Exceptions\BusinessRuleException;
 use App\Core\Tenancy\TenantContext;
 use App\Models\StockMovement;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class StockMovementService
@@ -20,7 +21,15 @@ class StockMovementService
             config('inventory.reservation_reference_types', [])
         );
         if (! in_array($data['reference_type'] ?? null, $allowedReferenceTypes, true)) {
-            throw new BusinessRuleException('Unsupported inventory reference type.');
+            Log::error('Unsupported inventory reference type.', [
+                'reference_type' => $data['reference_type'] ?? null,
+                'reference_id' => $data['reference_id'] ?? null,
+                'movement_type' => $data['movement_type'] ?? null,
+                'company_id' => $data['company_id'] ?? null,
+                'branch_id' => $data['branch_id'] ?? null,
+            ]);
+
+            throw new BusinessRuleException('تعذر تسجيل حركة المخزون لأن نوع مرجع الحركة غير مدعوم.');
         }
         $movement = new StockMovement;
         $movement->forceFill($data + [

@@ -84,7 +84,7 @@ class SalesInvoiceInventoryService
         }
     }
 
-    public function return(SalesInvoiceItem $item, string $quantity, Warehouse $warehouse): StockMovement
+    public function return(SalesInvoiceItem $item, string $quantity, Warehouse $warehouse, array $reference = []): StockMovement
     {
         if ($item->item_type !== 'product' || ! $item->issued_movement_id) {
             throw new BusinessRuleException('Only issued invoice products can be returned.');
@@ -94,9 +94,14 @@ class SalesInvoiceInventoryService
             throw new BusinessRuleException('Return quantity exceeds the sold quantity.');
         }
         $unitCost = bcdiv((string) $item->cost_snapshot, (string) $item->quantity, 4);
-        $movement = $this->inventory->receive($warehouse, $item->product, $quantity, $unitCost, 'sales_return', [
-            'type' => 'sales_invoice_item', 'id' => $item->id,
-        ]);
+        $movement = $this->inventory->receive(
+            $warehouse,
+            $item->product,
+            $quantity,
+            $unitCost,
+            'sales_return',
+            $reference ?: ['type' => 'sales_invoice_item', 'id' => $item->id]
+        );
         $item->forceFill(['returned_quantity' => bcadd((string) $item->returned_quantity, $quantity, 6)])->save();
 
         return $movement;

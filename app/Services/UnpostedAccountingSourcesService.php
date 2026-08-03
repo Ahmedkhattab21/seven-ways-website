@@ -45,6 +45,7 @@ class UnpostedAccountingSourcesService
             $query = $class::query()->where('company_id', $companyId)
                 ->when($statuses !== [], fn ($q) => $q->whereIn('status', $statuses))
                 ->when($filters['branch_id'] ?? null, fn ($q, $id) => $q->where('branch_id', $id))
+                ->when($filters['branch_ids'] ?? null, fn ($q, $ids) => $q->whereIn('branch_id', $ids))
                 ->whereNotExists(function ($sub) use ($class) {
                     $sub->selectRaw('1')->from('accounting_posting_links as apl')
                         ->whereColumn('apl.source_id', (new $class)->getTable().'.id')
@@ -63,7 +64,19 @@ class UnpostedAccountingSourcesService
 
     public function count(array $filters = []): int
     {
-        return $this->report($filters)->count();
+        $companyId = $this->tenant->companyId();
+
+        return collect(self::SOURCES)->sum(function (array $statuses, string $class) use ($companyId, $filters) {
+            return $class::query()->where('company_id', $companyId)
+                ->when($statuses !== [], fn ($query) => $query->whereIn('status', $statuses))
+                ->when($filters['branch_id'] ?? null, fn ($query, $id) => $query->where('branch_id', $id))
+                ->when($filters['branch_ids'] ?? null, fn ($query, $ids) => $query->whereIn('branch_id', $ids))
+                ->whereNotExists(function ($sub) use ($class) {
+                    $sub->selectRaw('1')->from('accounting_posting_links as apl')
+                        ->whereColumn('apl.source_id', (new $class)->getTable().'.id')
+                        ->where('apl.source_type', $class)->whereIn('apl.status', ['posted', 'not_required']);
+                })->count();
+        });
     }
 
     private function number(Model $model): string

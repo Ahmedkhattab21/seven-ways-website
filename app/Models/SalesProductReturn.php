@@ -10,6 +10,11 @@ class SalesProductReturn extends BaseModel
 {
     protected $guarded = ['id', 'company_id', 'created_by'];
 
+    protected $casts = [
+        'quantity' => 'decimal:6',
+        'processed_at' => 'datetime',
+    ];
+
     protected static function booted(): void
     {
         static::deleting(fn () => throw new BusinessRuleException('Product return history cannot be deleted.'));

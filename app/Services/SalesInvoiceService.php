@@ -115,6 +115,19 @@ class SalesInvoiceService
         });
     }
 
+    public function createProductOnlyDirect(array $data, array $items): SalesInvoice
+    {
+        $products = collect($items)->map(fn (array $item) => array_merge(
+            collect($item)->except([
+                'item_type', 'service_id', 'service_package_id', 'unit_price', 'unit_id',
+                'tax_id', 'tax_rate', 'promotion_id',
+            ])->all(),
+            ['item_type' => 'product']
+        ))->all();
+
+        return $this->createDirect($data, $products);
+    }
+
     private function packagePrice(ServicePackage $package, int $branchId, ?int $vehicleSizeId, mixed $date): BranchServicePackage
     {
         $date = Carbon::parse($date)->toDateString();

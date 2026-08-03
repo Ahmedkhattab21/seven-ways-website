@@ -1729,6 +1729,67 @@ svg {
     font-size: var(--sw-font-xs);
 }
 
+.sales-invoices-index-layout {
+    display: grid;
+    gap: var(--sw-space-6);
+}
+
+.sales-invoices-table-card .sw-card__body {
+    padding: 0;
+}
+
+.sales-invoices-table-card .sw-table {
+    min-width: 64rem;
+}
+
+.sales-invoices-table-card .sw-table th,
+.sales-invoices-table-card .sw-table td {
+    padding: var(--sw-space-4) var(--sw-space-5);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.sales-invoices-table-card .sw-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.sales-invoices-table-card .sales-invoice-number {
+    color: var(--sw-text);
+    font-weight: var(--sw-weight-semibold);
+}
+
+.sales-invoices-table-card .sales-invoice-number:hover {
+    color: var(--sw-primary);
+}
+
+.sales-invoices-table-card .sales-invoice-customer {
+    min-width: 15rem;
+    white-space: normal;
+}
+
+.sales-invoice-amount {
+    display: inline-block;
+    min-width: 5rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.sales-invoices-table-card .sw-badge--issued,
+.sales-invoices-table-card .sw-badge--partially_paid {
+    color: var(--sw-info);
+    background: var(--sw-info-soft);
+}
+
+.sales-invoices-table-card .sw-badge--paid {
+    color: var(--sw-success);
+    background: var(--sw-success-soft);
+}
+
+.sales-invoices-table-card .sw-badge--overdue,
+.sales-invoices-table-card .sw-badge--void {
+    color: var(--sw-danger);
+    background: var(--sw-danger-soft);
+}
+
 .sw-modal {
     position: fixed;
     z-index: var(--sw-z-modal);
@@ -4981,68 +5042,526 @@ svg {
 
 .sales-invoice-form {
     display: grid;
-    gap: var(--sw-space-6);
+    gap: var(--sw-space-7);
+    padding-bottom: var(--sw-space-5);
 }
 
-.sales-invoice-header-grid,
-.sales-invoice-item-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+.sales-invoice-section {
+    overflow: visible;
+}
+
+.sales-invoice-header-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--sw-space-5);
+}
+
+.sales-invoice-field--wide {
+    grid-column: span 2;
+}
+
+.sales-invoice-field--full {
+    grid-column: 1 / -1;
+}
+
+.sales-invoice-products-header {
+    align-items: center;
     gap: var(--sw-space-5);
 }
 
 .sales-invoice-items {
     display: grid;
-    gap: var(--sw-space-5);
+    gap: var(--sw-space-6);
 }
 
 .sales-invoice-item {
     display: grid;
     gap: var(--sw-space-5);
-    padding: var(--sw-space-5);
+    padding: var(--sw-space-6);
     margin: 0;
+    background: var(--sw-white-faint);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-lg);
+}
+
+.sales-invoice-item legend {
+    padding-inline: var(--sw-space-3);
+    color: var(--sw-text);
+    font-size: var(--sw-font-lg);
+    font-weight: var(--sw-weight-bold);
+}
+
+.sales-invoice-item-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--sw-space-5);
+}
+
+.sales-invoice-product-field {
+    grid-column: span 2;
+}
+
+.sales-invoice-item__description {
+    grid-column: 1 / -1;
+}
+
+.sales-invoice-product-summary {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--sw-space-3);
+}
+
+.sales-invoice-product-summary[hidden] {
+    display: none;
+}
+
+.sales-invoice-product-summary > div {
+    display: grid;
+    gap: var(--sw-space-1);
+    min-height: 4.5rem;
+    align-content: center;
+    padding: var(--sw-space-3) var(--sw-space-4);
+    background: color-mix(in srgb, var(--sw-primary) 5%, var(--sw-surface));
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+}
+
+.sales-invoice-product-summary span {
+    color: var(--sw-text-muted);
+    font-size: var(--sw-font-xs);
+}
+
+.sales-invoice-product-summary strong {
+    font-variant-numeric: tabular-nums;
+}
+
+.sales-invoice-warranty {
+    border-top: 1px solid var(--sw-border);
+}
+
+.sales-invoice-warranty summary {
+    padding-block: var(--sw-space-4);
+    color: var(--sw-text-muted);
+    font-weight: var(--sw-weight-semibold);
+    cursor: pointer;
+}
+
+.sales-invoice-warranty-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--sw-space-5);
+    padding-top: var(--sw-space-2);
+}
+
+.sales-invoice-remove-product {
+    justify-self: end;
+}
+
+.sales-invoice-notes-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sales-invoice-errors ul {
+    margin: var(--sw-space-2) 0 0;
+}
+
+.sales-invoice-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--sw-space-5);
+    padding: var(--sw-space-4);
+    background: var(--sw-surface);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+    box-shadow: var(--sw-shadow-sm);
+}
+
+.sales-invoice-actions p {
+    margin: 0;
+    margin-inline-end: auto;
+    color: var(--sw-text-muted);
+    font-size: var(--sw-font-sm);
+}
+
+@media (max-width: 1100px) {
+    .sales-invoice-header-grid,
+    .sales-invoice-item-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sales-invoice-product-summary {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .sales-invoice-warranty-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .sales-invoice-products-header,
+    .sales-invoice-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .sales-invoice-header-grid,
+    .sales-invoice-item-grid,
+    .sales-invoice-notes-grid,
+    .sales-invoice-warranty-grid,
+    .sales-invoice-product-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .sales-invoice-field--wide,
+    .sales-invoice-field--full,
+    .sales-invoice-product-field,
+    .sales-invoice-item__description {
+        grid-column: auto;
+    }
+
+    .sales-invoice-item {
+        padding: var(--sw-space-4);
+    }
+
+    .sales-invoice-actions p {
+        margin: 0;
+    }
+
+    .sales-invoice-products-header .sw-button,
+    .sales-invoice-actions .sw-button {
+        width: 100%;
+    }
+}
+
+.sales-credit-note-page,
+.sales-credit-note-form {
+    display: grid;
+    gap: var(--sw-space-6);
+}
+
+.sales-credit-note-source-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--sw-space-4);
+}
+
+.sales-credit-note-source-grid > div {
+    display: grid;
+    gap: var(--sw-space-2);
+    min-height: 5rem;
+    align-content: center;
+    padding: var(--sw-space-4) var(--sw-space-5);
     background: var(--sw-white-faint);
     border: 1px solid var(--sw-border);
     border-radius: var(--sw-radius-md);
 }
 
-.sales-invoice-item legend {
-    padding-inline: var(--sw-space-2);
-    font-weight: var(--sw-weight-bold);
+.sales-credit-note-source-grid span {
+    color: var(--sw-text-muted);
+    font-size: var(--sw-font-xs);
 }
 
-.sales-invoice-item__description {
-    grid-column: span 2;
+.sales-credit-note-source-grid strong {
+    overflow-wrap: anywhere;
 }
 
-.sales-invoice-item > .sw-button {
-    justify-self: end;
+.sales-credit-note-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--sw-space-5);
 }
 
-.sales-invoice-actions {
-    position: sticky;
-    bottom: var(--sw-space-4);
-    z-index: 5;
+.sales-credit-note-reason {
+    grid-column: 1 / -1;
+}
+
+.sales-credit-note-reason .sw-textarea {
+    min-height: 7rem;
+}
+
+.sales-credit-note-selection-count {
+    flex-shrink: 0;
+    padding: var(--sw-space-2) var(--sw-space-3);
+    color: var(--sw-text-muted);
+    font-size: var(--sw-font-xs);
+    font-weight: var(--sw-weight-semibold);
+    background: var(--sw-white-faint);
+    border: 1px solid var(--sw-border);
+    border-radius: 999px;
+}
+
+.sales-credit-note-items-card .sw-card__body {
+    padding: 0;
+}
+
+.sales-credit-note-items-table {
+    min-width: 70rem;
+}
+
+.sales-credit-note-stock-return {
+    display: grid;
+    gap: var(--sw-space-3);
+    min-width: 16rem;
+}
+
+.sales-credit-note-financial-only {
+    color: var(--sw-text-muted);
+    white-space: nowrap;
+}
+
+.sales-credit-note-items-table th,
+.sales-credit-note-items-table td {
+    padding: var(--sw-space-4) var(--sw-space-5);
+    vertical-align: middle;
+}
+
+.sales-credit-note-items-table tbody tr {
+    transition: background-color var(--sw-duration-fast) ease;
+}
+
+.sales-credit-note-items-table tbody tr.is-selected {
+    background: color-mix(in srgb, var(--sw-primary) 7%, transparent);
+}
+
+.sales-credit-note-item-description {
+    min-width: 16rem;
+    white-space: normal;
+}
+
+.sales-credit-note-check {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sw-space-2);
+    cursor: pointer;
+}
+
+.sales-credit-note-check input {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--sw-primary);
+}
+
+.sales-credit-note-quantity {
+    width: 9rem;
+    min-width: 9rem;
+}
+
+.sales-credit-note-quantity:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.sales-credit-note-actions {
     display: flex;
     justify-content: flex-end;
+    gap: var(--sw-space-3);
     padding: var(--sw-space-4);
-    background: color-mix(in srgb, var(--sw-surface) 92%, transparent);
+    background: var(--sw-surface);
     border: 1px solid var(--sw-border);
     border-radius: var(--sw-radius-md);
-    box-shadow: var(--sw-shadow-lg);
-    backdrop-filter: blur(12px);
+    box-shadow: var(--sw-shadow-sm);
 }
 
-@media (max-width: 760px) {
-    .sales-invoice-header-grid,
-    .sales-invoice-item-grid {
+.sales-credit-note-errors ul {
+    margin: var(--sw-space-2) 0 0;
+}
+
+@media (max-width: 900px) {
+    .sales-credit-note-source-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    .sales-credit-note-source .sw-card__header,
+    .sales-credit-note-items-card .sw-card__header,
+    .sales-credit-note-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .sales-credit-note-source-grid,
+    .sales-credit-note-details-grid {
         grid-template-columns: 1fr;
     }
 
-    .sales-invoice-item__description {
+    .sales-credit-note-reason {
         grid-column: auto;
     }
 
-    .sales-invoice-actions .sw-button {
+    .sales-credit-note-actions .sw-button {
+        width: 100%;
+    }
+}
+
+.sales-credit-note-show-page {
+    display: grid;
+    gap: var(--sw-space-6);
+    padding-bottom: var(--sw-space-5);
+}
+
+.sales-credit-note-show-hero .sw-card__header {
+    align-items: center;
+}
+
+.sales-credit-note-show-eyebrow {
+    margin: 0 0 var(--sw-space-2);
+    color: var(--sw-primary);
+    font-size: var(--sw-font-xs);
+    font-weight: var(--sw-weight-bold);
+}
+
+.sales-credit-note-show-hero .sw-card__title {
+    font-size: var(--sw-font-xl);
+}
+
+.sales-credit-note-show-meta {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--sw-space-4);
+}
+
+.sales-credit-note-show-meta > div,
+.sales-credit-note-show-financial-grid > div {
+    display: grid;
+    gap: var(--sw-space-2);
+    min-height: 5rem;
+    align-content: center;
+    padding: var(--sw-space-4) var(--sw-space-5);
+    background: var(--sw-white-faint);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+}
+
+.sales-credit-note-show-meta span,
+.sales-credit-note-show-financial-grid span {
+    color: var(--sw-text-muted);
+    font-size: var(--sw-font-xs);
+}
+
+.sales-credit-note-show-meta a {
+    color: var(--sw-text);
+    font-weight: var(--sw-weight-bold);
+    text-decoration: none;
+}
+
+.sales-credit-note-show-meta a:hover {
+    color: var(--sw-primary);
+}
+
+.sales-credit-note-show-reason .sw-card__body p {
+    max-width: 70rem;
+    margin: 0;
+    color: var(--sw-text);
+    line-height: 1.9;
+    white-space: pre-wrap;
+}
+
+.sales-credit-note-show-count {
+    flex-shrink: 0;
+    padding: var(--sw-space-2) var(--sw-space-3);
+    color: var(--sw-text-muted);
+    font-size: var(--sw-font-xs);
+    font-weight: var(--sw-weight-semibold);
+    background: var(--sw-white-faint);
+    border: 1px solid var(--sw-border);
+    border-radius: 999px;
+}
+
+.sales-credit-note-show-items .sw-card__body {
+    padding: 0;
+}
+
+.sales-credit-note-show-table {
+    min-width: 56rem;
+}
+
+.sales-credit-note-show-table th,
+.sales-credit-note-show-table td {
+    padding: var(--sw-space-4) var(--sw-space-5);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.sales-credit-note-show-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.sales-credit-note-show-table td.sales-credit-note-show-description {
+    min-width: 18rem;
+    white-space: normal;
+}
+
+.sales-credit-note-show-total {
+    color: var(--sw-text);
+    font-weight: var(--sw-weight-bold);
+}
+
+.sales-credit-note-show-financial-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--sw-space-4);
+}
+
+.sales-credit-note-show-financial-grid .is-total {
+    color: var(--sw-primary);
+    background: color-mix(in srgb, var(--sw-primary) 8%, var(--sw-surface));
+    border-color: color-mix(in srgb, var(--sw-primary) 30%, var(--sw-border));
+}
+
+.sales-credit-note-show-financial-grid strong {
+    font-size: var(--sw-font-lg);
+    font-variant-numeric: tabular-nums;
+}
+
+.sales-credit-note-show-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sw-space-5);
+    padding: var(--sw-space-5);
+    background: var(--sw-surface);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-md);
+    box-shadow: var(--sw-shadow-sm);
+}
+
+.sales-credit-note-show-actions > div {
+    display: grid;
+    gap: var(--sw-space-1);
+}
+
+.sales-credit-note-show-actions span {
+    color: var(--sw-text-muted);
+    font-size: var(--sw-font-sm);
+}
+
+.sales-credit-note-show-actions form {
+    margin: 0;
+}
+
+@media (max-width: 1000px) {
+    .sales-credit-note-show-meta,
+    .sales-credit-note-show-financial-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    .sales-credit-note-show-hero .sw-card__header,
+    .sales-credit-note-show-items .sw-card__header,
+    .sales-credit-note-show-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .sales-credit-note-show-meta,
+    .sales-credit-note-show-financial-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sales-credit-note-show-actions .sw-button {
         width: 100%;
     }
 }

@@ -37,6 +37,7 @@ class ReportFilterData
         }
 
         $canSeeAll = $tenant->user()->hasRole('system_admin')
+            || $tenant->user()->isCompanyAdministrator()
             || $tenant->user()->hasPermission('reports.view_all_branches');
         if ($requested->isEmpty()) {
             $requested = $canSeeAll

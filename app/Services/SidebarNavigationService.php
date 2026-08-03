@@ -26,14 +26,15 @@ class SidebarNavigationService
     public function __construct(
         private Request $request,
         private CompanySetupProgressService $setupProgress,
-        private ModuleRegistry $modules
+        private ModuleRegistry $modules,
+        private UserDashboardProfileResolver $profiles
     ) {
     }
 
     public function for(User $user): array
     {
         $permissions = $this->permissionSet($user);
-        $profile = $this->profileFor($user);
+        $profile = $this->profiles->profile($user);
         $seenUrls = [];
         $sections = [];
 
@@ -206,17 +207,6 @@ class SidebarNavigationService
         }
 
         return $items->isEmpty() ? null : ['items' => $items->unique('url')->values()->all()];
-    }
-
-    private function profileFor(User $user): string
-    {
-        return match (true) {
-            $user->hasRole('system_admin') => 'system_admin',
-            $user->hasRole(['company_owner', 'general_manager']) => 'manager',
-            $user->hasRole('accountant') => 'accountant',
-            $user->hasRole('branch_manager') => 'branch_manager',
-            default => 'generic',
-        };
     }
 
     private function supportsProfile(array $entry, string $profile): bool

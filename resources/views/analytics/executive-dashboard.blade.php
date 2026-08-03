@@ -36,6 +36,21 @@
         @endforeach
     </div>
 
+    <x-card title="المؤشرات التشغيلية الحالية" subtitle="من المستندات النهائية مباشرة، ولا تشترط الترحيل المحاسبي">
+        <div class="sw-stats-grid">
+            <x-stat-card label="صافي المبيعات التشغيلي" :value="$money->format($dashboard['operational']['net_sales'], $currency, app()->getLocale(), $company)" hint="الفواتير النهائية ناقص الإشعارات الدائنة" icon="trend" />
+            <x-stat-card label="التحصيلات" :value="$money->format($dashboard['operational']['collections'], $currency, app()->getLocale(), $company)" hint="من تحصيلات العملاء فقط" icon="wallet" />
+            <x-stat-card label="أوامر الشراء المفتوحة" :value="number_format($dashboard['operational']['open_purchase_orders'])" hint="كل الفروع المختارة" icon="clipboard" />
+            <x-stat-card label="تنبيهات المخزون" :value="number_format($dashboard['operational']['low_stock_count'] + $dashboard['operational']['negative_stock_count'])" hint="منخفض أو سالب" icon="alert" />
+        </div>
+    </x-card>
+
+    <x-card title="مقارنة الفروع" subtitle="نفس الفترة والفلاتر المختارة">
+        <div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>الفرع</th><th>صافي المبيعات</th><th>التحصيلات</th><th>المديونية</th><th>قيمة المخزون</th><th>اعتمادات معلقة</th></tr></thead><tbody>
+        @foreach($dashboard['branch_comparison'] as $row)<tr><td>{{ $row['branch']->name }}</td><td>{{ $money->format($row['metrics']['net_sales'], $currency, app()->getLocale(), $company) }}</td><td>{{ $money->format($row['metrics']['collections'], $currency, app()->getLocale(), $company) }}</td><td>{{ $money->format($row['metrics']['receivables'], $currency, app()->getLocale(), $company) }}</td><td>{{ $money->format($row['metrics']['inventory_value'], $currency, app()->getLocale(), $company) }}</td><td>{{ $row['metrics']['pending_approvals'] }}</td></tr>@endforeach
+        </tbody></table></div>
+    </x-card>
+
     <div class="sw-dashboard-grid">
         <x-card title="اتجاه المبيعات" subtitle="القيم قبل الضريبة حسب الشهر" class="sw-dashboard-grid__chart">
             @if($current['sales_trend'])
@@ -79,4 +94,3 @@
         </div>
     </x-card>
 @endsection
-

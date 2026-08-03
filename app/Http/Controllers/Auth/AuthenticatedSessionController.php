@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\DashboardLandingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +17,7 @@ class AuthenticatedSessionController extends Controller
         return view('auth.login');
     }
 
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request, DashboardLandingService $landing): RedirectResponse
     {
         $request->authenticate();
         $request->session()->regenerate();
@@ -30,7 +31,7 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('branches.create');
         }
 
-        return redirect()->intended(route('dashboard'));
+        return redirect()->to($landing->intendedOrDefault($request, $request->user()));
     }
 
     public function destroy(Request $request): RedirectResponse

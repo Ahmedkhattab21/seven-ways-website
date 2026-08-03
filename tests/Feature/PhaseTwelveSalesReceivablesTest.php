@@ -21,6 +21,7 @@ use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Quotation;
 use App\Models\Role;
+use App\Models\SalesCreditNote;
 use App\Models\SalesInvoice;
 use App\Models\SalesProductReturn;
 use App\Models\Service;
@@ -89,6 +90,7 @@ class PhaseTwelveSalesReceivablesTest extends TestCase
 
     public function test_DirectSaleInventory_issues_stock_once_and_backend_calculates_tax_and_discount(): void
     {
+        $this->assertContains('sales_product_return', config('inventory.reservation_reference_types'));
         $context = $this->context();
         app(InventoryService::class)->receive($context['warehouse'], $context['product'], '10', '20', 'stock_opening');
         $invoice = app(SalesInvoiceService::class)->createDirect([
@@ -122,8 +124,12 @@ class PhaseTwelveSalesReceivablesTest extends TestCase
             'Customer return',
             $returnKey
         );
-        $this->assertSame('9.000000', StockBalance::where('warehouse_id', $context['warehouse']->id)->where('product_id', $context['product']->id)->value('quantity'));
+        $this->assertSame('8.000000', StockBalance::where('warehouse_id', $context['warehouse']->id)->where('product_id', $context['product']->id)->value('quantity'));
         $this->assertSame('product_return', $note->reason_code);
+        $this->assertSame('draft', $note->status);
+        $this->assertNull($note->productReturns->first()->stock_movement_id);
+        $this->assertSame('0.000000', $invoice->items->first()->fresh()->returned_quantity);
+        $this->assertSame(0, StockMovement::where('movement_type', 'sales_return')->count());
         $retry = app(SalesProductReturnService::class)->return(
             $invoice->items->first(),
             $context['warehouse'],
@@ -133,6 +139,19 @@ class PhaseTwelveSalesReceivablesTest extends TestCase
         );
         $this->assertTrue($note->is($retry));
         $this->assertSame(1, SalesProductReturn::where('sales_invoice_item_id', $invoice->items->first()->id)->count());
+        app(SalesCreditNoteService::class)->approve($note->fresh());
+        $this->assertSame('8.000000', StockBalance::where('warehouse_id', $context['warehouse']->id)->where('product_id', $context['product']->id)->value('quantity'));
+        app(SalesCreditNoteService::class)->issue($note->fresh());
+        $return = $note->productReturns()->firstOrFail();
+        $movement = StockMovement::where('movement_type', 'sales_return')->firstOrFail();
+        $this->assertSame('sales_product_return', $movement->reference_type);
+        $this->assertSame($return->id, $movement->reference_id);
+        $this->assertSame($movement->id, $return->fresh()->stock_movement_id);
+        $this->assertNotNull($return->fresh()->processed_at);
+        $this->assertSame('issued', $note->fresh()->status);
+        $this->assertSame('9.000000', StockBalance::where('warehouse_id', $context['warehouse']->id)->where('product_id', $context['product']->id)->value('quantity'));
+        $this->assertSame('1.000000', $invoice->items->first()->fresh()->returned_quantity);
+        app(SalesCreditNoteService::class)->issue($note->fresh());
         $this->assertSame(1, StockMovement::where('movement_type', 'sales_return')->count());
         $this->assertSame('9.000000', StockBalance::where('warehouse_id', $context['warehouse']->id)->where('product_id', $context['product']->id)->value('quantity'));
         try {
@@ -146,6 +165,148 @@ class PhaseTwelveSalesReceivablesTest extends TestCase
             $this->fail('Returned quantity cannot exceed the sold quantity.');
         } catch (BusinessRuleException) {
             $this->assertSame(1, StockMovement::where('movement_type', 'sales_return')->count());
+        }
+    }
+
+    public function test_product_credit_can_be_financial_only_without_returning_inventory(): void
+    {
+        $context = $this->context();
+        app(InventoryService::class)->receive($context['warehouse'], $context['product'], '10', '20', 'stock_opening');
+        $invoice = app(SalesInvoiceService::class)->createDirect([
+            'customer_id' => $context['customer']->id,
+            'invoice_date' => today()->toDateString(),
+        ], [[
+            'item_type' => 'product',
+            'product_id' => $context['product']->id,
+            'warehouse_id' => $context['warehouse']->id,
+            'quantity' => 2,
+        ]]);
+        $this->asUser($context['approver']);
+        app(SalesInvoiceApprovalService::class)->submit($invoice);
+        app(SalesInvoiceApprovalService::class)->approve($invoice->fresh());
+        app(SalesInvoiceIssuanceService::class)->issue($invoice->fresh());
+
+        $credits = app(SalesCreditNoteService::class);
+        $note = $credits->create($invoice->fresh(), [
+            'credit_note_date' => today()->toDateString(),
+            'reason_code' => 'pricing_error',
+            'reason' => 'Financial correction only',
+        ], [[
+            'sales_invoice_item_id' => $invoice->items()->first()->id,
+            'quantity' => 1,
+        ]]);
+        $credits->approve($note);
+        $credits->issue($note->fresh());
+
+        $this->assertSame('8.000000', StockBalance::where('warehouse_id', $context['warehouse']->id)->where('product_id', $context['product']->id)->value('quantity'));
+        $this->assertSame('0.000000', $invoice->items()->first()->fresh()->returned_quantity);
+        $this->assertSame(0, $note->productReturns()->count());
+        $this->assertGreaterThan(0, (float) $invoice->fresh()->credited_amount);
+    }
+
+    public function test_unsupported_stock_reference_rolls_back_credit_issue_completely(): void
+    {
+        $context = $this->context();
+        app(InventoryService::class)->receive($context['warehouse'], $context['product'], '10', '20', 'stock_opening');
+        $invoice = app(SalesInvoiceService::class)->createDirect([
+            'customer_id' => $context['customer']->id,
+            'invoice_date' => today()->toDateString(),
+        ], [[
+            'item_type' => 'product',
+            'product_id' => $context['product']->id,
+            'warehouse_id' => $context['warehouse']->id,
+            'quantity' => 2,
+        ]]);
+        $this->asUser($context['approver']);
+        app(SalesInvoiceApprovalService::class)->submit($invoice);
+        app(SalesInvoiceApprovalService::class)->approve($invoice->fresh());
+        app(SalesInvoiceIssuanceService::class)->issue($invoice->fresh());
+        $credits = app(SalesCreditNoteService::class);
+        $note = $credits->create($invoice->fresh(), [
+            'credit_note_date' => today()->toDateString(),
+            'reason_code' => 'product_return',
+            'reason' => 'Rollback verification',
+        ], [[
+            'sales_invoice_item_id' => $invoice->items()->first()->id,
+            'quantity' => 1,
+            'return_to_stock' => true,
+            'warehouse_id' => $context['warehouse']->id,
+        ]]);
+        $credits->approve($note);
+        $balanceBefore = $invoice->fresh()->balance_due;
+        $stockBefore = StockBalance::where('warehouse_id', $context['warehouse']->id)->where('product_id', $context['product']->id)->value('quantity');
+        $allowedReferences = config('inventory.reservation_reference_types');
+        config(['inventory.reservation_reference_types' => array_values(array_diff($allowedReferences, ['sales_product_return']))]);
+
+        try {
+            $credits->issue($note->fresh());
+            $this->fail('An unsupported reference type must abort the issue transaction.');
+        } catch (BusinessRuleException $exception) {
+            $this->assertSame('تعذر تسجيل حركة المخزون لأن نوع مرجع الحركة غير مدعوم.', $exception->getMessage());
+        } finally {
+            config(['inventory.reservation_reference_types' => $allowedReferences]);
+        }
+
+        $this->assertSame('approved', $note->fresh()->status);
+        $this->assertSame($balanceBefore, $invoice->fresh()->balance_due);
+        $this->assertSame('0.0000', $invoice->fresh()->credited_amount);
+        $this->assertSame($stockBefore, StockBalance::where('warehouse_id', $context['warehouse']->id)->where('product_id', $context['product']->id)->value('quantity'));
+        $this->assertSame('0.000000', $invoice->items()->first()->fresh()->returned_quantity);
+        $this->assertSame(0, StockMovement::where('movement_type', 'sales_return')->count());
+        $this->assertNull($note->productReturns()->firstOrFail()->stock_movement_id);
+    }
+
+    public function test_product_return_rejects_a_warehouse_from_another_branch_without_side_effects(): void
+    {
+        $context = $this->context();
+        app(InventoryService::class)->receive($context['warehouse'], $context['product'], '10', '20', 'stock_opening');
+        $invoice = app(SalesInvoiceService::class)->createDirect([
+            'customer_id' => $context['customer']->id,
+            'invoice_date' => today()->toDateString(),
+        ], [[
+            'item_type' => 'product',
+            'product_id' => $context['product']->id,
+            'warehouse_id' => $context['warehouse']->id,
+            'quantity' => 2,
+        ]]);
+        $this->asUser($context['approver']);
+        app(SalesInvoiceApprovalService::class)->submit($invoice);
+        app(SalesInvoiceApprovalService::class)->approve($invoice->fresh());
+        app(SalesInvoiceIssuanceService::class)->issue($invoice->fresh());
+        $otherBranch = Branch::create([
+            'company_id' => $context['company']->id,
+            'code' => 'OTHER'.uniqid(),
+            'name' => 'Other branch',
+            'is_main' => false,
+            'is_active' => true,
+        ]);
+        $otherWarehouse = Warehouse::query()->forceCreate([
+            'company_id' => $context['company']->id,
+            'branch_id' => $otherBranch->id,
+            'code' => 'W'.uniqid(),
+            'name' => 'Other warehouse',
+            'warehouse_type' => 'main',
+            'is_active' => true,
+            'is_system' => false,
+        ]);
+        $beforeNotes = SalesCreditNote::count();
+
+        try {
+            app(SalesCreditNoteService::class)->create($invoice->fresh(), [
+                'credit_note_date' => today()->toDateString(),
+                'reason_code' => 'product_return',
+                'reason' => 'Invalid branch warehouse',
+            ], [[
+                'sales_invoice_item_id' => $invoice->items()->first()->id,
+                'quantity' => 1,
+                'return_to_stock' => true,
+                'warehouse_id' => $otherWarehouse->id,
+            ]]);
+            $this->fail('A warehouse from another branch must be rejected.');
+        } catch (BusinessRuleException) {
+            $this->assertSame($beforeNotes, SalesCreditNote::count());
+            $this->assertSame('8.000000', StockBalance::where('warehouse_id', $context['warehouse']->id)->where('product_id', $context['product']->id)->value('quantity'));
+            $this->assertSame(0, StockMovement::where('movement_type', 'sales_return')->count());
         }
     }
 
@@ -334,7 +495,51 @@ class PhaseTwelveSalesReceivablesTest extends TestCase
         $this->assertSame(1, SalesInvoice::query()->where('quotation_id', $quotation->id)->count());
     }
 
-    public function test_direct_invoice_accepts_product_service_package_and_custom_items(): void
+    public function test_direct_invoice_http_form_and_validation_allow_products_only(): void
+    {
+        $context = $this->context();
+
+        $this->get(route('sales-invoices.create'))
+            ->assertOk()
+            ->assertSee('منتجات الفاتورة')
+            ->assertSee($context['product']->sku)
+            ->assertDontSee('نوع العنصر')
+            ->assertDontSee('name="items[0][item_type]"', false)
+            ->assertDontSee('service_package_id', false);
+
+        $payload = [
+            'customer_id' => $context['customer']->id,
+            'invoice_date' => today()->toDateString(),
+            'items' => [[
+                'product_id' => $context['product']->id,
+                'warehouse_id' => $context['warehouse']->id,
+                'quantity' => 1,
+                'item_type' => 'custom',
+                'service_id' => $context['service']->id,
+                'service_package_id' => 999999,
+            ]],
+        ];
+
+        $this->post(route('sales-invoices.store'), $payload)
+            ->assertSessionHasErrors([
+                'items.0.item_type',
+                'items.0.service_id',
+                'items.0.service_package_id',
+            ]);
+
+        unset(
+            $payload['items'][0]['item_type'],
+            $payload['items'][0]['service_id'],
+            $payload['items'][0]['service_package_id']
+        );
+        $this->post(route('sales-invoices.store'), $payload)->assertRedirect();
+
+        $invoice = SalesInvoice::query()->latest('id')->firstOrFail();
+        $this->assertSame('product', $invoice->items()->value('item_type'));
+        $this->assertSame('100.0000', $invoice->items()->value('unit_price'));
+    }
+
+    public function test_legacy_direct_invoice_service_still_supports_historical_non_product_callers(): void
     {
         $context = $this->context();
         BranchService::query()->forceCreate([
