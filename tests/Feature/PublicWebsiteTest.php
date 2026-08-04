@@ -4,12 +4,15 @@ namespace Tests\Feature;
 
 use App\Mail\WebsiteContactMessage;
 use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class PublicWebsiteTest extends TestCase
 {
+    use DatabaseTransactions;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -433,6 +436,12 @@ class PublicWebsiteTest extends TestCase
             ->assertSessionHas('registration_success');
 
         Mail::assertSent(WebsiteContactMessage::class, 1);
+        $this->assertDatabaseHas('website_registrations', [
+            'full_name' => 'Ahmed Test',
+            'phone' => '+201000000000',
+            'service' => 'ppf',
+            'preferred_branch' => 'nasr-city',
+        ]);
     }
 
     public function test_footer_keeps_the_reference_composition_in_both_locales(): void

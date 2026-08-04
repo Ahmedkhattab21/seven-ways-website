@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Website;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Website\RegistrationRequest;
 use App\Mail\WebsiteContactMessage;
+use App\Models\WebsiteRegistration;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -15,6 +16,10 @@ class RegistrationController extends Controller
     public function store(RegistrationRequest $request): RedirectResponse
     {
         $registration = $request->safe()->except('website');
+        $savedRegistration = WebsiteRegistration::query()->create([
+            ...$registration,
+            'locale' => app()->getLocale(),
+        ]);
         $recipient = config('website.contact.recipient');
         $service = __('website.registration.services.'.$registration['service']);
         $country = __('website.registration.countries.'.$registration['country']);
@@ -44,14 +49,13 @@ class RegistrationController extends Controller
             }
 
             Mail::to($recipient)->send(new WebsiteContactMessage($contact));
+
+            $savedRegistration->update(['email_sent_at' => now()]);
         } catch (Throwable $exception) {
             Log::error('Website registration delivery failed.', [
                 'exception' => $exception,
+                'registration_id' => $savedRegistration->getKey(),
             ]);
-
-            return back()
-                ->withInput($request->safe()->except(['website']))
-                ->with('registration_error', __('website.registration.error'));
         }
 
         return back()->with('registration_success', __('website.registration.success'));

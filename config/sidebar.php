@@ -7,6 +7,14 @@ return [
         'icon' => 'grid',
         'items' => [
             [
+                'label' => 'الطلبات',
+                'icon' => 'clipboard',
+                'route' => 'registration-requests.index',
+                'profiles' => ['system_admin'],
+                'system_admin_only' => true,
+                'active' => ['registration-requests.*'],
+            ],
+            [
                 'label' => 'لوحة التحكم',
                 'labels' => ['manager' => 'لوحة الإدارة التنفيذية', 'accountant' => 'لوحة المحاسبة'],
                 'icon' => 'grid',

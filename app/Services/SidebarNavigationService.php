@@ -72,6 +72,7 @@ class SidebarNavigationService
         if (! Route::has($item['route'])
             || ! $this->modules->enabledForRoute($item['route'], $this->request)
             || (isset($item['module']) && ! $this->modules->enabled($item['module']))
+            || (($item['system_admin_only'] ?? false) && $profile !== 'system_admin')
             || ! $this->supportsProfile($item, $profile)
             || ! $this->isAllowed($item, $permissions)) {
             return null;

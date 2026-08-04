@@ -125,6 +125,7 @@ use App\Http\Controllers\WarrantyVerificationController;
 use App\Http\Controllers\Website\ContactController as WebsiteContactController;
 use App\Http\Controllers\Website\RegistrationController as WebsiteRegistrationController;
 use App\Http\Controllers\Website\WebsiteController;
+use App\Http\Controllers\WebsiteRegistrationAdminController;
 use App\Http\Controllers\WorkOrderActionController;
 use App\Http\Controllers\WorkOrderController;
 use App\Http\Controllers\WorkOrderMaterialController;
@@ -194,6 +195,12 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
+    Route::get('registration-requests', [WebsiteRegistrationAdminController::class, 'index'])
+        ->name('registration-requests.index');
+    Route::get('registration-requests/{registrationRequest}', [WebsiteRegistrationAdminController::class, 'show'])
+        ->whereNumber('registrationRequest')
+        ->name('registration-requests.show');
+
     Route::get('approvals', [ApprovalController::class, 'index'])->name('approvals.index');
     Route::get('approval-reports', CentralWorkflowReportController::class)->name('approvals.reports');
     Route::get('approvals/{approval}', [ApprovalController::class, 'show'])->name('approvals.show');
