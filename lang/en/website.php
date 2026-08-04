@@ -86,6 +86,16 @@ return [
             ],
         ],
         'show_more' => 'SHOW MORE',
+        'customer_stories' => [
+            'eyebrow' => 'Real experiences',
+            'title' => 'Customer Stories & Experiences',
+            'body' => 'Our customers’ trust is the best reflection of our work. Explore real vehicles and experiences from Seven Ways branches.',
+            'photos_label' => 'Photos from Seven Ways customer experiences',
+            'videos_title' => 'Customer Experiences & Expert Tips',
+            'video_label' => 'Customer experience :number',
+            'previous' => 'Previous video',
+            'next' => 'Next video',
+        ],
     ],
 
     'about' => [

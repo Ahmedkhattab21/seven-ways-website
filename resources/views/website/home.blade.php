@@ -119,4 +119,66 @@
             </div>
         </div>
     </section>
+
+    @php($customerStories = config('website.customer_stories', []))
+    <section class="sw-customer-stories sw-section" data-sw-customer-stories>
+        <div class="sw-shell sw-customer-stories__inner">
+            <header class="sw-customer-stories__heading sw-reveal">
+                <span>{{ __('website.home.customer_stories.eyebrow') }}</span>
+                <h2>{{ __('website.home.customer_stories.title') }}</h2>
+                <p>{{ __('website.home.customer_stories.body') }}</p>
+            </header>
+
+            <div
+                class="sw-customer-stories__photos"
+                aria-label="{{ __('website.home.customer_stories.photos_label') }}"
+            >
+                @foreach ($customerStories['photos'] ?? [] as $photo)
+                    <figure class="sw-customer-story-photo sw-reveal">
+                        <img
+                            src="{{ asset($photo) }}"
+                            alt="{{ __('website.home.customer_stories.photos_label') }}"
+                            loading="lazy"
+                        >
+                    </figure>
+                @endforeach
+            </div>
+
+            <div class="sw-customer-stories__videos-heading sw-reveal">
+                <h3>{{ __('website.home.customer_stories.videos_title') }}</h3>
+                <div class="sw-customer-stories__controls">
+                    <button
+                        type="button"
+                        data-sw-customer-previous
+                        aria-label="{{ __('website.home.customer_stories.previous') }}"
+                    >
+                        <span aria-hidden="true">‹</span>
+                    </button>
+                    <button
+                        type="button"
+                        data-sw-customer-next
+                        aria-label="{{ __('website.home.customer_stories.next') }}"
+                    >
+                        <span aria-hidden="true">›</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="sw-customer-stories__videos" data-sw-customer-track>
+                @foreach ($customerStories['videos'] ?? [] as $video)
+                    <article class="sw-customer-story-video sw-reveal">
+                        <video
+                            controls
+                            playsinline
+                            preload="metadata"
+                            aria-label="{{ __('website.home.customer_stories.video_label', ['number' => $loop->iteration]) }}"
+                        >
+                            <source src="{{ asset($video) }}" type="video/mp4">
+                        </video>
+                        <p>{{ __('website.home.customer_stories.video_label', ['number' => $loop->iteration]) }}</p>
+                    </article>
+                @endforeach
+            </div>
+        </div>
+    </section>
 @endsection

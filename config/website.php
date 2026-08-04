@@ -111,14 +111,14 @@ return [
             'id' => 'nasr-city',
             'country_code' => 'egypt',
             'country' => ['ar' => 'مصر', 'en' => 'Egypt'],
-            'name' => ['ar' => 'مدينة نصر', 'en' => 'Nasr City'],
+            'name' => ['ar' => 'مدينة مصر', 'en' => 'Madinet Masr'],
             'address' => [
-                'ar' => 'محطة بنزين وطنية - بجوار مسجد السلام، الوفاء والأمل، مدينة نصر',
-                'en' => 'Wataniya Gas Station - Next to Al Salam Mosque, Wafaa and Amal, Nasr City',
+                'ar' => 'القاهرة - مدينة مصر - شارع الضغط العالي - بلوك 22 - عمارة 6 بجوار عمارة شبانة',
+                'en' => 'Cairo - Madinet Masr - High Pressure Street - Block 22 - Building 6, next to Shabana Building',
             ],
             'phone' => '+201099025564',
             'whatsapp' => 'https://wa.me/201099025564',
-            'map_link' => 'https://www.google.com/maps/search/?api=1&query=Seven+Ways+Nasr+City',
+            'map_link' => 'https://maps.app.goo.gl/heWj3yBJKkNjeYdK6?g_st=aw',
             'map_embed' => 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3453.6884222212807!2d31.358420824582655!3d30.045795518506964!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14583d002493452f%3A0xe7f18626b13860ec!2sSeven%20Ways!5e0!3m2!1sar!2seg!4v1754321669152!5m2!1sar!2seg',
         ],
         [
@@ -156,11 +156,11 @@ return [
         ],
         'egypt' => [
             'ar' => [
-                'محطة بنزين وطنية - بجوار مسجد السلام، الوفاء والأمل، مدينة نصر',
+                'القاهرة - مدينة مصر - شارع الضغط العالي - بلوك 22 - عمارة 6 بجوار عمارة شبانة',
                 'فرع الإسكندرية - الإسكندرية، مصر',
             ],
             'en' => [
-                'Wataniya Gas Station - Next to Al Salam Mosque, Wafaa and Amal, Nasr City',
+                'Cairo - Madinet Masr - High Pressure Street - Block 22 - Building 6, next to Shabana Building',
                 'Alexandria Branch - Alexandria, Egypt',
             ],
         ],
@@ -229,6 +229,22 @@ return [
         ],
     ],
 
+    'customer_stories' => [
+        'photos' => [
+            'assets/website/images/customer-stories/customer-story-01.webp',
+            'assets/website/images/customer-stories/customer-story-02.webp',
+            'assets/website/images/customer-stories/customer-story-03.webp',
+        ],
+        'videos' => [
+            'assets/website/videos/customer-stories/customer-story-01.mp4',
+            'assets/website/videos/customer-stories/customer-story-02.mp4',
+            'assets/website/videos/customer-stories/customer-story-03.mp4',
+            'assets/website/videos/customer-stories/customer-story-04.mp4',
+            'assets/website/videos/customer-stories/customer-story-05.mp4',
+            'assets/website/videos/customer-stories/customer-story-06.mp4',
+        ],
+    ],
+
     'product_packages' => [
         [
             'id' => 'project3',
@@ -259,7 +275,9 @@ return [
         [
             'id' => 'layer-plus',
             'brand' => 'LAYER+',
-            'images' => [],
+            'images' => [
+                'assets/website/images/layer-plus-supreme-films.webp',
+            ],
             'sections' => ['ppf', 'thermal', 'nano'],
         ],
         [
@@ -284,26 +302,32 @@ return [
             'id' => 'osren',
             'brand' => 'OSREN',
             'images' => [
-                'assets/website/images/osren-nao-glaze-28.webp',
+                'assets/website/images/osren-polishing-system.webp',
             ],
             'sections' => ['polishing'],
         ],
         [
             'id' => 'rupes',
             'brand' => 'RUPES',
-            'images' => [],
+            'images' => [
+                'assets/website/images/rupes-polishing-system.webp',
+            ],
             'sections' => ['polishing'],
         ],
         [
             'id' => 'sonax',
             'brand' => 'SONAX',
-            'images' => [],
+            'images' => [
+                'assets/website/images/sonax-cutmax-6-4.webp',
+            ],
             'sections' => ['polishing'],
         ],
         [
             'id' => 'koch-chemie',
             'brand' => 'Koch-Chemie',
-            'images' => [],
+            'images' => [
+                'assets/website/images/koch-chemie-polishing-kit.webp',
+            ],
             'sections' => ['polishing'],
         ],
         [
@@ -315,7 +339,9 @@ return [
         [
             'id' => 'zerox',
             'brand' => 'ZeroX',
-            'images' => [],
+            'images' => [
+                'assets/website/images/zerox-extreme-cut-compound.webp',
+            ],
             'sections' => ['polishing'],
         ],
     ],

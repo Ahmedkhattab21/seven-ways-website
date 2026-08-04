@@ -107,6 +107,33 @@ if (websiteRoot) {
         setActiveSlide(activeIndex);
     });
 
+    websiteRoot.querySelectorAll('[data-sw-customer-stories]').forEach((gallery) => {
+        const track = gallery.querySelector('[data-sw-customer-track]');
+        const previous = gallery.querySelector('[data-sw-customer-previous]');
+        const next = gallery.querySelector('[data-sw-customer-next]');
+        const videos = Array.from(gallery.querySelectorAll('video'));
+
+        const scrollByCard = (direction) => {
+            const card = track?.querySelector('.sw-customer-story-video');
+            if (!track || !card) return;
+
+            const rtlDirection = document.documentElement.dir === 'rtl' ? -1 : 1;
+            track.scrollBy({
+                left: direction * rtlDirection * (card.getBoundingClientRect().width + 20),
+                behavior: reducedMotion ? 'auto' : 'smooth',
+            });
+        };
+
+        previous?.addEventListener('click', () => scrollByCard(-1));
+        next?.addEventListener('click', () => scrollByCard(1));
+
+        videos.forEach((video) => {
+            video.addEventListener('play', () => {
+                videos.filter((item) => item !== video).forEach((item) => item.pause());
+            });
+        });
+    });
+
     websiteRoot.querySelectorAll('[data-sw-footer-country]').forEach((countryInput) => {
         countryInput.addEventListener('change', () => {
             if (!(countryInput instanceof HTMLInputElement) || !countryInput.checked) return;

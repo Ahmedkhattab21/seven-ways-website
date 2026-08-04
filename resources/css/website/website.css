@@ -3025,6 +3025,190 @@ html[dir="ltr"] .sw-website .sw-home-services .sw-home-brand.sw-reveal.is-visibl
     }
 }
 
+.sw-website .sw-customer-stories {
+    position: relative;
+    overflow: hidden;
+    padding: 118px 0 130px;
+    background:
+        radial-gradient(circle at 12% 20%, rgba(230, 39, 47, 0.22), transparent 28%),
+        radial-gradient(circle at 88% 82%, rgba(255, 184, 28, 0.12), transparent 30%),
+        #070707;
+}
+
+.sw-website .sw-customer-stories::before {
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 42px 42px;
+    content: "";
+    pointer-events: none;
+}
+
+.sw-website .sw-customer-stories__inner {
+    position: relative;
+    z-index: 1;
+}
+
+.sw-website .sw-customer-stories__heading {
+    max-width: 820px;
+    margin: 0 auto 52px;
+    text-align: center;
+}
+
+.sw-website .sw-customer-stories__heading > span {
+    display: inline-flex;
+    margin-bottom: 12px;
+    color: var(--sw-primary);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.sw-website .sw-customer-stories__heading h2 {
+    margin: 0;
+    color: var(--sw-white);
+    font-size: clamp(38px, 5vw, 70px);
+    font-weight: 900;
+    line-height: 1.08;
+}
+
+.sw-website .sw-customer-stories__heading p {
+    max-width: 720px;
+    margin: 20px auto 0;
+    color: rgba(255, 255, 255, 0.74);
+    font-size: clamp(17px, 1.3vw, 21px);
+    line-height: 1.85;
+}
+
+.sw-website .sw-customer-stories__photos {
+    display: grid;
+    margin-bottom: 74px;
+    grid-template-columns: 1.25fr 0.75fr;
+    grid-template-rows: repeat(2, minmax(230px, 310px));
+    gap: 18px;
+}
+
+.sw-website .sw-customer-story-photo {
+    position: relative;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 26px;
+    background: #161616;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
+}
+
+.sw-website .sw-customer-story-photo:first-child {
+    grid-row: 1 / 3;
+}
+
+.sw-website .sw-customer-story-photo::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 -80px 80px rgba(0, 0, 0, 0.18);
+    content: "";
+    pointer-events: none;
+}
+
+.sw-website .sw-customer-story-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 500ms ease;
+}
+
+.sw-website .sw-customer-story-photo:hover img {
+    transform: scale(1.035);
+}
+
+.sw-website .sw-customer-stories__videos-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.sw-website .sw-customer-stories__videos-heading h3 {
+    margin: 0;
+    color: var(--sw-white);
+    font-size: clamp(27px, 3vw, 42px);
+    font-weight: 850;
+}
+
+.sw-website .sw-customer-stories__controls {
+    display: flex;
+    gap: 10px;
+}
+
+.sw-website .sw-customer-stories__controls button {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    color: var(--sw-white);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 50%;
+    place-items: center;
+    cursor: pointer;
+    transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.sw-website .sw-customer-stories__controls button:hover,
+.sw-website .sw-customer-stories__controls button:focus-visible {
+    background: var(--sw-primary);
+    border-color: var(--sw-primary);
+    outline: none;
+    transform: translateY(-2px);
+}
+
+.sw-website .sw-customer-stories__controls button span {
+    font-size: 34px;
+    line-height: 1;
+}
+
+.sw-website .sw-customer-stories__videos {
+    display: grid;
+    padding: 2px 2px 18px;
+    overflow-x: auto;
+    grid-auto-columns: minmax(260px, 340px);
+    grid-auto-flow: column;
+    gap: 20px;
+    scroll-behavior: smooth;
+    scroll-snap-type: inline mandatory;
+    scrollbar-color: var(--sw-primary) rgba(255, 255, 255, 0.08);
+    scrollbar-width: thin;
+}
+
+.sw-website .sw-customer-story-video {
+    overflow: hidden;
+    background: #111;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 24px;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4);
+    scroll-snap-align: start;
+}
+
+.sw-website .sw-customer-story-video video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 9 / 16;
+    object-fit: contain;
+    background: #000;
+}
+
+.sw-website .sw-customer-story-video p {
+    margin: 0;
+    padding: 15px 18px 17px;
+    color: rgba(255, 255, 255, 0.84);
+    font-size: 15px;
+    font-weight: 700;
+}
+
 @keyframes sw-about-watermark-in {
     to {
         opacity: 0.5;
@@ -3192,6 +3376,20 @@ html[dir="ltr"] .sw-website .sw-home-services .sw-home-brand.sw-reveal.is-visibl
 }
 
 @media (max-width: 820px) {
+    .sw-website .sw-section.sw-customer-stories {
+        padding: 88px 0 96px;
+    }
+
+    .sw-website .sw-customer-stories__photos {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: minmax(390px, 58vh) minmax(220px, 300px);
+    }
+
+    .sw-website .sw-customer-story-photo:first-child {
+        grid-column: 1 / 3;
+        grid-row: auto;
+    }
+
     .sw-website {
         --sw-shell: min(100% - 32px, 720px);
     }
@@ -3392,6 +3590,43 @@ html[dir="ltr"] .sw-website .sw-home-services .sw-home-brand.sw-reveal.is-visibl
 }
 
 @media (max-width: 580px) {
+    .sw-website .sw-section.sw-customer-stories {
+        padding: 72px 0 78px;
+    }
+
+    .sw-website .sw-customer-stories__heading {
+        margin-bottom: 34px;
+        text-align: start;
+    }
+
+    .sw-website .sw-customer-stories__heading h2 {
+        font-size: 38px;
+    }
+
+    .sw-website .sw-customer-stories__photos {
+        margin-bottom: 54px;
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(3, minmax(310px, 58vh));
+        gap: 14px;
+    }
+
+    .sw-website .sw-customer-story-photo:first-child {
+        grid-column: auto;
+    }
+
+    .sw-website .sw-customer-stories__videos-heading {
+        align-items: flex-end;
+    }
+
+    .sw-website .sw-customer-stories__controls button {
+        width: 42px;
+        height: 42px;
+    }
+
+    .sw-website .sw-customer-stories__videos {
+        grid-auto-columns: 84%;
+    }
+
     .sw-website {
         --sw-shell: calc(100% - 28px);
         font-size: 15px;

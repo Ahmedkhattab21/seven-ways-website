@@ -49,6 +49,7 @@ class PublicWebsiteTest extends TestCase
         $this->get(route('website.home', ['lang' => 'ar']))
             ->assertOk()
             ->assertSee('حماية متقدمة، أناقة مستمرة')
+            ->assertSee('حيث إننا نستخدم منتجات أمريكية وفرنسية عالمية')
             ->assertSee('من نحن')
             ->assertSee('data-locale="ar"', false)
             ->assertSee('sw-hero__cta', false)
@@ -109,6 +110,31 @@ class PublicWebsiteTest extends TestCase
             ->assertSee('id="project3"', false)
             ->assertSee('id="osren"', false)
             ->assertSee('OSREN NAO GLAZE 28');
+    }
+
+    public function test_home_page_displays_customer_stories_media(): void
+    {
+        $stories = config('website.customer_stories');
+
+        $this->assertCount(3, $stories['photos']);
+        $this->assertCount(6, $stories['videos']);
+
+        foreach ([...$stories['photos'], ...$stories['videos']] as $media) {
+            $this->assertFileExists(public_path($media));
+        }
+
+        $this->get(route('website.home', ['lang' => 'ar']))
+            ->assertOk()
+            ->assertSee('آراء وتجارب عملائنا')
+            ->assertSee('data-sw-customer-stories', false)
+            ->assertSee('data-sw-customer-track', false)
+            ->assertSee('controls', false)
+            ->assertSee('preload="metadata"', false)
+            ->assertDontSee('autoplay', false);
+
+        $this->get(route('website.home', ['lang' => 'en']))
+            ->assertOk()
+            ->assertSee('Customer Stories &amp; Experiences', false);
     }
 
     public function test_upx_brand_and_products_are_removed_from_the_public_website(): void
@@ -180,6 +206,13 @@ class PublicWebsiteTest extends TestCase
             ->assertSee('ZeroX Polishing Products')
             ->assertSee('sw-product__brand-name', false);
 
+        foreach (['osren', 'rupes', 'sonax', 'koch-chemie', 'zerox'] as $productId) {
+            $product = collect(config('website.product_packages'))->firstWhere('id', $productId);
+
+            $this->assertNotEmpty($product['images'] ?? [], $productId);
+            $this->assertFileExists(public_path($product['images'][0]));
+        }
+
         $this->get(route('website.home', ['lang' => 'en']))
             ->assertOk()
             ->assertSee('RUPES')
@@ -188,6 +221,21 @@ class PublicWebsiteTest extends TestCase
             ->assertSee("Meguiar's")
             ->assertSee('ZeroX')
             ->assertSee('sw-home-brand__name', false);
+    }
+
+    public function test_layer_plus_public_service_uses_the_supreme_films_image(): void
+    {
+        $product = collect(config('website.product_packages'))->firstWhere('id', 'layer-plus');
+
+        $this->assertSame(
+            ['assets/website/images/layer-plus-supreme-films.webp'],
+            $product['images'],
+        );
+        $this->assertFileExists(public_path($product['images'][0]));
+
+        $this->get(route('website.services'))
+            ->assertOk()
+            ->assertSee($product['images'][0], false);
     }
 
     public function test_about_page_keeps_the_reference_composition_in_both_locales(): void
@@ -248,6 +296,8 @@ class PublicWebsiteTest extends TestCase
     {
         $arabic = $this->get(route('website.contact', ['lang' => 'ar']))
             ->assertOk()
+            ->assertSee('مدينة مصر')
+            ->assertSee('القاهرة - مدينة مصر - شارع الضغط العالي - بلوك 22 - عمارة 6 بجوار عمارة شبانة')
             ->assertSee('sw-contact-hero__title', false)
             ->assertSee('sw-contact-countries', false)
             ->assertSee('sw-contact-branch__map', false)
@@ -266,7 +316,7 @@ class PublicWebsiteTest extends TestCase
             ->assertSee('Saudi Arabia')
             ->assertSee('Egypt')
             ->assertSee('Riyadh Branch')
-            ->assertSee('Nasr City');
+            ->assertSee('Madinet Masr');
     }
 
     public function test_floating_call_button_uses_the_egypt_contact_number(): void
@@ -307,6 +357,17 @@ class PublicWebsiteTest extends TestCase
             ->assertOk()
             ->assertSee('Alexandria Branch')
             ->assertSee('31.26125,29.98375', false);
+    }
+
+    public function test_madinet_masr_branch_uses_the_provided_google_maps_link(): void
+    {
+        $madinetMasr = collect(config('website.branches'))->firstWhere('id', 'nasr-city');
+
+        $this->assertNotNull($madinetMasr);
+        $this->assertSame(
+            'https://maps.app.goo.gl/heWj3yBJKkNjeYdK6?g_st=aw',
+            $madinetMasr['map_link']
+        );
     }
 
     public function test_makkah_replaces_dammam_in_public_locations(): void
