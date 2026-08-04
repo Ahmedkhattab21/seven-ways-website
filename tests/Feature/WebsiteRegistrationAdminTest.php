@@ -48,9 +48,25 @@ class WebsiteRegistrationAdminTest extends TestCase
             ->assertOk();
     }
 
+    public function test_general_manager_can_see_and_open_registration_requests(): void
+    {
+        $manager = $this->userWithRole('general_manager');
+        $registration = WebsiteRegistration::query()->create($this->registrationData());
+
+        $this->actingAs($manager)
+            ->get(route('registration-requests.index'))
+            ->assertOk()
+            ->assertSee('الطلبات');
+
+        $this->actingAs($manager)
+            ->get(route('registration-requests.show', $registration))
+            ->assertOk()
+            ->assertSee($registration->full_name);
+    }
+
     public function test_non_admin_cannot_access_registration_requests(): void
     {
-        $user = $this->userWithRole('general_manager');
+        $user = $this->userWithRole('branch_manager');
         $registration = WebsiteRegistration::query()->create($this->registrationData());
 
         $this->actingAs($user)

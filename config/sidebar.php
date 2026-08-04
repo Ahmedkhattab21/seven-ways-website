@@ -11,7 +11,7 @@ return [
                 'icon' => 'clipboard',
                 'route' => 'registration-requests.index',
                 'profiles' => ['manager', 'system_admin'],
-                'roles_any' => ['company_owner', 'system_admin'],
+                'roles_any' => ['company_owner', 'general_manager', 'system_admin'],
                 'active' => ['registration-requests.*'],
             ],
             [
