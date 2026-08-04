@@ -34,6 +34,7 @@ class SidebarNavigationService
     public function for(User $user): array
     {
         $permissions = $this->permissionSet($user);
+        $roles = $this->roleSet($user);
         $profile = $this->profiles->profile($user);
         $seenUrls = [];
         $sections = [];
@@ -45,7 +46,7 @@ class SidebarNavigationService
             }
             $items = [];
             foreach ($section['items'] as $item) {
-                $resolved = $this->resolveItem($item, $permissions, $profile);
+                $resolved = $this->resolveItem($item, $permissions, $roles, $profile);
                 if (! $resolved || isset($seenUrls[$resolved['url']])) {
                     continue;
                 }
@@ -67,12 +68,14 @@ class SidebarNavigationService
         return compact('sections', 'setup', 'financialAlert');
     }
 
-    private function resolveItem(array $item, array $permissions, string $profile): ?array
+    private function resolveItem(array $item, array $permissions, array $roles, string $profile): ?array
     {
         if (! Route::has($item['route'])
             || ! $this->modules->enabledForRoute($item['route'], $this->request)
             || (isset($item['module']) && ! $this->modules->enabled($item['module']))
-            || (($item['system_admin_only'] ?? false) && $profile !== 'system_admin')
+            || (isset($item['roles_any']) && ! collect($item['roles_any'])->contains(
+                fn (string $role) => isset($roles[$role])
+            ))
             || ! $this->supportsProfile($item, $profile)
             || ! $this->isAllowed($item, $permissions)) {
             return null;
@@ -141,6 +144,16 @@ class SidebarNavigationService
             ->with('permissions:id,name')
             ->get()
             ->flatMap->permissions
+            ->pluck('name')
+            ->unique()
+            ->flip()
+            ->all();
+    }
+
+    private function roleSet(User $user): array
+    {
+        return $user->roles()
+            ->where('roles.is_active', true)
             ->pluck('name')
             ->unique()
             ->flip()

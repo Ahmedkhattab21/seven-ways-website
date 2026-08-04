@@ -32,6 +32,6 @@ class WebsiteRegistrationAdminController extends Controller
 
     private function authorizeSystemAdmin(Request $request): void
     {
-        abort_unless($request->user()?->hasRole('system_admin'), 403);
+        abort_unless($request->user()?->hasRole(['company_owner', 'system_admin']), 403);
     }
 }

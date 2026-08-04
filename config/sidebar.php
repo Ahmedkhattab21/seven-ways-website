@@ -10,8 +10,8 @@ return [
                 'label' => 'الطلبات',
                 'icon' => 'clipboard',
                 'route' => 'registration-requests.index',
-                'profiles' => ['system_admin'],
-                'system_admin_only' => true,
+                'profiles' => ['manager', 'system_admin'],
+                'roles_any' => ['company_owner', 'system_admin'],
                 'active' => ['registration-requests.*'],
             ],
             [

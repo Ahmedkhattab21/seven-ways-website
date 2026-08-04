@@ -32,9 +32,25 @@ class WebsiteRegistrationAdminTest extends TestCase
             ->assertSee('+201000000099');
     }
 
+    public function test_company_owner_can_see_and_open_registration_requests(): void
+    {
+        $owner = $this->userWithRole('company_owner');
+        $registration = WebsiteRegistration::query()->create($this->registrationData());
+
+        $this->actingAs($owner)
+            ->get(route('registration-requests.index'))
+            ->assertOk()
+            ->assertSee('href="'.route('registration-requests.index').'"', false)
+            ->assertSee('Ahmed Website');
+
+        $this->actingAs($owner)
+            ->get(route('registration-requests.show', $registration))
+            ->assertOk();
+    }
+
     public function test_non_admin_cannot_access_registration_requests(): void
     {
-        $user = $this->userWithRole('company_owner');
+        $user = $this->userWithRole('general_manager');
         $registration = WebsiteRegistration::query()->create($this->registrationData());
 
         $this->actingAs($user)
