@@ -108,13 +108,19 @@ class InvoiceWarrantyTest extends TestCase
         $this->assertContains('permission:sales_invoices.share', $share->gatherMiddleware());
     }
 
-    public function test_print_template_contains_embedded_warranty_and_local_flags(): void
+    public function test_print_template_contains_separate_warranty_page_and_local_flags(): void
     {
         $template = file_get_contents(resource_path('views/sales-invoices/print.blade.php'));
 
-        $this->assertStringContainsString('بيانات المنتجات والضمان', $template);
-        $this->assertStringContainsString('$productItems = $invoice->items->where(\'item_type\', \'product\')', $template);
-        $this->assertStringContainsString('غير مسجل لهذا المنتج', $template);
+        $this->assertStringContainsString('class="warranty-page"', $template);
+        $this->assertStringContainsString('page-break-before:always', $template);
+        $this->assertStringContainsString('كارت الضمان', $template);
+        $this->assertStringContainsString('طباعة الفاتورة وكارت الضمان', $template);
+        $this->assertStringContainsString('$warrantyItems = $invoice->items->where(\'item_type\', \'product\')', $template);
+        $this->assertStringContainsString('كارت مرتبط بالفاتورة', $template);
+        $this->assertStringContainsString('لا توجد مدة ضمان مسجلة لهذا المنتج', $template);
+        $this->assertStringContainsString('بنود وشروط الضمان', $template);
+        $this->assertStringContainsString('ختم وتوقيع الفرع', $template);
         $this->assertStringContainsString('images/flags/eg.svg', $template);
         $this->assertStringContainsString('images/flags/sa.svg', $template);
         $this->assertStringNotContainsString('warranties.print', $template);

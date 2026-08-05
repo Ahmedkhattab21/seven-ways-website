@@ -44,11 +44,11 @@ class InvoiceShareController extends Controller
             'channel' => 'whatsapp',
         ]);
         $message = rawurlencode(implode("\n", [
-            'فاتورة Seven Ways',
+            'فاتورة وكارت ضمان Seven Ways',
             "رقم الفاتورة: {$salesInvoice->invoice_number}",
             "العميل: {$salesInvoice->customer_name_snapshot}",
             "الإجمالي: {$salesInvoice->total} {$salesInvoice->currency?->code}",
-            "عرض الفاتورة: {$url}",
+            "عرض الفاتورة وكارت الضمان: {$url}",
         ]));
 
         return view('sales-invoices.whatsapp-redirect', [

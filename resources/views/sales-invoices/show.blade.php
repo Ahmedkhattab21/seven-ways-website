@@ -27,9 +27,9 @@
             <p class="sw-card__subtitle">{{ $invoice->customer_name_snapshot }} — {{ $invoice->branch->name }} — {{ $statusLabels[$invoice->status] ?? $invoice->status }}</p>
         </div>
         <div class="sw-form-actions">
-            <a class="sw-button sw-button--outline" href="{{ route('sales-invoices.print', $invoice) }}">طباعة</a>
+            <a class="sw-button sw-button--outline" href="{{ route('sales-invoices.print', $invoice) }}">طباعة الفاتورة وكارت الضمان</a>
             @if(auth()->user()->hasPermission('sales_invoices.share'))
-                <form method="POST" action="{{ route('sales-invoices.share', $invoice) }}">@csrf<button class="sw-button sw-button--primary">إرسال الفاتورة عبر واتساب</button></form>
+                <form method="POST" action="{{ route('sales-invoices.share', $invoice) }}">@csrf<button class="sw-button sw-button--primary">إرسال الفاتورة وكارت الضمان عبر واتساب</button></form>
             @endif
         </div>
     </header>

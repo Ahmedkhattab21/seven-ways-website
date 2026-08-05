@@ -30,7 +30,8 @@ class SalesInvoiceWhatsAppShareTest extends TestCase
         $this->assertNotEmpty($matches);
         parse_str('text='.html_entity_decode($matches[1]), $query);
         $this->assertStringContainsString($invoice->invoice_number, $query['text']);
-        $this->assertStringContainsString('عرض الفاتورة:', $query['text']);
+        $this->assertStringContainsString('فاتورة وكارت ضمان Seven Ways', $query['text']);
+        $this->assertStringContainsString('عرض الفاتورة وكارت الضمان:', $query['text']);
         $this->assertStringContainsString('/shared/invoices/', $query['text']);
         $this->assertDatabaseHas('invoice_shares', [
             'sales_invoice_id' => $invoice->id,
@@ -40,7 +41,7 @@ class SalesInvoiceWhatsAppShareTest extends TestCase
 
         $this->get(route('sales-invoices.show', $invoice))
             ->assertOk()
-            ->assertSee('إرسال الفاتورة عبر واتساب')
+            ->assertSee('إرسال الفاتورة وكارت الضمان عبر واتساب')
             ->assertDontSee('target="_blank"', false);
     }
 
