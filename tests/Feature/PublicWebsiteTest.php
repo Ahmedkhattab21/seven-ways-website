@@ -119,8 +119,9 @@ class PublicWebsiteTest extends TestCase
     {
         $stories = config('website.customer_stories');
 
-        $this->assertCount(3, $stories['photos']);
+        $this->assertCount(2, $stories['photos']);
         $this->assertCount(6, $stories['videos']);
+        $this->assertNotContains('assets/website/images/customer-stories/customer-story-03.webp', $stories['photos']);
 
         foreach ([...$stories['photos'], ...$stories['videos']] as $media) {
             $this->assertFileExists(public_path($media));
@@ -338,7 +339,7 @@ class PublicWebsiteTest extends TestCase
     {
         $this->get(route('website.home'))
             ->assertOk()
-            ->assertSee('href="https://wa.me/201118742044"', false);
+            ->assertSee('href="https://wa.me/201099025564"', false);
     }
 
     public function test_alexandria_branch_uses_the_provided_coordinates(): void

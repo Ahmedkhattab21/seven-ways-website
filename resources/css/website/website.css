@@ -691,7 +691,7 @@ html[dir="ltr"] .sw-website .sw-advantages__heading img {
     position: relative;
     z-index: 1;
     margin-block: 40px;
-    color: var(--sw-secondary);
+    color: var(--sw-primary);
     font-size: 48px;
     font-weight: 700;
     line-height: 1.25;
@@ -762,7 +762,7 @@ html[dir="ltr"] .sw-website .sw-advantage h3 span {
 }
 
 .sw-website .sw-advantage--xpel h3 {
-    background: linear-gradient(55deg, var(--sw-secondary) 5%, var(--sw-primary));
+    background: var(--sw-primary);
 }
 
 .sw-website .sw-advantage__content {
@@ -795,7 +795,7 @@ html[dir="ltr"] .sw-website .sw-advantage__number {
 }
 
 .sw-website .sw-advantage--xpel .sw-advantage__number {
-    color: var(--sw-secondary);
+    color: var(--sw-white);
 }
 
 .sw-website .sw-advantage p {
@@ -1020,7 +1020,7 @@ html[dir="ltr"] .sw-website .sw-advantages .sw-advantages__slider.sw-reveal.is-v
     position: relative;
     z-index: 1;
     margin-block: 40px;
-    color: var(--sw-secondary);
+    color: var(--sw-primary);
     font-size: 48px;
     font-weight: 700;
     line-height: 1.25;
@@ -2849,7 +2849,7 @@ html[dir="ltr"] .sw-website .sw-home-services .sw-home-brand.sw-reveal.is-visibl
 
 .sw-website .sw-footer__branches h2 {
     margin: 0 0 30px;
-    color: var(--sw-secondary);
+    color: var(--sw-primary);
     font-size: 44px;
     font-weight: 800;
 }
@@ -2866,7 +2866,7 @@ html[dir="ltr"] .sw-website .sw-home-services .sw-home-brand.sw-reveal.is-visibl
 
 .sw-website .sw-footer__branch-columns h3 {
     margin: 0 0 10px;
-    color: var(--sw-secondary);
+    color: var(--sw-primary);
     font-size: 18px;
     font-weight: 800;
 }
@@ -2898,7 +2898,7 @@ html[dir="ltr"] .sw-website .sw-home-services .sw-home-brand.sw-reveal.is-visibl
     height: 18px;
     margin-top: 2px;
     fill: none;
-    stroke: var(--sw-secondary);
+    stroke: var(--sw-primary);
     stroke-width: 1.7;
 }
 

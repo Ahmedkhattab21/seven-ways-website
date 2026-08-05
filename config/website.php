@@ -13,7 +13,7 @@ return [
     'contact' => [
         'recipient' => env('WEBSITE_CONTACT_EMAIL') ?: env('MAIL_FROM_ADDRESS'),
         'call_phone' => '+201099025564',
-        'whatsapp_url' => 'https://wa.me/201118742044',
+        'whatsapp_url' => 'https://wa.me/201099025564',
     ],
 
     'socials' => [
@@ -174,7 +174,7 @@ return [
     'assets' => [
         'logo' => 'assets/brand/seven-ways-logo.webp',
         'mark' => 'assets/brand/seven-ways-mark.webp',
-        'hero_car' => 'assets/website/images/g-class-ar-Cv_phCfN.webp',
+        'hero_car' => 'assets/website/images/audi-seven-ways-hero.png',
         'hero_background' => 'assets/website/images/home-bg-DkJ_mK4W.webp',
         'about_background' => 'assets/website/images/about-us-bg-DpxzeicM.webp',
         'about_video' => 'assets/website/videos/about-us-video-zlm9A9Qo.mp4',
@@ -233,7 +233,6 @@ return [
         'photos' => [
             'assets/website/images/customer-stories/customer-story-01.webp',
             'assets/website/images/customer-stories/customer-story-02.webp',
-            'assets/website/images/customer-stories/customer-story-03.webp',
         ],
         'videos' => [
             'assets/website/videos/customer-stories/customer-story-01.mp4',
